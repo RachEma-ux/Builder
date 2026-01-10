@@ -40,7 +40,7 @@ data class PackEntity(
         /**
          * Creates PackEntity from Pack domain model.
          */
-        fun from from(pack: Pack): PackEntity {
+        fun from(pack: Pack): PackEntity {
             return PackEntity(
                 id = pack.id,
                 name = pack.name,

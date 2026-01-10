@@ -1,7 +1,7 @@
 package com.builder.domain.github
 
 import com.builder.core.repository.GitHubRepository
-import com.builder.data.remote.github.models.Repository
+import com.builder.core.model.github.Repository
 import javax.inject.Inject
 
 /**
