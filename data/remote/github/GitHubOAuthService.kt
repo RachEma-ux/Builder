@@ -15,20 +15,14 @@ interface GitHubOAuthService {
         /**
          * GitHub OAuth Client ID
          *
-         * IMPORTANT: You MUST replace this placeholder with your actual GitHub OAuth Client ID.
+         * Configured for Builder - Mobile Orchestration
+         * Registered at: https://github.com/settings/developers
          *
-         * To get a Client ID:
-         * 1. Go to https://github.com/settings/applications/new
-         * 2. Register a new OAuth application
-         * 3. Copy the Client ID (starts with "Ov" or "Iv1.")
-         * 4. Replace the placeholder below
-         *
-         * For detailed instructions, see: docs/GITHUB_OAUTH_SETUP.md
-         *
-         * Security Note: Consider using BuildConfig to keep this out of version control.
+         * Security Note: Client ID is public and safe to commit.
+         * For production deployments, consider using BuildConfig.
          * See docs/GITHUB_OAUTH_SETUP.md Section 2.2 for BuildConfig approach.
          */
-        const val CLIENT_ID = "Ov23liPLACEHOLDER_UPDATE_ME" // ⚠️ MUST UPDATE BEFORE USE
+        const val CLIENT_ID = "Ov23li1oiyTmHw29pwBs" // ✅ Configured
     }
 
     /**
