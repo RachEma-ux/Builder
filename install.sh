@@ -53,29 +53,60 @@ check_termux() {
 check_prerequisites() {
     log_step "Checking prerequisites..."
 
-    local missing_packages=()
+    local all_good=true
 
-    # Check for required packages
+    # Check and install git
     if ! command -v git &> /dev/null; then
-        missing_packages+=("git")
-    fi
-
-    if ! command -v java &> /dev/null; then
-        missing_packages+=("openjdk-17")
-    fi
-
-    if ! command -v adb &> /dev/null; then
-        missing_packages+=("android-tools")
-    fi
-
-    if [ ${#missing_packages[@]} -ne 0 ]; then
-        log_warn "Missing packages: ${missing_packages[*]}"
-        log_info "Installing required packages..."
-        pkg update -y
-        pkg install -y "${missing_packages[@]}"
+        log_warn "Git not found, installing..."
+        pkg update -y && pkg install -y git || {
+            log_error "Failed to install git"
+            exit 1
+        }
+        log_info "Git installed ✓"
     else
-        log_info "All prerequisites installed ✓"
+        log_info "Git found ✓"
     fi
+
+    # Check and install Java
+    if ! command -v java &> /dev/null; then
+        log_warn "Java not found, installing..."
+        pkg update -y
+
+        # Try openjdk-17 first
+        if pkg install -y openjdk-17 2>/dev/null; then
+            log_info "OpenJDK 17 installed ✓"
+        else
+            log_warn "openjdk-17 not available, trying alternatives..."
+            # Try other versions
+            if pkg search openjdk | grep -q openjdk; then
+                log_info "Available Java packages:"
+                pkg search openjdk | grep openjdk
+                log_error "Please install Java manually: pkg install openjdk-<version>"
+                exit 1
+            else
+                log_error "No OpenJDK packages found in repositories"
+                log_info "Try: pkg update && pkg upgrade"
+                exit 1
+            fi
+        fi
+    else
+        JAVA_VERSION=$(java -version 2>&1 | head -n 1)
+        log_info "Java found: $JAVA_VERSION ✓"
+    fi
+
+    # Check and install ADB
+    if ! command -v adb &> /dev/null; then
+        log_warn "ADB not found, installing..."
+        pkg install -y android-tools || {
+            log_error "Failed to install android-tools"
+            exit 1
+        }
+        log_info "ADB installed ✓"
+    else
+        log_info "ADB found ✓"
+    fi
+
+    log_info "All prerequisites checked ✓"
 }
 
 setup_storage() {
