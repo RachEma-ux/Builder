@@ -18,13 +18,19 @@ android {
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
 
-        externalNativeBuild {
-            cmake {
-                cppFlags += "-std=c++17"
-                arguments += listOf(
-                    "-DANDROID_STL=c++_shared",
-                    "-DANDROID_PLATFORM=android-26"
-                )
+        // Only configure native build if Wasmtime library exists
+        val wasmtimeLibExists = file("../native/wasmtime-android/libs/arm64-v8a/libwasmtime.so").exists() ||
+                                file("../native/wasmtime-android/libs/x86_64/libwasmtime.so").exists()
+
+        if (wasmtimeLibExists) {
+            externalNativeBuild {
+                cmake {
+                    cppFlags += "-std=c++17"
+                    arguments += listOf(
+                        "-DANDROID_STL=c++_shared",
+                        "-DANDROID_PLATFORM=android-26"
+                    )
+                }
             }
         }
     }
@@ -38,11 +44,22 @@ android {
         jvmTarget = "17"
     }
 
-    externalNativeBuild {
-        cmake {
-            path = file("../native/wasmtime-android/CMakeLists.txt")
-            version = "3.22.1"
+    // Only enable native build if Wasmtime library exists
+    val wasmtimeLibExists = file("../native/wasmtime-android/libs/arm64-v8a/libwasmtime.so").exists() ||
+                            file("../native/wasmtime-android/libs/x86_64/libwasmtime.so").exists()
+
+    if (wasmtimeLibExists) {
+        externalNativeBuild {
+            cmake {
+                path = file("../native/wasmtime-android/CMakeLists.txt")
+                version = "3.22.1"
+            }
         }
+        println("✅ Wasmtime library found - native build enabled")
+    } else {
+        println("⚠️  Wasmtime library not found - native build disabled")
+        println("   WASM execution will not be available at runtime")
+        println("   Run ./scripts/build-wasmtime.sh to enable WASM support")
     }
 }
 
