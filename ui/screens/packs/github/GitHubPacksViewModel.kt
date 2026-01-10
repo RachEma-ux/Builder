@@ -1,0 +1,370 @@
+package com.builder.ui.screens.packs.github
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.builder.core.model.InstallMode
+import com.builder.core.model.InstallSource
+import com.builder.core.repository.GitHubRepository
+import com.builder.data.remote.github.DeviceFlowState
+import com.builder.data.remote.github.models.*
+import com.builder.domain.github.ListRepositoriesUseCase
+import com.builder.domain.pack.InstallPackUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import timber.log.Timber
+import javax.inject.Inject
+
+/**
+ * ViewModel for GitHub Packs screen.
+ * Handles Dev and Production pack installation flows.
+ */
+@HiltViewModel
+class GitHubPacksViewModel @Inject constructor(
+    private val gitHubRepository: GitHubRepository,
+    private val listRepositoriesUseCase: ListRepositoriesUseCase,
+    private val installPackUseCase: InstallPackUseCase
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(GitHubPacksUiState())
+    val uiState: StateFlow<GitHubPacksUiState> = _uiState.asStateFlow()
+
+    init {
+        checkAuthentication()
+    }
+
+    /**
+     * Checks if user is authenticated.
+     */
+    private fun checkAuthentication() {
+        _uiState.update {
+            it.copy(isAuthenticated = gitHubRepository.isAuthenticated())
+        }
+    }
+
+    /**
+     * Initiates OAuth device flow.
+     */
+    fun initiateOAuth() {
+        viewModelScope.launch {
+            gitHubRepository.initiateDeviceFlow().collect { state ->
+                when (state) {
+                    is DeviceFlowState.Loading -> {
+                        _uiState.update { it.copy(authState = AuthState.Loading) }
+                    }
+                    is DeviceFlowState.WaitingForUser -> {
+                        _uiState.update {
+                            it.copy(
+                                authState = AuthState.WaitingForUser(
+                                    userCode = state.userCode,
+                                    verificationUri = state.verificationUri
+                                )
+                            )
+                        }
+                    }
+                    is DeviceFlowState.Success -> {
+                        _uiState.update {
+                            it.copy(
+                                authState = AuthState.Success,
+                                isAuthenticated = true
+                            )
+                        }
+                        loadRepositories()
+                    }
+                    is DeviceFlowState.Error -> {
+                        _uiState.update {
+                            it.copy(authState = AuthState.Error(state.message))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Logs out the user.
+     */
+    fun logout() {
+        gitHubRepository.logout()
+        _uiState.update {
+            GitHubPacksUiState() // Reset to initial state
+        }
+    }
+
+    /**
+     * Loads repositories for the authenticated user.
+     */
+    fun loadRepositories() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(loadingRepositories = true) }
+
+            listRepositoriesUseCase().fold(
+                onSuccess = { repos ->
+                    _uiState.update {
+                        it.copy(
+                            repositories = repos,
+                            loadingRepositories = false
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Failed to load repositories")
+                    _uiState.update {
+                        it.copy(
+                            loadingRepositories = false,
+                            error = "Failed to load repositories: ${error.message}"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    /**
+     * Selects a repository.
+     */
+    fun selectRepository(repo: Repository) {
+        _uiState.update { it.copy(selectedRepo = repo) }
+
+        // Load branches and tags
+        loadBranches(repo.owner.login, repo.name)
+        loadTags(repo.owner.login, repo.name)
+    }
+
+    /**
+     * Loads branches for a repository.
+     */
+    private fun loadBranches(owner: String, repo: String) {
+        viewModelScope.launch {
+            gitHubRepository.listBranches(owner, repo).fold(
+                onSuccess = { branches ->
+                    _uiState.update { it.copy(branches = branches) }
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Failed to load branches")
+                }
+            )
+        }
+    }
+
+    /**
+     * Loads tags for a repository.
+     */
+    private fun loadTags(owner: String, repo: String) {
+        viewModelScope.launch {
+            gitHubRepository.listTags(owner, repo).fold(
+                onSuccess = { tags ->
+                    _uiState.update { it.copy(tags = tags) }
+
+                    // Load releases for each tag
+                    loadReleases(owner, repo)
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Failed to load tags")
+                }
+            )
+        }
+    }
+
+    /**
+     * Loads releases for a repository.
+     */
+    private fun loadReleases(owner: String, repo: String) {
+        viewModelScope.launch {
+            gitHubRepository.listReleases(owner, repo).fold(
+                onSuccess = { releases ->
+                    _uiState.update { it.copy(releases = releases) }
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Failed to load releases")
+                }
+            )
+        }
+    }
+
+    /**
+     * Selects a branch (for Dev mode).
+     */
+    fun selectBranch(branch: Branch) {
+        _uiState.update { it.copy(selectedBranch = branch) }
+
+        // Load workflow runs for this branch
+        _uiState.value.selectedRepo?.let { repo ->
+            loadWorkflowRuns(repo.owner.login, repo.name, branch.name)
+        }
+    }
+
+    /**
+     * Loads workflow runs for a branch.
+     */
+    private fun loadWorkflowRuns(owner: String, repo: String, branch: String) {
+        viewModelScope.launch {
+            gitHubRepository.listWorkflowRuns(owner, repo, branch).fold(
+                onSuccess = { runs ->
+                    _uiState.update { it.copy(workflowRuns = runs) }
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Failed to load workflow runs")
+                }
+            )
+        }
+    }
+
+    /**
+     * Selects a tag (for Production mode).
+     */
+    fun selectTag(tag: Tag) {
+        _uiState.update { it.copy(selectedTag = tag) }
+
+        // Get release for this tag
+        _uiState.value.selectedRepo?.let { repo ->
+            getReleaseByTag(repo.owner.login, repo.name, tag.name)
+        }
+    }
+
+    /**
+     * Gets a release by tag.
+     */
+    private fun getReleaseByTag(owner: String, repo: String, tag: String) {
+        viewModelScope.launch {
+            gitHubRepository.getReleaseByTag(owner, repo, tag).fold(
+                onSuccess = { release ->
+                    _uiState.update { it.copy(selectedRelease = release) }
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Failed to get release for tag: $tag")
+                }
+            )
+        }
+    }
+
+    /**
+     * Installs a pack from workflow artifact (Dev mode).
+     */
+    fun installFromArtifact(artifact: Artifact, workflowRun: WorkflowRun) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(installing = true) }
+
+            val installSource = InstallSource.dev(
+                branch = workflowRun.headBranch ?: "unknown",
+                artifactUrl = artifact.archiveDownloadUrl,
+                timestamp = System.currentTimeMillis()
+            )
+
+            installPackUseCase(
+                downloadUrl = artifact.archiveDownloadUrl,
+                installSource = installSource,
+                expectedChecksum = null // No checksum for dev installs
+            ).fold(
+                onSuccess = { pack ->
+                    Timber.i("Pack installed successfully: ${pack.id}")
+                    _uiState.update {
+                        it.copy(
+                            installing = false,
+                            installSuccess = "Pack ${pack.name} installed successfully"
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Pack installation failed")
+                    _uiState.update {
+                        it.copy(
+                            installing = false,
+                            error = "Installation failed: ${error.message}"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    /**
+     * Installs a pack from release asset (Production mode).
+     */
+    fun installFromRelease(release: Release, asset: ReleaseAsset, checksum: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(installing = true) }
+
+            val installSource = InstallSource.prod(
+                tag = release.tagName,
+                releaseUrl = asset.browserDownloadUrl,
+                timestamp = System.currentTimeMillis()
+            )
+
+            installPackUseCase(
+                downloadUrl = asset.browserDownloadUrl,
+                installSource = installSource,
+                expectedChecksum = checksum
+            ).fold(
+                onSuccess = { pack ->
+                    Timber.i("Pack installed successfully: ${pack.id}")
+                    _uiState.update {
+                        it.copy(
+                            installing = false,
+                            installSuccess = "Pack ${pack.name} installed successfully"
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Pack installation failed")
+                    _uiState.update {
+                        it.copy(
+                            installing = false,
+                            error = "Installation failed: ${error.message}"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    /**
+     * Switches between Dev and Prod tabs.
+     */
+    fun selectTab(mode: InstallMode) {
+        _uiState.update { it.copy(selectedTab = mode) }
+    }
+
+    /**
+     * Clears error message.
+     */
+    fun clearError() {
+        _uiState.update { it.copy(error = null, installSuccess = null) }
+    }
+}
+
+/**
+ * UI state for GitHub Packs screen.
+ */
+data class GitHubPacksUiState(
+    val selectedTab: InstallMode = InstallMode.DEV,
+    val isAuthenticated: Boolean = false,
+    val authState: AuthState = AuthState.Idle,
+    val loadingRepositories: Boolean = false,
+    val repositories: List<Repository> = emptyList(),
+    val selectedRepo: Repository? = null,
+    val branches: List<Branch> = emptyList(),
+    val selectedBranch: Branch? = null,
+    val tags: List<Tag> = emptyList(),
+    val selectedTag: Tag? = null,
+    val workflowRuns: List<WorkflowRun> = emptyList(),
+    val releases: List<Release> = emptyList(),
+    val selectedRelease: Release? = null,
+    val installing: Boolean = false,
+    val installSuccess: String? = null,
+    val error: String? = null
+)
+
+/**
+ * Authentication state.
+ */
+sealed class AuthState {
+    object Idle : AuthState()
+    object Loading : AuthState()
+    data class WaitingForUser(val userCode: String, val verificationUri: String) : AuthState()
+    object Success : AuthState()
+    data class Error(val message: String) : AuthState()
+}
