@@ -7,8 +7,24 @@ project("wasmtime_jni")
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Find Java for JNI
-find_package(JNI REQUIRED)
+# Find Java for JNI - but don't fail if desktop components are missing
+find_package(JNI)
+
+# On Android, the NDK provides JNI headers
+# We don't need the full JDK components (AWT, JVM libs, etc.)
+if(ANDROID)
+    # Android NDK provides JNI headers
+    if(NOT JNI_INCLUDE_DIRS)
+        # Fallback: Use NDK's JNI headers directly
+        set(JNI_INCLUDE_DIRS "${ANDROID_NDK}/sysroot/usr/include")
+    endif()
+    message(STATUS "Android build - using NDK JNI headers: ${JNI_INCLUDE_DIRS}")
+else()
+    # Desktop builds need full JNI
+    if(NOT JNI_FOUND)
+        message(FATAL_ERROR "JNI not found. Please install JDK and set JAVA_HOME.")
+    endif()
+endif()
 
 # Include directories
 include_directories(
