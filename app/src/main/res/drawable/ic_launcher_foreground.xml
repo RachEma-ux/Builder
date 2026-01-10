@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Safe zone: 66dp diameter circle centered at 54,54 -->
+    <!-- Icon content should stay within 44-64 range on both axes -->
+
+    <!-- Letter "B" for Builder -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,38h12c4,0 7,1.5 9,4c2,2.5 3,5.5 3,9c0,2.5 -0.5,4.5 -1.5,6.5c-1,2 -2.5,3.5 -4.5,4.5c2.5,1 4.5,2.5 5.5,4.5c1,2 1.5,4.5 1.5,7c0,3.5 -1,6.5 -3,9c-2,2.5 -5,4 -9,4H42V38zM48,43v16h6c2.5,0 4.5,-0.5 6,-2c1.5,-1.5 2,-3.5 2,-6c0,-2.5 -0.5,-4.5 -2,-6c-1.5,-1.5 -3.5,-2 -6,-2H48zM48,64v16h6c2.5,0 4.5,-0.5 6,-2c1.5,-1.5 2,-3.5 2,-6c0,-2.5 -0.5,-4.5 -2,-6c-1.5,-1.5 -3.5,-2 -6,-2H48z"/>
+
+    <!-- Building blocks accent -->
+    <path
+        android:fillColor="#03DAC6"
+        android:fillAlpha="0.6"
+        android:pathData="M68,48h8v8h-8z"/>
+    <path
+        android:fillColor="#03DAC6"
+        android:fillAlpha="0.8"
+        android:pathData="M68,58h8v8h-8z"/>
+</vector>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Background -->
+    <path
+        android:fillColor="#6200EE"
+        android:pathData="M0,0h48v48h-48z"/>
+
+    <!-- Letter "B" -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M14,12h8c3,0 5,1 6,3c1,2 2,4 2,6c0,2 -0.5,3.5 -1.5,5c-1,1.5 -2,2.5 -3.5,3c2,0.5 3.5,1.5 4.5,3c1,1.5 1.5,3.5 1.5,5.5c0,2.5 -1,4.5 -2.5,6c-1.5,1.5 -3.5,2.5 -6.5,2.5H14V12zM18,16v10h4c1.5,0 2.5,-0.5 3.5,-1.5c1,-1 1.5,-2 1.5,-3.5c0,-1.5 -0.5,-2.5 -1.5,-3.5c-1,-1 -2,-1.5 -3.5,-1.5H18zM18,30v10h4c1.5,0 2.5,-0.5 3.5,-1.5c1,-1 1.5,-2 1.5,-3.5c0,-1.5 -0.5,-2.5 -1.5,-3.5c-1,-1 -2,-1.5 -3.5,-1.5H18z"/>
+
+    <!-- Accent blocks -->
+    <path
+        android:fillColor="#03DAC6"
+        android:fillAlpha="0.8"
+        android:pathData="M32,20h4v4h-4z"/>
+    <path
+        android:fillColor="#03DAC6"
+        android:fillAlpha="0.9"
+        android:pathData="M32,26h4v4h-4z"/>
+</vector>
