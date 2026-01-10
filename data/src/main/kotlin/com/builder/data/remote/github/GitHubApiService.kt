@@ -72,7 +72,7 @@ interface GitHubApiService {
         @Path("owner") owner: String,
         @Path("repo") repo: String,
         @Query("per_page") perPage: Int = 100
-    ): Response<List<Tag>>
+    ): Response<List<com.builder.core.model.github.Tag>>
 
     // ========== Releases ==========
 
