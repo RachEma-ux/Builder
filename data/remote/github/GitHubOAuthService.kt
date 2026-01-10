@@ -11,7 +11,24 @@ import retrofit2.http.*
 interface GitHubOAuthService {
     companion object {
         const val BASE_URL = "https://github.com/"
-        const val CLIENT_ID = "Ov23liYourClientIdHere" // TODO: Replace with actual Client ID
+
+        /**
+         * GitHub OAuth Client ID
+         *
+         * IMPORTANT: You MUST replace this placeholder with your actual GitHub OAuth Client ID.
+         *
+         * To get a Client ID:
+         * 1. Go to https://github.com/settings/applications/new
+         * 2. Register a new OAuth application
+         * 3. Copy the Client ID (starts with "Ov" or "Iv1.")
+         * 4. Replace the placeholder below
+         *
+         * For detailed instructions, see: docs/GITHUB_OAUTH_SETUP.md
+         *
+         * Security Note: Consider using BuildConfig to keep this out of version control.
+         * See docs/GITHUB_OAUTH_SETUP.md Section 2.2 for BuildConfig approach.
+         */
+        const val CLIENT_ID = "Ov23liPLACEHOLDER_UPDATE_ME" // ⚠️ MUST UPDATE BEFORE USE
     }
 
     /**
