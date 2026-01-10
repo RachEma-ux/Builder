@@ -3,8 +3,9 @@ package com.builder.data.remote.github
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import com.builder.data.remote.github.models.AccessTokenResponse
-import com.builder.data.remote.github.models.DeviceCodeResponse
+import com.builder.core.model.github.AccessTokenResponse
+import com.builder.core.model.github.DeviceCodeResponse
+import com.builder.core.model.github.DeviceFlowState
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -169,19 +170,3 @@ class GitHubOAuthManager @Inject constructor(
     }
 }
 
-/**
- * Sealed class representing device flow states.
- */
-sealed class DeviceFlowState {
-    object Loading : DeviceFlowState()
-
-    data class WaitingForUser(
-        val userCode: String,
-        val verificationUri: String,
-        val expiresIn: Int
-    ) : DeviceFlowState()
-
-    data class Success(val accessToken: String) : DeviceFlowState()
-
-    data class Error(val message: String) : DeviceFlowState()
-}

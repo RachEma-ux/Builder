@@ -1,7 +1,6 @@
 package com.builder.core.repository
 
-import com.builder.data.remote.github.DeviceFlowState
-import com.builder.data.remote.github.models.*
+import com.builder.core.model.github.*
 import kotlinx.coroutines.flow.Flow
 
 /**

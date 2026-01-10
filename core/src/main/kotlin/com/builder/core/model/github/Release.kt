@@ -1,4 +1,4 @@
-package com.builder.data.remote.github.models
+package com.builder.core.model.github
 
 import com.google.gson.annotations.SerializedName
 

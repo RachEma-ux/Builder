@@ -1,6 +1,6 @@
 package com.builder.data.remote.github
 
-import com.builder.data.remote.github.models.*
+import com.builder.core.model.github.*
 import retrofit2.Response
 import retrofit2.http.*
 
