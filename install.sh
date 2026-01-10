@@ -142,8 +142,9 @@ build_app() {
 
     # Build debug APK
     ./gradlew assembleDebug --warning-mode all 2>&1 | tee build.log
+    BUILD_EXIT_CODE=${PIPESTATUS[0]}
 
-    if [ $? -eq 0 ]; then
+    if [ $BUILD_EXIT_CODE -eq 0 ]; then
         log_info "Build successful! ✓"
 
         # Find the APK
