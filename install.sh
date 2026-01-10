@@ -126,6 +126,78 @@ setup_storage() {
     fi
 }
 
+setup_android_sdk() {
+    log_step "Setting up Android SDK..."
+
+    # Check if ANDROID_HOME is already set and valid
+    if [ -n "$ANDROID_HOME" ] && [ -d "$ANDROID_HOME" ]; then
+        log_info "Android SDK found at $ANDROID_HOME ✓"
+        return 0
+    fi
+
+    # Check if local.properties exists
+    if [ -f "$HOME/Builder/local.properties" ] && grep -q "sdk.dir" "$HOME/Builder/local.properties"; then
+        log_info "Android SDK configured in local.properties ✓"
+        return 0
+    fi
+
+    log_warn "Android SDK not found, installing..."
+    log_info "This will download ~2GB of data and may take 10-15 minutes"
+
+    # Create SDK directory
+    SDK_DIR="$HOME/android-sdk"
+    mkdir -p "$SDK_DIR/cmdline-tools"
+
+    # Install unzip if not present
+    if ! command -v unzip &> /dev/null; then
+        log_info "Installing unzip..."
+        pkg install -y unzip
+    fi
+
+    # Download Android command-line tools
+    log_info "Downloading Android SDK command-line tools..."
+    cd "$SDK_DIR/cmdline-tools"
+
+    CMDLINE_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+    wget -q --show-progress "$CMDLINE_TOOLS_URL" || {
+        log_error "Failed to download Android SDK tools"
+        exit 1
+    }
+
+    # Extract tools
+    log_info "Extracting SDK tools..."
+    unzip -q commandlinetools-linux-*.zip
+    mv cmdline-tools latest
+    rm commandlinetools-linux-*.zip
+
+    # Set ANDROID_HOME
+    export ANDROID_HOME="$SDK_DIR"
+    export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+
+    # Add to bashrc for persistence
+    if ! grep -q "ANDROID_HOME" "$HOME/.bashrc"; then
+        log_info "Adding ANDROID_HOME to ~/.bashrc..."
+        echo "" >> "$HOME/.bashrc"
+        echo "# Android SDK" >> "$HOME/.bashrc"
+        echo "export ANDROID_HOME=\$HOME/android-sdk" >> "$HOME/.bashrc"
+        echo "export PATH=\$ANDROID_HOME/cmdline-tools/latest/bin:\$ANDROID_HOME/platform-tools:\$PATH" >> "$HOME/.bashrc"
+    fi
+
+    # Accept licenses
+    log_info "Accepting Android SDK licenses..."
+    yes | sdkmanager --licenses > /dev/null 2>&1
+
+    # Install required SDK components
+    log_info "Installing Android SDK platform and build tools (this may take 10 minutes)..."
+    sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" || {
+        log_error "Failed to install SDK components"
+        exit 1
+    }
+
+    log_info "Android SDK installed successfully ✓"
+    log_info "SDK location: $ANDROID_HOME"
+}
+
 build_app() {
     log_step "Building Builder app..."
 
@@ -142,8 +214,9 @@ build_app() {
 
     # Build debug APK
     ./gradlew assembleDebug --warning-mode all 2>&1 | tee build.log
+    BUILD_EXIT_CODE=${PIPESTATUS[0]}
 
-    if [ $? -eq 0 ]; then
+    if [ $BUILD_EXIT_CODE -eq 0 ]; then
         log_info "Build successful! ✓"
 
         # Find the APK
@@ -291,6 +364,7 @@ main() {
     if [ "$INSTALL_ONLY" = false ]; then
         check_prerequisites
         setup_storage
+        setup_android_sdk
         build_app
         copy_to_downloads
     fi
