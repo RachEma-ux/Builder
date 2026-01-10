@@ -72,16 +72,20 @@ check_prerequisites() {
         log_warn "Java not found, installing..."
         pkg update -y
 
-        # Try openjdk-17 first
-        if pkg install -y openjdk-17 2>/dev/null; then
+        # Try openjdk-21 (LTS version available in Termux)
+        if pkg install -y openjdk-21 2>/dev/null; then
+            log_info "OpenJDK 21 installed ✓"
+        elif pkg install -y openjdk-17 2>/dev/null; then
             log_info "OpenJDK 17 installed ✓"
+        elif pkg install -y openjdk-25 2>/dev/null; then
+            log_info "OpenJDK 25 installed ✓"
         else
-            log_warn "openjdk-17 not available, trying alternatives..."
+            log_warn "Standard OpenJDK packages not available, checking alternatives..."
             # Try other versions
             if pkg search openjdk | grep -q openjdk; then
                 log_info "Available Java packages:"
                 pkg search openjdk | grep openjdk
-                log_error "Please install Java manually: pkg install openjdk-<version>"
+                log_error "Please install Java manually: pkg install openjdk-21"
                 exit 1
             else
                 log_error "No OpenJDK packages found in repositories"
