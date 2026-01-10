@@ -6,7 +6,7 @@ package com.builder.runtime.workflow
  */
 class WorkflowContext(
     val packId: String,
-    val instanceId: Long
+    val instanceId: String
 ) {
     private val stepResults = mutableMapOf<String, Result<Any>>()
 
@@ -43,7 +43,7 @@ class WorkflowContext(
  */
 data class WorkflowResult(
     val packId: String,
-    val instanceId: Long,
+    val instanceId: String,
     val stepResults: Map<String, Any?>
 )
 

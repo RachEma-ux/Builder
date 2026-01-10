@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.builder.data.local.db.BuilderDatabase
 import com.builder.data.local.db.dao.InstanceDao
+import com.builder.data.local.db.dao.LogDao
 import com.builder.data.local.db.dao.PackDao
 import dagger.Module
 import dagger.Provides
@@ -41,5 +42,10 @@ object DatabaseModule {
     @Provides
     fun provideInstanceDao(database: BuilderDatabase): InstanceDao {
         return database.instanceDao()
+    }
+
+    @Provides
+    fun provideLogDao(database: BuilderDatabase): LogDao {
+        return database.logDao()
     }
 }

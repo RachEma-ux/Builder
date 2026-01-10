@@ -1,9 +1,15 @@
 package com.builder.runtime.workflow
 
+import com.builder.core.model.LogLevel
+import com.builder.core.model.LogSource
 import com.builder.core.model.Workflow
 import com.builder.core.model.WorkflowStep
+import com.builder.runtime.LogCollector
 import com.builder.runtime.wasm.WasmRuntime
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -12,14 +18,27 @@ import timber.log.Timber
 
 /**
  * Workflow engine for executing workflow.json files.
+ *
+ * Enhanced with:
+ * - Progress tracking
+ * - Step-by-step logging via LogCollector
+ * - Cancellation support
+ * - Better error handling
+ *
  * See Builder_Final.md §8 for workflow specification.
  */
 class WorkflowEngine(
     private val wasmRuntime: WasmRuntime,
     private val httpClient: OkHttpClient,
-    private val kvStore: KvStore
+    private val kvStore: KvStore,
+    private val logCollector: LogCollector
 ) {
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
+
+    private val _progress = MutableStateFlow<WorkflowProgress?>(null)
+    val progress: StateFlow<WorkflowProgress?> = _progress.asStateFlow()
+
+    private var isCancelled = false
 
     /**
      * Executes a workflow.
@@ -33,32 +52,79 @@ class WorkflowEngine(
         context: WorkflowContext
     ): Result<WorkflowResult> {
         return try {
-            Timber.i("Starting workflow execution: ${workflow.id}")
+            isCancelled = false
+
+            log(context, LogLevel.INFO, "Starting workflow execution: ${workflow.id}")
             workflow.validate()
 
-            for (step in workflow.steps) {
-                Timber.d("Executing step: ${step.id} (${step.type})")
+            val totalSteps = workflow.steps.size
+            updateProgress(0, totalSteps, "Starting workflow")
+
+            for ((index, step) in workflow.steps.withIndex()) {
+                if (isCancelled) {
+                    log(context, LogLevel.WARN, "Workflow execution cancelled")
+                    return Result.failure(WorkflowCancelledException("Workflow cancelled by user"))
+                }
+
+                log(context, LogLevel.DEBUG, "Executing step ${index + 1}/$totalSteps: ${step.id} (${step.type})")
+                updateProgress(index, totalSteps, "Executing step: ${step.id}")
 
                 val stepResult = executeStep(step, context)
                 context.setStepResult(step.id, stepResult)
 
                 if (stepResult.isFailure) {
-                    Timber.e("Step ${step.id} failed: ${stepResult.exceptionOrNull()}")
+                    val error = stepResult.exceptionOrNull()
+                    log(context, LogLevel.ERROR, "Step ${step.id} failed: ${error?.message}")
+                    updateProgress(index + 1, totalSteps, "Failed at step: ${step.id}")
+
                     return Result.failure(
                         WorkflowExecutionException(
                             "Step ${step.id} failed",
-                            stepResult.exceptionOrNull()
+                            error
                         )
                     )
                 }
+
+                log(context, LogLevel.DEBUG, "Step ${step.id} completed successfully")
             }
 
-            Timber.i("Workflow ${workflow.id} completed successfully")
+            updateProgress(totalSteps, totalSteps, "Workflow completed")
+            log(context, LogLevel.INFO, "Workflow ${workflow.id} completed successfully")
+
             Result.success(context.toResult())
         } catch (e: Exception) {
+            log(context, LogLevel.ERROR, "Workflow execution failed: ${e.message}")
             Timber.e(e, "Workflow execution failed")
             Result.failure(e)
+        } finally {
+            _progress.value = null
         }
+    }
+
+    /**
+     * Cancel the currently executing workflow
+     */
+    fun cancel() {
+        isCancelled = true
+    }
+
+    private fun updateProgress(current: Int, total: Int, message: String) {
+        _progress.value = WorkflowProgress(
+            currentStep = current,
+            totalSteps = total,
+            message = message,
+            percent = if (total > 0) (current.toFloat() / total * 100).toInt() else 0
+        )
+    }
+
+    private fun log(context: WorkflowContext, level: LogLevel, message: String) {
+        logCollector.log(
+            instanceId = context.instanceId,
+            packId = context.packId,
+            level = level,
+            message = message,
+            source = LogSource.WORKFLOW_STEP
+        )
     }
 
     /**
@@ -162,13 +228,14 @@ class WorkflowEngine(
         context: WorkflowContext
     ): Result<Any> {
         return try {
-            when (step.level.lowercase()) {
-                "debug" -> Timber.d("[${context.packId}] ${step.message}")
-                "info" -> Timber.i("[${context.packId}] ${step.message}")
-                "warn" -> Timber.w("[${context.packId}] ${step.message}")
-                "error" -> Timber.e("[${context.packId}] ${step.message}")
-                else -> Timber.i("[${context.packId}] ${step.message}")
+            val level = when (step.level.lowercase()) {
+                "debug" -> LogLevel.DEBUG
+                "warn" -> LogLevel.WARN
+                "error" -> LogLevel.ERROR
+                else -> LogLevel.INFO
             }
+
+            log(context, level, step.message)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -202,9 +269,26 @@ class WorkflowEngine(
 }
 
 /**
+ * Workflow execution progress
+ */
+data class WorkflowProgress(
+    val currentStep: Int,
+    val totalSteps: Int,
+    val message: String,
+    val percent: Int
+)
+
+/**
  * Exception thrown when workflow execution fails.
  */
 class WorkflowExecutionException(
     message: String,
     cause: Throwable? = null
 ) : Exception(message, cause)
+
+/**
+ * Exception thrown when workflow is cancelled.
+ */
+class WorkflowCancelledException(
+    message: String
+) : Exception(message)
