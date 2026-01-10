@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Builder</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_runtimes">Runtimes</string>
+    <string name="nav_packs">Packs</string>
+    <string name="nav_packs_installed">Installed</string>
+    <string name="nav_packs_github">GitHub</string>
+    <string name="nav_packs_local">Local File</string>
+    <string name="nav_builds">Builds</string>
+    <string name="nav_instances">Instances</string>
+    <string name="nav_logs">Logs</string>
+    <string name="nav_health">Health</string>
+
+    <!-- Install modes -->
+    <string name="mode_dev">DEV</string>
+    <string name="mode_prod">PROD</string>
+    <string name="mode_dev_warning">DEV builds install from workflow artifacts only (temporary). Not for production.</string>
+    <string name="mode_prod_info">PRODUCTION installs from tag Release assets only (stable + auditable).</string>
+
+    <!-- GitHub -->
+    <string name="github_connect">Connect GitHub</string>
+    <string name="github_disconnect">Disconnect</string>
+    <string name="github_oauth_title">GitHub OAuth</string>
+
+    <!-- Packs -->
+    <string name="pack_install">Install</string>
+    <string name="pack_delete">Delete</string>
+    <string name="pack_update">Update</string>
+
+    <!-- Instances -->
+    <string name="instance_start">Start</string>
+    <string name="instance_pause">Pause</string>
+    <string name="instance_stop">Stop</string>
+    <string name="instance_state_stopped">Stopped</string>
+    <string name="instance_state_running">Running</string>
+    <string name="instance_state_paused">Paused</string>
+
+    <!-- Secrets -->
+    <string name="secrets_title">Secrets</string>
+    <string name="secrets_required">Required Secrets</string>
+    <string name="secrets_set">Set Secret</string>
+    <string name="secrets_missing_warning">This pack requires secrets. Set them before starting.</string>
+
+    <!-- Errors -->
+    <string name="error_generic">An error occurred</string>
+    <string name="error_network">Network error</string>
+    <string name="error_checksum_mismatch">Checksum verification failed</string>
+    <string name="error_pack_not_found">Pack not found</string>
+
+</resources>

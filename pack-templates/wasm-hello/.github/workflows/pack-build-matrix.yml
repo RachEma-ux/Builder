@@ -1,0 +1,108 @@
+name: Build Pack
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        variant: [hello]
+        target: [android-arm64, android-universal]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-wasi
+          override: true
+
+      - name: Set version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" =~ ^refs/tags/ ]]; then
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "version=0.0.0-dev+${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build pack
+        env:
+          PACK_VARIANT: ${{ matrix.variant }}
+          TARGET: ${{ matrix.target }}
+          PACK_VERSION: ${{ steps.version.outputs.version }}
+          GIT_SHA: ${{ github.sha }}
+          OUT_DIR: out
+        run: ./scripts/build-pack.sh
+
+      - name: Verify pack
+        run: ./scripts/verify-pack.sh
+
+      - name: Generate checksums
+        working-directory: out
+        run: sha256sum pack-*.zip > checksums.sha256
+
+      - name: Upload artifact
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pack-${{ matrix.variant }}-${{ matrix.target }}-${{ steps.version.outputs.version }}
+          path: out/pack-*.zip
+
+      - name: Upload to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            out/pack-*.zip
+            out/checksums.sha256
+
+  publish-index:
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate packs.index.json
+        run: |
+          cat > packs.index.json <<'EOF'
+          {
+            "index_version": "1.0",
+            "default_variant": "hello",
+            "targets": {
+              "android": {
+                "preferred": ["android-arm64", "android-universal"]
+              }
+            },
+            "variants": {
+              "hello": {
+                "name": "Hello WASM",
+                "type": "wasm",
+                "targets": {
+                  "android-arm64": {
+                    "asset": "pack-hello-android-arm64-{version}.zip"
+                  },
+                  "android-universal": {
+                    "asset": "pack-hello-android-universal-{version}.zip"
+                  }
+                }
+              }
+            }
+          }
+          EOF
+
+      - name: Upload index to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: packs.index.json
