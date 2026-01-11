@@ -1,6 +1,5 @@
 package com.builder.di
 
-import com.builder.runtime.instance.InstanceManager
 import com.builder.runtime.wasm.PermissionEnforcer
 import com.builder.runtime.wasm.WasiConfig
 import com.builder.runtime.wasm.WasmRuntime
