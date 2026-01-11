@@ -14,16 +14,22 @@ class WasmRuntime(
     private val permissionEnforcer: PermissionEnforcer
 ) {
     companion object {
+        private var libraryLoaded = false
+
         init {
             // Load native Wasmtime library
             try {
                 System.loadLibrary("wasmtime_jni")
+                libraryLoaded = true
                 Timber.i("Wasmtime native library loaded successfully")
             } catch (e: UnsatisfiedLinkError) {
-                Timber.e(e, "Failed to load Wasmtime native library")
-                throw RuntimeException("Wasmtime native library not available", e)
+                libraryLoaded = false
+                Timber.w("Wasmtime native library not available - WASM execution will be disabled")
+                Timber.w("To enable WASM support, build the native library: ./scripts/build-wasmtime.sh")
             }
         }
+
+        fun isAvailable(): Boolean = libraryLoaded
     }
 
     /**
@@ -87,6 +93,16 @@ class WasmRuntime(
         entryFunction: String,
         envVars: Map<String, String>
     ): Result<String> {
+        // Check if native library is available
+        if (!libraryLoaded) {
+            return Result.failure(
+                UnsupportedOperationException(
+                    "WASM runtime not available. Native library not loaded. " +
+                    "Run ./scripts/build-wasmtime.sh to build the native library."
+                )
+            )
+        }
+
         return try {
             // Enforce permissions
             permissionEnforcer.enforce(packId, manifest.permissions)
