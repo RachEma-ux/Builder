@@ -35,6 +35,8 @@ android {
 dependencies {
     // Project modules
     implementation(project(":core"))
+    implementation(project(":data"))
+    implementation(project(":runtime"))
     implementation(project(":domain"))
 
     // AndroidX
