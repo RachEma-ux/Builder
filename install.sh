@@ -302,6 +302,35 @@ copy_to_downloads() {
     fi
 }
 
+show_github_actions_help() {
+    echo ""
+    echo "╔════════════════════════════════════════════════════════╗"
+    echo "║         Unable to Build on ARM64 Device                ║"
+    echo "╚════════════════════════════════════════════════════════╝"
+    echo ""
+    log_warn "Android Build Tools require x86_64 architecture"
+    log_warn "Your ARM64 device cannot run Google's build tools"
+    echo ""
+    log_info "✅ RECOMMENDED: Download APK from GitHub Actions"
+    echo ""
+    echo "Steps:"
+    echo "  1. Push your code to GitHub (if not already)"
+    echo "  2. Go to: https://github.com/RachEma-ux/Builder/actions"
+    echo "  3. Click on the latest 'Android CI' workflow run"
+    echo "  4. Scroll down to 'Artifacts' section"
+    echo "  5. Download 'builder-debug-apk'"
+    echo "  6. Extract and install the APK on your phone"
+    echo ""
+    log_info "Alternative: Use GitHub CLI on device"
+    echo "  $ pkg install gh"
+    echo "  $ gh auth login"
+    echo "  $ gh run list --repo RachEma-ux/Builder"
+    echo "  $ gh run download <run-id> --name builder-debug-apk"
+    echo ""
+    log_info "The APK is built automatically on every push!"
+    echo ""
+}
+
 show_summary() {
     echo ""
     echo "╔════════════════════════════════════════════════════════╗"
@@ -319,6 +348,9 @@ show_summary() {
     echo ""
     log_info "To rebuild and reinstall:"
     echo "  $ ./install.sh"
+    echo ""
+    log_info "Can't build locally? Get APK from GitHub Actions:"
+    echo "  $ ./install.sh --github-help"
     echo ""
 }
 
@@ -340,18 +372,27 @@ main() {
                 INSTALL_ONLY=true
                 shift
                 ;;
+            --github-help)
+                show_github_actions_help
+                exit 0
+                ;;
             --help|-h)
                 echo "Usage: ./install.sh [OPTIONS]"
                 echo ""
                 echo "Options:"
                 echo "  --build-only      Only build the APK, don't install"
                 echo "  --install-only    Only install existing APK, don't build"
+                echo "  --github-help     Show how to download APK from GitHub Actions"
                 echo "  --help, -h        Show this help message"
                 echo ""
                 echo "Examples:"
                 echo "  ./install.sh                # Build and install"
                 echo "  ./install.sh --build-only   # Just build"
                 echo "  ./install.sh --install-only # Just install"
+                echo "  ./install.sh --github-help  # Get GitHub Actions instructions"
+                echo ""
+                echo "Note: On ARM64 devices, local builds may fail due to x86_64 build tools."
+                echo "      Use --github-help to learn about GitHub Actions builds."
                 exit 0
                 ;;
             *)
