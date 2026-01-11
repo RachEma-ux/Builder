@@ -212,8 +212,12 @@ build_app() {
     log_info "Starting Gradle build (this may take 5-10 minutes)..."
     log_info "First build will download dependencies..."
 
+    # Clean build cache to avoid stale annotation processor issues
+    log_info "Cleaning build cache..."
+    ./gradlew clean --warning-mode all 2>&1 | tee -a build.log
+
     # Build debug APK
-    ./gradlew assembleDebug --warning-mode all 2>&1 | tee build.log
+    ./gradlew assembleDebug --warning-mode all 2>&1 | tee -a build.log
     BUILD_EXIT_CODE=${PIPESTATUS[0]}
 
     if [ $BUILD_EXIT_CODE -eq 0 ]; then
