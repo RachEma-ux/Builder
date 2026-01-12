@@ -28,7 +28,6 @@ android {
 dependencies {
     // Project modules
     implementation(project(":core"))
-    implementation(project(":runtime"))
 
     // AndroidX
     implementation("androidx.core:core-ktx:1.12.0")

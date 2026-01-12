@@ -4,6 +4,7 @@ import com.builder.core.model.Instance
 import com.builder.core.model.InstanceState
 import com.builder.core.model.Pack
 import com.builder.core.model.PackType
+import com.builder.core.repository.InstanceRepository
 import com.builder.data.local.db.dao.InstanceDao
 import com.builder.data.local.db.entities.InstanceEntity
 import com.builder.runtime.wasm.WasmRuntime
@@ -28,7 +29,7 @@ class InstanceManager @Inject constructor(
     private val instanceDao: InstanceDao,
     private val wasmRuntime: WasmRuntime,
     private val httpClient: OkHttpClient
-) {
+) : InstanceRepository {
     private val json = Json { ignoreUnknownKeys = true }
     private val kvStore = InMemoryKvStore()
     private val workflowEngine = WorkflowEngine(wasmRuntime, httpClient, kvStore)
@@ -39,7 +40,7 @@ class InstanceManager @Inject constructor(
     /**
      * Creates a new instance for a pack.
      */
-    suspend fun createInstance(
+    override suspend fun createInstance(
         pack: Pack,
         name: String
     ): Result<Instance> {
@@ -66,7 +67,7 @@ class InstanceManager @Inject constructor(
     /**
      * Starts an instance.
      */
-    suspend fun startInstance(
+    override suspend fun startInstance(
         instance: Instance,
         pack: Pack,
         envVars: Map<String, String> = emptyMap()
@@ -113,7 +114,7 @@ class InstanceManager @Inject constructor(
     /**
      * Pauses an instance.
      */
-    suspend fun pauseInstance(instance: Instance): Result<Unit> {
+    override suspend fun pauseInstance(instance: Instance): Result<Unit> {
         return try {
             val executor = runningInstances[instance.id]
                 ?: return Result.failure(IllegalStateException("Instance not running"))
@@ -136,7 +137,7 @@ class InstanceManager @Inject constructor(
     /**
      * Stops an instance.
      */
-    suspend fun stopInstance(instance: Instance): Result<Unit> {
+    override suspend fun stopInstance(instance: Instance): Result<Unit> {
         return try {
             val executor = runningInstances.remove(instance.id)
             executor?.stop()
@@ -160,7 +161,7 @@ class InstanceManager @Inject constructor(
     /**
      * Deletes an instance.
      */
-    suspend fun deleteInstance(instanceId: Long): Result<Unit> {
+    override suspend fun deleteInstance(instanceId: Long): Result<Unit> {
         return try {
             // Stop if running
             runningInstances.remove(instanceId)?.stop()
@@ -178,28 +179,28 @@ class InstanceManager @Inject constructor(
     /**
      * Gets an instance by ID.
      */
-    suspend fun getInstance(instanceId: Long): Instance? {
+    override suspend fun getInstance(instanceId: Long): Instance? {
         return instanceDao.getById(instanceId)?.toDomain()
     }
 
     /**
      * Gets all instances as Flow.
      */
-    fun getAllInstances(): Flow<List<Instance>> {
+    override fun getAllInstances(): Flow<List<Instance>> {
         return instanceDao.getAllFlow().map { list -> list.map { it.toDomain() } }
     }
 
     /**
      * Gets instances for a specific pack.
      */
-    fun getInstancesForPack(packId: String): Flow<List<Instance>> {
+    override fun getInstancesForPack(packId: String): Flow<List<Instance>> {
         return instanceDao.getByPackId(packId).map { list -> list.map { it.toDomain() } }
     }
 
     /**
      * Gets running instances.
      */
-    fun getRunningInstances(): Flow<List<Instance>> {
+    override fun getRunningInstances(): Flow<List<Instance>> {
         return instanceDao.getRunning().map { list -> list.map { it.toDomain() } }
     }
 
