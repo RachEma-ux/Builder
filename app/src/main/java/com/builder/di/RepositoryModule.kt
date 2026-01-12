@@ -5,9 +5,9 @@ import com.builder.core.repository.InstanceRepository
 import com.builder.core.repository.LogRepository
 import com.builder.core.repository.PackRepository
 import com.builder.data.repository.GitHubRepositoryImpl
-import com.builder.data.repository.InstanceRepositoryImpl
 import com.builder.data.repository.LogRepositoryImpl
 import com.builder.data.repository.PackRepositoryImpl
+import com.builder.runtime.instance.InstanceManager
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -36,7 +36,7 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindInstanceRepository(
-        impl: InstanceRepositoryImpl
+        impl: InstanceManager
     ): InstanceRepository
 
     @Binds
