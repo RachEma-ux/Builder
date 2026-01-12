@@ -1,4 +1,4 @@
-package com.builder.runtime.instance
+package com.builder.data.instance
 
 import com.builder.core.model.Instance
 import com.builder.core.model.InstanceState
