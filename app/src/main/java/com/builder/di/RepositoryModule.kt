@@ -10,6 +10,7 @@ import com.builder.data.repository.PackRepositoryImpl
 import com.builder.runtime.instance.InstanceManager
 import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -20,6 +21,14 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
+
+    companion object {
+        @Provides
+        @Singleton
+        fun provideInstanceRepository(
+            instanceManager: InstanceManager
+        ): InstanceRepository = instanceManager
+    }
 
     @Binds
     @Singleton
@@ -32,12 +41,6 @@ abstract class RepositoryModule {
     abstract fun bindGitHubRepository(
         impl: GitHubRepositoryImpl
     ): GitHubRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindInstanceRepository(
-        impl: InstanceManager
-    ): InstanceRepository
 
     @Binds
     @Singleton
