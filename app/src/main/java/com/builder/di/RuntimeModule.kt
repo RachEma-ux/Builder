@@ -1,5 +1,8 @@
 package com.builder.di
 
+import com.builder.core.repository.InstanceRepository
+import com.builder.data.instance.InstanceManager
+import com.builder.data.local.db.dao.InstanceDao
 import com.builder.runtime.wasm.PermissionEnforcer
 import com.builder.runtime.wasm.WasiConfig
 import com.builder.runtime.wasm.WasmRuntime
@@ -7,6 +10,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
 import javax.inject.Singleton
 
 /**
@@ -37,6 +41,20 @@ object RuntimeModule {
         return WasmRuntime(
             wasiConfig = wasiConfig,
             permissionEnforcer = permissionEnforcer
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideInstanceManager(
+        instanceDao: InstanceDao,
+        wasmRuntime: WasmRuntime,
+        httpClient: OkHttpClient
+    ): InstanceManager {
+        return InstanceManager(
+            instanceDao = instanceDao,
+            wasmRuntime = wasmRuntime,
+            httpClient = httpClient
         )
     }
 }

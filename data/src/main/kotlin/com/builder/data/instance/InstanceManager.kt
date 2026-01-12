@@ -1,4 +1,4 @@
-package com.builder.runtime.instance
+package com.builder.data.instance
 
 import com.builder.core.model.Instance
 import com.builder.core.model.InstanceState
@@ -17,15 +17,14 @@ import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import timber.log.Timber
 import java.io.File
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Manages pack instance lifecycle.
  * See Builder_Final.md §12 for instance lifecycle specification.
+ *
+ * Note: Provided by RuntimeModule, not constructed via @Inject
  */
-@Singleton
-class InstanceManager @Inject constructor(
+class InstanceManager(
     private val instanceDao: InstanceDao,
     private val wasmRuntime: WasmRuntime,
     private val httpClient: OkHttpClient

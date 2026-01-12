@@ -66,7 +66,6 @@ android {
 dependencies {
     // Project modules
     implementation(project(":core"))
-    implementation(project(":data"))
 
     // AndroidX
     implementation("androidx.core:core-ktx:1.12.0")
