@@ -52,6 +52,9 @@ class HealthMonitor @Inject constructor(
         synchronized(monitoredInstances) {
             if (!monitoredInstances.containsKey(instance.id.toString())) {
                 monitoredInstances[instance.id.toString()] = MonitoredInstance(
+            val instanceIdStr = instance.id.toString()
+            if (!monitoredInstances.containsKey(instanceIdStr)) {
+                monitoredInstances[instanceIdStr] = MonitoredInstance(
                     instance = instance,
                     startTime = System.currentTimeMillis(),
                     networkBytesInStart = getNetworkBytesReceived(),
