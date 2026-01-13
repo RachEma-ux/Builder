@@ -50,8 +50,6 @@ class HealthMonitor @Inject constructor(
      */
     fun startMonitoring(instance: Instance) {
         synchronized(monitoredInstances) {
-            if (!monitoredInstances.containsKey(instance.id.toString())) {
-                monitoredInstances[instance.id.toString()] = MonitoredInstance(
             val instanceIdStr = instance.id.toString()
             if (!monitoredInstances.containsKey(instanceIdStr)) {
                 monitoredInstances[instanceIdStr] = MonitoredInstance(
