@@ -1,6 +1,7 @@
 package com.builder.runtime.wasm
 
 import com.builder.core.model.PackManifest
+import com.builder.runtime.wasm.permissions.PermissionEnforcer
 import timber.log.Timber
 import java.io.File
 

@@ -50,8 +50,9 @@ class HealthMonitor @Inject constructor(
      */
     fun startMonitoring(instance: Instance) {
         synchronized(monitoredInstances) {
-            if (!monitoredInstances.containsKey(instance.id)) {
-                monitoredInstances[instance.id] = MonitoredInstance(
+            val instanceIdStr = instance.id.toString()
+            if (!monitoredInstances.containsKey(instanceIdStr)) {
+                monitoredInstances[instanceIdStr] = MonitoredInstance(
                     instance = instance,
                     startTime = System.currentTimeMillis(),
                     networkBytesInStart = getNetworkBytesReceived(),
@@ -157,7 +158,7 @@ class HealthMonitor @Inject constructor(
         val networkBytesOut = max(0, getNetworkBytesTransmitted() - monitored.networkBytesOutStart)
 
         return HealthMetrics.create(
-            instanceId = monitored.instance.id,
+            instanceId = monitored.instance.id.toString(),
             packId = monitored.instance.packId,
             cpuUsagePercent = cpuUsage,
             memoryUsedMb = memoryInfo.usedMb,
