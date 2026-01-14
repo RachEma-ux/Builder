@@ -52,3 +52,7 @@ jobs:
       # Step 4: Compile domain module (JVM library)
       - name: Compile domain module
         run: ./gradlew :domain:compileKotlin
+
+      # Step 5: Compile data module (Android library)
+      - name: Compile data module
+        run: ./gradlew :data:compileDebugKotlin
