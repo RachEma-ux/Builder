@@ -40,3 +40,7 @@ jobs:
 
       - name: Resolve dependencies
         run: ./gradlew dependencies --configuration debugRuntimeClasspath || true
+
+      # Step 2: Compile core module (no internal dependencies)
+      - name: Compile core module
+        run: ./gradlew :core:compileDebugKotlin
