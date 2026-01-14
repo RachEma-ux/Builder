@@ -3,6 +3,7 @@ package com.builder.di
 import com.builder.core.repository.InstanceRepository
 import com.builder.data.instance.InstanceManager
 import com.builder.data.local.db.dao.InstanceDao
+import com.builder.runtime.LogCollector
 import com.builder.runtime.wasm.PermissionEnforcer
 import com.builder.runtime.wasm.WasiConfig
 import com.builder.runtime.wasm.WasmRuntime
@@ -34,6 +35,12 @@ object RuntimeModule {
 
     @Provides
     @Singleton
+    fun provideLogCollector(): LogCollector {
+        return LogCollector()
+    }
+
+    @Provides
+    @Singleton
     fun provideWasmRuntime(
         wasiConfig: WasiConfig,
         permissionEnforcer: PermissionEnforcer
@@ -49,12 +56,14 @@ object RuntimeModule {
     fun provideInstanceManager(
         instanceDao: InstanceDao,
         wasmRuntime: WasmRuntime,
-        httpClient: OkHttpClient
+        httpClient: OkHttpClient,
+        logCollector: LogCollector
     ): InstanceManager {
         return InstanceManager(
             instanceDao = instanceDao,
             wasmRuntime = wasmRuntime,
-            httpClient = httpClient
+            httpClient = httpClient,
+            logCollector = logCollector
         )
     }
 }

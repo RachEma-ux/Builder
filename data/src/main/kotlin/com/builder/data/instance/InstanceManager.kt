@@ -7,6 +7,7 @@ import com.builder.core.model.PackType
 import com.builder.core.repository.InstanceRepository
 import com.builder.data.local.db.dao.InstanceDao
 import com.builder.data.local.db.entities.InstanceEntity
+import com.builder.runtime.LogCollector
 import com.builder.runtime.wasm.WasmRuntime
 import com.builder.runtime.workflow.InMemoryKvStore
 import com.builder.runtime.workflow.WorkflowContext
@@ -27,11 +28,12 @@ import java.io.File
 class InstanceManager(
     private val instanceDao: InstanceDao,
     private val wasmRuntime: WasmRuntime,
-    private val httpClient: OkHttpClient
+    private val httpClient: OkHttpClient,
+    private val logCollector: LogCollector
 ) : InstanceRepository {
     private val json = Json { ignoreUnknownKeys = true }
     private val kvStore = InMemoryKvStore()
-    private val workflowEngine = WorkflowEngine(wasmRuntime, httpClient, kvStore)
+    private val workflowEngine = WorkflowEngine(wasmRuntime, httpClient, kvStore, logCollector)
 
     // Track running instances
     private val runningInstances = mutableMapOf<Long, InstanceExecutor>()
@@ -69,7 +71,7 @@ class InstanceManager(
     override suspend fun startInstance(
         instance: Instance,
         pack: Pack,
-        envVars: Map<String, String> = emptyMap()
+        envVars: Map<String, String>
     ): Result<Unit> {
         return try {
             // Check if already running
@@ -298,7 +300,7 @@ class WorkflowInstanceExecutor(
             // Create context
             val context = WorkflowContext(
                 packId = pack.id,
-                instanceId = instance.id
+                instanceId = instance.id.toString()
             )
 
             // Execute workflow (async)

@@ -1,7 +1,7 @@
 package com.builder.data.repository
 
 import com.builder.core.repository.GitHubRepository
-import com.builder.data.remote.github.DeviceFlowState
+import com.builder.core.model.github.DeviceFlowState
 import com.builder.data.remote.github.GitHubApiService
 import com.builder.data.remote.github.GitHubOAuthManager
 import com.builder.core.model.github.*
