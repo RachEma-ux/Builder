@@ -42,8 +42,9 @@ class GitHubRepositoryImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             try {
                 val response = apiService.listRepositories()
-                if (response.isSuccessful && response.body() != null) {
-                    Result.success(response.body()!!)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Result.success(body)
                 } else {
                     Result.failure(Exception("Failed to list repositories: ${response.code()}"))
                 }
@@ -58,8 +59,9 @@ class GitHubRepositoryImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             try {
                 val response = apiService.listBranches(owner, repo)
-                if (response.isSuccessful && response.body() != null) {
-                    Result.success(response.body()!!)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Result.success(body)
                 } else {
                     Result.failure(Exception("Failed to list branches: ${response.code()}"))
                 }
@@ -74,8 +76,9 @@ class GitHubRepositoryImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             try {
                 val response = apiService.listTags(owner, repo)
-                if (response.isSuccessful && response.body() != null) {
-                    Result.success(response.body()!!)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Result.success(body)
                 } else {
                     Result.failure(Exception("Failed to list tags: ${response.code()}"))
                 }
@@ -90,8 +93,9 @@ class GitHubRepositoryImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             try {
                 val response = apiService.listReleases(owner, repo)
-                if (response.isSuccessful && response.body() != null) {
-                    Result.success(response.body()!!)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Result.success(body)
                 } else {
                     Result.failure(Exception("Failed to list releases: ${response.code()}"))
                 }
@@ -110,8 +114,9 @@ class GitHubRepositoryImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             try {
                 val response = apiService.getReleaseByTag(owner, repo, tag)
-                if (response.isSuccessful && response.body() != null) {
-                    Result.success(response.body()!!)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Result.success(body)
                 } else {
                     Result.failure(Exception("Failed to get release: ${response.code()}"))
                 }
@@ -130,8 +135,9 @@ class GitHubRepositoryImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             try {
                 val response = apiService.listWorkflowRuns(owner, repo, branch)
-                if (response.isSuccessful && response.body() != null) {
-                    Result.success(response.body()!!.workflowRuns)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Result.success(body.workflowRuns)
                 } else {
                     Result.failure(Exception("Failed to list workflow runs: ${response.code()}"))
                 }
@@ -150,8 +156,9 @@ class GitHubRepositoryImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             try {
                 val response = apiService.getWorkflowRun(owner, repo, runId)
-                if (response.isSuccessful && response.body() != null) {
-                    Result.success(response.body()!!)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Result.success(body)
                 } else {
                     Result.failure(Exception("Failed to get workflow run: ${response.code()}"))
                 }
@@ -193,8 +200,9 @@ class GitHubRepositoryImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             try {
                 val response = apiService.listArtifacts(owner, repo, runId)
-                if (response.isSuccessful && response.body() != null) {
-                    Result.success(response.body()!!.artifacts)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Result.success(body.artifacts)
                 } else {
                     Result.failure(Exception("Failed to list artifacts: ${response.code()}"))
                 }
