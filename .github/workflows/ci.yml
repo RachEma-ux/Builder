@@ -48,3 +48,7 @@ jobs:
       # Step 3: Compile runtime module (Android library)
       - name: Compile runtime module
         run: ./gradlew :runtime:compileDebugKotlin
+
+      # Step 4: Compile domain module (JVM library)
+      - name: Compile domain module
+        run: ./gradlew :domain:compileKotlin
