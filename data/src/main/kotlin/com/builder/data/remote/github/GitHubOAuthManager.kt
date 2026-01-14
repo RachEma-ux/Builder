@@ -56,12 +56,11 @@ class GitHubOAuthManager @Inject constructor(
                 clientId = GitHubOAuthService.CLIENT_ID
             )
 
-            if (!deviceCodeResponse.isSuccessful || deviceCodeResponse.body() == null) {
+            val deviceCode = deviceCodeResponse.body()
+            if (!deviceCodeResponse.isSuccessful || deviceCode == null) {
                 emit(DeviceFlowState.Error("Failed to get device code"))
                 return@flow
             }
-
-            val deviceCode = deviceCodeResponse.body()!!
             Timber.i("Device code obtained: ${deviceCode.userCode}")
 
             // Step 2: Show user code to user
@@ -85,9 +84,9 @@ class GitHubOAuthManager @Inject constructor(
                     deviceCode = deviceCode.deviceCode
                 )
 
+                val accessToken = tokenResponse.body()
                 when {
-                    tokenResponse.isSuccessful && tokenResponse.body() != null -> {
-                        val accessToken = tokenResponse.body()!!
+                    tokenResponse.isSuccessful && accessToken != null -> {
                         saveAccessToken(accessToken)
                         Timber.i("Access token obtained successfully")
                         emit(DeviceFlowState.Success(accessToken.accessToken))
