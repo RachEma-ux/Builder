@@ -179,10 +179,10 @@ fun ProdModeBanner() {
 
 @Composable
 fun RepositorySelector(
-    repositories: List<com.builder.data.remote.github.models.Repository>,
-    selectedRepo: com.builder.data.remote.github.models.Repository?,
+    repositories: List<com.builder.core.model.github.Repository>,
+    selectedRepo: com.builder.core.model.github.Repository?,
     loading: Boolean,
-    onSelectRepo: (com.builder.data.remote.github.models.Repository) -> Unit,
+    onSelectRepo: (com.builder.core.model.github.Repository) -> Unit,
     onRefresh: () -> Unit
 ) {
     Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {

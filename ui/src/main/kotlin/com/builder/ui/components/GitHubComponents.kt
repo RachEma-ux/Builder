@@ -9,7 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.builder.data.remote.github.models.Repository
+import com.builder.core.model.github.Repository
 
 /**
  * Dropdown selector for GitHub repositories.
@@ -82,9 +82,9 @@ fun RepositoryDropdown(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BranchDropdown(
-    branches: List<com.builder.data.remote.github.models.Branch>,
-    selectedBranch: com.builder.data.remote.github.models.Branch?,
-    onSelectBranch: (com.builder.data.remote.github.models.Branch) -> Unit,
+    branches: List<com.builder.core.model.github.Branch>,
+    selectedBranch: com.builder.core.model.github.Branch?,
+    onSelectBranch: (com.builder.core.model.github.Branch) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
@@ -144,9 +144,9 @@ fun BranchDropdown(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TagDropdown(
-    tags: List<com.builder.data.remote.github.models.Tag>,
-    selectedTag: com.builder.data.remote.github.models.Tag?,
-    onSelectTag: (com.builder.data.remote.github.models.Tag) -> Unit,
+    tags: List<com.builder.core.model.github.Tag>,
+    selectedTag: com.builder.core.model.github.Tag?,
+    onSelectTag: (com.builder.core.model.github.Tag) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
