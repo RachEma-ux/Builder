@@ -35,12 +35,6 @@ object RuntimeModule {
 
     @Provides
     @Singleton
-    fun provideLogCollector(): LogCollector {
-        return LogCollector()
-    }
-
-    @Provides
-    @Singleton
     fun provideWasmRuntime(
         wasiConfig: WasiConfig,
         permissionEnforcer: PermissionEnforcer
