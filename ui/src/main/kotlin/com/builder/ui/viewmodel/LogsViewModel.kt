@@ -108,12 +108,14 @@ class LogsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val filter = _filter.value
+                val instanceId = filter.instanceId
+                val packId = filter.packId
                 when {
-                    filter.instanceId != null -> {
-                        logRepository.deleteByInstance(filter.instanceId)
+                    instanceId != null -> {
+                        logRepository.deleteByInstance(instanceId)
                     }
-                    filter.packId != null -> {
-                        logRepository.deleteByPack(filter.packId)
+                    packId != null -> {
+                        logRepository.deleteByPack(packId)
                     }
                     else -> {
                         logRepository.deleteAll()

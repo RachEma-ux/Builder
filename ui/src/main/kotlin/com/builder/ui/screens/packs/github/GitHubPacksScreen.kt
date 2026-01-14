@@ -148,7 +148,7 @@ fun DevModeBanner() {
             .fillMaxWidth()
             .padding(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.warningContainer
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
         )
     ) {
         Text(
