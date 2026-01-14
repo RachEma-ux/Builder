@@ -38,7 +38,7 @@ class PackStorage @Inject constructor(
     /**
      * Gets a temporary directory for staging.
      */
-    fun getTempDir(): File {
+    fun createStagingDir(): File {
         val tempId = System.currentTimeMillis().toString()
         return File(tempDir, tempId).also { it.mkdirs() }
     }
