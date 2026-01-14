@@ -56,3 +56,7 @@ jobs:
       # Step 5: Compile data module (Android library)
       - name: Compile data module
         run: ./gradlew :data:compileDebugKotlin
+
+      # Step 6: Compile app module (Android application)
+      - name: Compile app module
+        run: ./gradlew :app:compileDebugKotlin
