@@ -215,55 +215,93 @@ class GitHubOAuthManager @Inject constructor(
                 )
             )
 
-            // Step 3: Poll for access token
+            // Step 3: Poll for access token with retry logic
             val pollingInterval = (deviceCode.interval * 1000).toLong()
             val expirationTime = System.currentTimeMillis() + (deviceCode.expiresIn * 1000)
+            var consecutiveFailures = 0
+            val maxRetries = 5
 
             while (System.currentTimeMillis() < expirationTime) {
                 delay(pollingInterval)
 
-                val tokenResponse = oauthService.getAccessToken(
-                    clientId = GitHubOAuthService.CLIENT_ID,
-                    deviceCode = deviceCode.deviceCode
-                )
+                try {
+                    val tokenResponse = oauthService.getAccessToken(
+                        clientId = GitHubOAuthService.CLIENT_ID,
+                        deviceCode = deviceCode.deviceCode
+                    )
 
-                val accessToken = tokenResponse.body()
-                when {
-                    tokenResponse.isSuccessful && accessToken?.accessToken != null -> {
-                        saveAccessToken(accessToken)
-                        Timber.i("Access token obtained successfully")
-                        emit(DeviceFlowState.Success(accessToken.accessToken))
+                    // Reset failure count on successful request
+                    consecutiveFailures = 0
+
+                    // Capture body once to avoid multiple calls returning different values
+                    val responseBody = tokenResponse.body()
+                    val token = responseBody?.accessToken
+
+                    when {
+                        tokenResponse.isSuccessful && token != null -> {
+                            saveAccessToken(responseBody)
+                            Timber.i("Access token obtained successfully")
+                            emit(DeviceFlowState.Success(token))
+                            return@flow
+                        }
+                        tokenResponse.isSuccessful -> {
+                            // HTTP 200 but no access_token = authorization_pending
+                            Timber.d("Authorization pending (200 with no token), continuing to poll")
+                            continue
+                        }
+                        tokenResponse.code() == 428 -> {
+                            // authorization_pending - continue polling
+                            Timber.d("Authorization pending, continuing to poll")
+                            continue
+                        }
+                        tokenResponse.code() == 400 -> {
+                            // expired_token or other error
+                            emit(DeviceFlowState.Error("Device code expired or invalid"))
+                            return@flow
+                        }
+                        tokenResponse.code() == 403 -> {
+                            // access_denied
+                            emit(DeviceFlowState.Error("Access denied by user"))
+                            return@flow
+                        }
+                        tokenResponse.code() == 429 -> {
+                            // slow_down - increase polling interval
+                            delay(pollingInterval)
+                            continue
+                        }
+                        else -> {
+                            emit(DeviceFlowState.Error("Unexpected error: ${tokenResponse.code()}"))
+                            return@flow
+                        }
+                    }
+                } catch (e: java.net.ConnectException) {
+                    consecutiveFailures++
+                    Timber.w("Connection failed (attempt $consecutiveFailures/$maxRetries): ${e.message}")
+                    if (consecutiveFailures >= maxRetries) {
+                        emit(DeviceFlowState.Error("Connection failed after $maxRetries attempts: ${e.message}"))
                         return@flow
                     }
-                    tokenResponse.isSuccessful -> {
-                        // HTTP 200 but no access_token = authorization_pending
-                        Timber.d("Authorization pending (200 with no token), continuing to poll")
-                        continue
-                    }
-                    tokenResponse.code() == 428 -> {
-                        // authorization_pending - continue polling
-                        Timber.d("Authorization pending, continuing to poll")
-                        continue
-                    }
-                    tokenResponse.code() == 400 -> {
-                        // expired_token or other error
-                        emit(DeviceFlowState.Error("Device code expired or invalid"))
+                    // Wait longer before retry on connection failure
+                    delay(pollingInterval * 2)
+                    continue
+                } catch (e: java.net.SocketTimeoutException) {
+                    consecutiveFailures++
+                    Timber.w("Connection timeout (attempt $consecutiveFailures/$maxRetries): ${e.message}")
+                    if (consecutiveFailures >= maxRetries) {
+                        emit(DeviceFlowState.Error("Connection timeout after $maxRetries attempts"))
                         return@flow
                     }
-                    tokenResponse.code() == 403 -> {
-                        // access_denied
-                        emit(DeviceFlowState.Error("Access denied by user"))
+                    delay(pollingInterval)
+                    continue
+                } catch (e: java.io.IOException) {
+                    consecutiveFailures++
+                    Timber.w("Network error (attempt $consecutiveFailures/$maxRetries): ${e.message}")
+                    if (consecutiveFailures >= maxRetries) {
+                        emit(DeviceFlowState.Error("Network error: ${e.message}"))
                         return@flow
                     }
-                    tokenResponse.code() == 429 -> {
-                        // slow_down - increase polling interval
-                        delay(pollingInterval)
-                        continue
-                    }
-                    else -> {
-                        emit(DeviceFlowState.Error("Unexpected error: ${tokenResponse.code()}"))
-                        return@flow
-                    }
+                    delay(pollingInterval)
+                    continue
                 }
             }
 
