@@ -41,44 +41,62 @@ annotation class GitHubOAuthClient
 object NetworkModule {
 
     /**
-     * Custom DNS resolver with fallback to public DNS servers.
-     * Helps resolve DNS issues on some Android devices.
+     * Known GitHub IP addresses as fallback when DNS fails.
+     * These are GitHub's official IP ranges.
+     * Updated periodically - see https://api.github.com/meta
+     */
+    private val gitHubIps = mapOf(
+        "github.com" to listOf(
+            "20.27.177.113",
+            "20.200.245.247",
+            "20.201.28.151",
+            "20.205.243.166"
+        ),
+        "api.github.com" to listOf(
+            "20.27.177.113",
+            "20.200.245.247",
+            "20.201.28.151",
+            "20.205.243.166"
+        )
+    )
+
+    /**
+     * Custom DNS resolver with hardcoded fallback for GitHub domains.
+     * Bypasses system DNS issues on problematic networks/devices.
      */
     private val fallbackDns = object : Dns {
-        // Google and Cloudflare public DNS servers as fallback
-        private val fallbackServers = listOf(
-            "8.8.8.8",      // Google DNS
-            "8.8.4.4",      // Google DNS
-            "1.1.1.1",      // Cloudflare DNS
-            "1.0.0.1"       // Cloudflare DNS
-        )
-
         override fun lookup(hostname: String): List<InetAddress> {
+            Timber.d("DNS lookup for: $hostname")
+
             // First try system DNS
             return try {
-                Timber.d("DNS lookup for $hostname using system DNS")
-                Dns.SYSTEM.lookup(hostname)
+                val addresses = Dns.SYSTEM.lookup(hostname)
+                Timber.d("System DNS resolved $hostname to ${addresses.map { it.hostAddress }}")
+                addresses
             } catch (e: UnknownHostException) {
-                Timber.w("System DNS failed for $hostname, trying fallback DNS")
-                // Try fallback DNS servers
-                tryFallbackDns(hostname) ?: throw e
-            }
-        }
+                Timber.w("System DNS failed for $hostname: ${e.message}")
 
-        private fun tryFallbackDns(hostname: String): List<InetAddress>? {
-            for (dnsServer in fallbackServers) {
-                try {
-                    Timber.d("Trying fallback DNS $dnsServer for $hostname")
-                    val addresses = InetAddress.getAllByName(hostname)
-                    if (addresses.isNotEmpty()) {
-                        Timber.i("Fallback DNS resolved $hostname to ${addresses.map { it.hostAddress }}")
-                        return addresses.toList()
+                // Use hardcoded IPs for GitHub domains
+                val fallbackIps = gitHubIps[hostname]
+                if (fallbackIps != null) {
+                    Timber.i("Using hardcoded IPs for $hostname")
+                    val addresses = fallbackIps.mapNotNull { ip ->
+                        try {
+                            InetAddress.getByName(ip)
+                        } catch (e2: Exception) {
+                            Timber.w("Failed to parse IP $ip: ${e2.message}")
+                            null
+                        }
                     }
-                } catch (e: Exception) {
-                    Timber.d("Fallback DNS $dnsServer failed: ${e.message}")
+                    if (addresses.isNotEmpty()) {
+                        Timber.i("Fallback resolved $hostname to ${addresses.map { it.hostAddress }}")
+                        return addresses
+                    }
                 }
+
+                Timber.e("All DNS resolution failed for $hostname")
+                throw e
             }
-            return null
         }
     }
 
