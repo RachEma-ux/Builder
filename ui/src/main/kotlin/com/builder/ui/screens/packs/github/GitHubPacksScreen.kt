@@ -1,10 +1,13 @@
 package com.builder.ui.screens.packs.github
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.builder.core.model.InstallMode
@@ -104,6 +107,18 @@ fun OAuthScreen(
     onInitiateOAuth: () -> Unit,
     onDebugBypass: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+
+    // Automatically open browser when we get the user code
+    LaunchedEffect(authState) {
+        if (authState is AuthState.WaitingForUser) {
+            // Open browser with pre-filled code
+            val url = "${authState.verificationUri}?user_code=${authState.userCode}"
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            context.startActivity(intent)
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -141,16 +156,38 @@ fun OAuthScreen(
             is AuthState.Loading -> {
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Opening browser...")
+                Text("Connecting to GitHub...")
             }
             is AuthState.WaitingForUser -> {
-                // Legacy device flow
-                Text("Visit: ${authState.verificationUri}")
+                Text("Browser opened automatically!", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Code: ${authState.userCode}", style = MaterialTheme.typography.headlineMedium)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Enter code: ${authState.userCode}", style = MaterialTheme.typography.headlineMedium)
+                Text(
+                    text = "If browser didn't open, visit:",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = authState.verificationUri,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
                 Spacer(modifier = Modifier.height(16.dp))
                 CircularProgressIndicator()
                 Text("Waiting for authorization...")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Manual open button in case auto-open failed
+                OutlinedButton(
+                    onClick = {
+                        val url = "${authState.verificationUri}?user_code=${authState.userCode}"
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                        context.startActivity(intent)
+                    }
+                ) {
+                    Text("Open Browser Again")
+                }
             }
             is AuthState.WaitingForAuthorization -> {
                 // Authorization code flow
@@ -163,7 +200,7 @@ fun OAuthScreen(
                 Text("Waiting for authorization...", style = MaterialTheme.typography.bodySmall)
             }
             is AuthState.Success -> {
-                Text("✓ Authenticated successfully!", style = MaterialTheme.typography.titleMedium)
+                Text("✓ Authenticated successfully!", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             }
             is AuthState.Error -> {
                 Text("Error: ${authState.message}", color = MaterialTheme.colorScheme.error)
