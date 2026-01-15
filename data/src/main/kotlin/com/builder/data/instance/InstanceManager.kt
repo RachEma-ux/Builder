@@ -74,37 +74,41 @@ class InstanceManager(
         envVars: Map<String, String>
     ): Result<Unit> {
         return try {
-            // Check if already running (synchronized to prevent race condition)
-            synchronized(runningInstances) {
+            // Check if already running and reserve slot (synchronized to prevent race condition)
+            val executor = synchronized(runningInstances) {
                 if (runningInstances.containsKey(instance.id)) {
                     return Result.failure(IllegalStateException("Instance already running"))
                 }
-
-                // Update state to running
-                val updatedEntity = InstanceEntity.from(
-                    instance.copy(
-                        state = InstanceState.RUNNING,
-                        startedAt = System.currentTimeMillis()
-                    )
-                )
-                instanceDao.update(updatedEntity)
-
                 // Create executor based on pack type
-                val executor = when (pack.type) {
+                val exec = when (pack.type) {
                     PackType.WASM -> createWasmExecutor(instance, pack, envVars)
                     PackType.WORKFLOW -> createWorkflowExecutor(instance, pack, envVars)
                 }
-
-                runningInstances[instance.id] = executor
-
-                // Start execution
-                executor.start()
-
-                Timber.i("Instance started: ${instance.id}")
+                // Reserve slot before releasing lock
+                runningInstances[instance.id] = exec
+                exec
             }
+
+            // Update state to running (suspend call outside synchronized block)
+            val updatedEntity = InstanceEntity.from(
+                instance.copy(
+                    state = InstanceState.RUNNING,
+                    startedAt = System.currentTimeMillis()
+                )
+            )
+            instanceDao.update(updatedEntity)
+
+            // Start execution
+            executor.start()
+
+            Timber.i("Instance started: ${instance.id}")
             Result.success(Unit)
         } catch (e: Exception) {
             Timber.e(e, "Failed to start instance")
+            // Clean up reserved slot on failure
+            synchronized(runningInstances) {
+                runningInstances.remove(instance.id)
+            }
             // Revert state
             val revertedEntity = InstanceEntity.from(
                 instance.copy(state = InstanceState.STOPPED)
