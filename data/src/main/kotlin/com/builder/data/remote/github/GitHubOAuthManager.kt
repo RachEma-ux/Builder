@@ -90,7 +90,7 @@ class GitHubOAuthManager @Inject constructor(
                         val accessToken = tokenResponse.body()!!
                         saveAccessToken(accessToken)
                         Timber.i("Access token obtained successfully")
-                        emit(DeviceFlowState.Success(accessToken.accessToken))
+                        emit(DeviceFlowState.Success(accessToken.accessToken!!))
                         return@flow
                     }
                     tokenResponse.isSuccessful -> {
