@@ -85,12 +85,15 @@ class GitHubOAuthManager @Inject constructor(
                     deviceCode = deviceCode.deviceCode
                 )
 
+                // Capture body once to avoid multiple calls returning different values
+                val responseBody = tokenResponse.body()
+                val token = responseBody?.accessToken
+
                 when {
-                    tokenResponse.isSuccessful && tokenResponse.body()?.accessToken != null -> {
-                        val accessToken = tokenResponse.body()!!
-                        saveAccessToken(accessToken)
+                    tokenResponse.isSuccessful && token != null -> {
+                        saveAccessToken(responseBody)
                         Timber.i("Access token obtained successfully")
-                        emit(DeviceFlowState.Success(accessToken.accessToken!!))
+                        emit(DeviceFlowState.Success(token))
                         return@flow
                     }
                     tokenResponse.isSuccessful -> {
