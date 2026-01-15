@@ -46,6 +46,20 @@ class GitHubPacksViewModel @Inject constructor(
     }
 
     /**
+     * Debug bypass for OAuth - allows testing app without network.
+     * Only for development/testing purposes.
+     */
+    fun debugBypassAuth() {
+        Timber.w("DEBUG: Bypassing OAuth authentication")
+        _uiState.update {
+            it.copy(
+                isAuthenticated = true,
+                authState = AuthState.Success
+            )
+        }
+    }
+
+    /**
      * Initiates OAuth authorization code flow with PKCE.
      */
     fun initiateOAuth() {

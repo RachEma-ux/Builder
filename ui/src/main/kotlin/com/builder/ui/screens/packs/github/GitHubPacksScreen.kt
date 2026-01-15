@@ -41,7 +41,8 @@ fun GitHubPacksScreen(
             if (!uiState.isAuthenticated) {
                 OAuthScreen(
                     authState = uiState.authState,
-                    onInitiateOAuth = { viewModel.initiateOAuth() }
+                    onInitiateOAuth = { viewModel.initiateOAuth() },
+                    onDebugBypass = { viewModel.debugBypassAuth() }
                 )
             } else {
                 // Dev vs Prod tabs
@@ -98,7 +99,11 @@ fun GitHubPacksScreen(
 }
 
 @Composable
-fun OAuthScreen(authState: AuthState, onInitiateOAuth: () -> Unit) {
+fun OAuthScreen(
+    authState: AuthState,
+    onInitiateOAuth: () -> Unit,
+    onDebugBypass: () -> Unit = {}
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -115,6 +120,23 @@ fun OAuthScreen(authState: AuthState, onInitiateOAuth: () -> Unit) {
                 Button(onClick = onInitiateOAuth) {
                     Text("Connect GitHub")
                 }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Debug bypass button for testing without network
+                OutlinedButton(
+                    onClick = onDebugBypass,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.tertiary
+                    )
+                ) {
+                    Text("Skip Auth (Debug)")
+                }
+                Text(
+                    text = "Use this to test the app without GitHub connection",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             is AuthState.Loading -> {
                 CircularProgressIndicator()
@@ -148,6 +170,18 @@ fun OAuthScreen(authState: AuthState, onInitiateOAuth: () -> Unit) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = onInitiateOAuth) {
                     Text("Retry")
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Debug bypass button for testing without network
+                OutlinedButton(
+                    onClick = onDebugBypass,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.tertiary
+                    )
+                ) {
+                    Text("Skip Auth (Debug)")
                 }
             }
         }
