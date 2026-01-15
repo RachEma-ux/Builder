@@ -229,11 +229,16 @@ class GitHubOAuthManager @Inject constructor(
 
                 val accessToken = tokenResponse.body()
                 when {
-                    tokenResponse.isSuccessful && accessToken != null -> {
+                    tokenResponse.isSuccessful && accessToken?.accessToken != null -> {
                         saveAccessToken(accessToken)
                         Timber.i("Access token obtained successfully")
                         emit(DeviceFlowState.Success(accessToken.accessToken))
                         return@flow
+                    }
+                    tokenResponse.isSuccessful -> {
+                        // HTTP 200 but no access_token = authorization_pending
+                        Timber.d("Authorization pending (200 with no token), continuing to poll")
+                        continue
                     }
                     tokenResponse.code() == 428 -> {
                         // authorization_pending - continue polling
