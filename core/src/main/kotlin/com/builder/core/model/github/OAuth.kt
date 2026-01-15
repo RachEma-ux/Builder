@@ -24,15 +24,23 @@ data class DeviceCodeResponse(
 
 /**
  * OAuth access token response from GitHub.
+ * Note: Fields are nullable because GitHub returns 200 for both
+ * success and pending states with different JSON shapes.
  */
 data class AccessTokenResponse(
     @SerializedName("access_token")
-    val accessToken: String,
+    val accessToken: String? = null,
 
     @SerializedName("token_type")
-    val tokenType: String,
+    val tokenType: String? = null,
 
-    val scope: String
+    val scope: String? = null,
+
+    // Error fields (returned when authorization is pending)
+    val error: String? = null,
+
+    @SerializedName("error_description")
+    val errorDescription: String? = null
 )
 
 /**
