@@ -74,32 +74,34 @@ class InstanceManager(
         envVars: Map<String, String>
     ): Result<Unit> {
         return try {
-            // Check if already running
-            if (runningInstances.containsKey(instance.id)) {
-                return Result.failure(IllegalStateException("Instance already running"))
-            }
+            // Check if already running (synchronized to prevent race condition)
+            synchronized(runningInstances) {
+                if (runningInstances.containsKey(instance.id)) {
+                    return Result.failure(IllegalStateException("Instance already running"))
+                }
 
-            // Update state to running
-            val updatedEntity = InstanceEntity.from(
-                instance.copy(
-                    state = InstanceState.RUNNING,
-                    startedAt = System.currentTimeMillis()
+                // Update state to running
+                val updatedEntity = InstanceEntity.from(
+                    instance.copy(
+                        state = InstanceState.RUNNING,
+                        startedAt = System.currentTimeMillis()
+                    )
                 )
-            )
-            instanceDao.update(updatedEntity)
+                instanceDao.update(updatedEntity)
 
-            // Create executor based on pack type
-            val executor = when (pack.type) {
-                PackType.WASM -> createWasmExecutor(instance, pack, envVars)
-                PackType.WORKFLOW -> createWorkflowExecutor(instance, pack, envVars)
+                // Create executor based on pack type
+                val executor = when (pack.type) {
+                    PackType.WASM -> createWasmExecutor(instance, pack, envVars)
+                    PackType.WORKFLOW -> createWorkflowExecutor(instance, pack, envVars)
+                }
+
+                runningInstances[instance.id] = executor
+
+                // Start execution
+                executor.start()
+
+                Timber.i("Instance started: ${instance.id}")
             }
-
-            runningInstances[instance.id] = executor
-
-            // Start execution
-            executor.start()
-
-            Timber.i("Instance started: ${instance.id}")
             Result.success(Unit)
         } catch (e: Exception) {
             Timber.e(e, "Failed to start instance")
@@ -117,8 +119,9 @@ class InstanceManager(
      */
     override suspend fun pauseInstance(instance: Instance): Result<Unit> {
         return try {
-            val executor = runningInstances[instance.id]
-                ?: return Result.failure(IllegalStateException("Instance not running"))
+            val executor = synchronized(runningInstances) {
+                runningInstances[instance.id]
+            } ?: return Result.failure(IllegalStateException("Instance not running"))
 
             executor.pause()
 
@@ -140,7 +143,9 @@ class InstanceManager(
      */
     override suspend fun stopInstance(instance: Instance): Result<Unit> {
         return try {
-            val executor = runningInstances.remove(instance.id)
+            val executor = synchronized(runningInstances) {
+                runningInstances.remove(instance.id)
+            }
             executor?.stop()
 
             val updatedEntity = InstanceEntity.from(
@@ -164,8 +169,11 @@ class InstanceManager(
      */
     override suspend fun deleteInstance(instanceId: Long): Result<Unit> {
         return try {
-            // Stop if running
-            runningInstances.remove(instanceId)?.stop()
+            // Stop if running (synchronized access)
+            val executor = synchronized(runningInstances) {
+                runningInstances.remove(instanceId)
+            }
+            executor?.stop()
 
             instanceDao.deleteById(instanceId)
 
