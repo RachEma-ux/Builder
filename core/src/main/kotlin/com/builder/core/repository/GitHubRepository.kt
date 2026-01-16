@@ -8,7 +8,14 @@ import kotlinx.coroutines.flow.Flow
  */
 interface GitHubRepository {
     /**
-     * Initiates OAuth device flow.
+     * Initiates OAuth authorization code flow with PKCE.
+     * Opens browser and waits for callback via deep link.
+     */
+    fun initiateAuthCodeFlow(): Flow<DeviceFlowState>
+
+    /**
+     * Initiates OAuth device flow (LEGACY).
+     * Consider using initiateAuthCodeFlow() for better UX.
      */
     fun initiateDeviceFlow(): Flow<DeviceFlowState>
 

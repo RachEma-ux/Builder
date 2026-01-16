@@ -38,7 +38,7 @@ interface GitHubOAuthService {
     ): Response<DeviceCodeResponse>
 
     /**
-     * Poll for access token.
+     * Poll for access token (Device Flow).
      * POST https://github.com/login/oauth/access_token
      */
     @FormUrlEncoded
@@ -48,5 +48,19 @@ interface GitHubOAuthService {
         @Field("client_id") clientId: String,
         @Field("device_code") deviceCode: String,
         @Field("grant_type") grantType: String = "urn:ietf:params:oauth:grant-type:device_code"
+    ): Response<AccessTokenResponse>
+
+    /**
+     * Exchange authorization code for access token (Authorization Code Flow with PKCE).
+     * POST https://github.com/login/oauth/access_token
+     */
+    @FormUrlEncoded
+    @Headers("Accept: application/json")
+    @POST("login/oauth/access_token")
+    suspend fun exchangeCodeForToken(
+        @Field("client_id") clientId: String,
+        @Field("code") code: String,
+        @Field("code_verifier") codeVerifier: String,
+        @Field("redirect_uri") redirectUri: String = "builder://oauth/callback"
     ): Response<AccessTokenResponse>
 }
