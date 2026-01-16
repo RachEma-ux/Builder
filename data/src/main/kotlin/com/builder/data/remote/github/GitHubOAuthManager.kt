@@ -128,7 +128,8 @@ class GitHubOAuthManager @Inject constructor(
             )
 
             val accessToken = tokenResponse.body()
-            if (!tokenResponse.isSuccessful || accessToken == null) {
+            val token = accessToken?.accessToken
+            if (!tokenResponse.isSuccessful || accessToken == null || token == null) {
                 Timber.e("Failed to exchange code for token: ${tokenResponse.code()}")
                 return DeviceFlowState.Error("Failed to get access token")
             }
@@ -144,7 +145,7 @@ class GitHubOAuthManager @Inject constructor(
             }
 
             Timber.i("Successfully obtained access token via authorization code flow")
-            DeviceFlowState.Success(accessToken.accessToken)
+            DeviceFlowState.Success(token)
 
         } catch (e: Exception) {
             Timber.e(e, "Error handling OAuth callback")
