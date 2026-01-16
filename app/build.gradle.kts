@@ -120,4 +120,10 @@ dependencies {
 
 kapt {
     correctErrorTypes = true
+
+    // Explicitly set JVM target for kapt to avoid inference from running JDK
+    javacOptions {
+        option("-source", "17")
+        option("-target", "17")
+    }
 }
