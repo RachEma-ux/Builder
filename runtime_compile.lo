@@ -1,0 +1,893 @@
+Initialized native services in: /data/data/com.termux/files/home/.gradle/native
+Initialized jansi services in: /data/data/com.termux/files/home/.gradle/native
+Received JVM installation metadata from '/data/data/com.termux/files/usr/lib/jvm/java-21-openjdk': {JAVA_HOME=/data/data/com.termux/files/usr/lib/jvm/java-21-openjdk, JAVA_VERSION=21.0.9, JAVA_VENDOR=Termux, RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=21.0.9, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=21.0.9, VM_VENDOR=Termux, OS_ARCH=aarch64}
+The client will now receive all logging from the daemon (pid: 27666). The daemon log file: /data/data/com.termux/files/home/.gradle/daemon/8.2/daemon-27666.out.log
+Starting 6th build in daemon [uptime: 37 mins 45.445 secs, performance: 100%, GC rate: 0.00/s, heap usage: 0% of 2 GiB]
+Using 8 worker leases.
+Watching the file system is configured to be enabled if available
+File system watching is inactive
+Starting Build
+The configuration classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+Settings evaluated using settings file '/data/data/com.termux/files/home/Builder/settings.gradle.kts'.
+Using local directory build cache for the root build (location = /data/data/com.termux/files/home/.gradle/caches/build-cache-1, removeUnusedEntriesAfter = 7 days).
+Projects loaded. Root project using build file '/data/data/com.termux/files/home/Builder/build.gradle.kts'.
+Included projects: [root project 'Builder', project ':app', project ':core', project ':data', project ':domain', project ':runtime', project ':ui']
+
+> Configure project :
+Evaluating root project 'Builder' using build file '/data/data/com.termux/files/home/Builder/build.gradle.kts'.
+The configuration detachedConfiguration1 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration detachedConfiguration1 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration detachedConfiguration1 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration detachedConfiguration1 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration detachedConfiguration2 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration detachedConfiguration2 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration detachedConfiguration2 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration detachedConfiguration2 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration detachedConfiguration3 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration detachedConfiguration3 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration detachedConfiguration3 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration detachedConfiguration3 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration detachedConfiguration4 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration detachedConfiguration4 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration detachedConfiguration4 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration detachedConfiguration4 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration detachedConfiguration5 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration detachedConfiguration5 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration detachedConfiguration5 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration detachedConfiguration5 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+Build cache key for Kotlin DSL accessors for root project 'Builder' is ca9e731c17bd28519496324d5d6b8220
+Skipping Kotlin DSL accessors for root project 'Builder' as it is up-to-date.
+
+> Configure project :app
+Evaluating project ':app' using build file '/data/data/com.termux/files/home/Builder/app/build.gradle.kts'.
+The configuration :app:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :app:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :app:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :app:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+WARNING: The option setting 'android.defaults.buildfeatures.buildconfig=true' is deprecated.
+The current default is 'false'.
+It will be removed in version 9.0 of the Android Gradle plugin.
+You can resolve this warning in Android Studio via `Refactor` > `Migrate BuildConfig to Gradle Build Files`
+WARNING: The option setting 'android.aapt2FromMavenOverride=/data/data/com.termux/files/home/android-sdk/build-tools/34.0.0/aapt2' is experimental.
+Using default execution profile
+Using Kotlin Gradle Plugin gradle82 variant
+Build cache key for Kotlin DSL accessors for project ':app' is a2dc33ad25029560b25292b48e960980
+Skipping Kotlin DSL accessors for project ':app' as it is up-to-date.
+Parsed shrinker version: 8.2.33
+
+> Configure project :core
+Evaluating project ':core' using build file '/data/data/com.termux/files/home/Builder/core/build.gradle.kts'.
+The configuration :core:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :core:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :core:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :core:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+Using Kotlin Gradle Plugin gradle82 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+Build cache key for Kotlin DSL accessors for project ':core' is 52445db626c59922bbb926c9dd13ac1f
+Skipping Kotlin DSL accessors for project ':core' as it is up-to-date.
+
+> Configure project :data
+Evaluating project ':data' using build file '/data/data/com.termux/files/home/Builder/data/build.gradle.kts'.
+The configuration :data:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :data:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :data:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :data:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+Using default execution profile
+Using Kotlin Gradle Plugin gradle82 variant
+Build cache key for Kotlin DSL accessors for project ':data' is f07598b04d31321f5ccf962ca4c2262e
+Skipping Kotlin DSL accessors for project ':data' as it is up-to-date.
+
+> Configure project :domain
+Evaluating project ':domain' using build file '/data/data/com.termux/files/home/Builder/domain/build.gradle.kts'.
+The configuration :domain:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :domain:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :domain:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :domain:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+Using Kotlin Gradle Plugin gradle82 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+Build cache key for Kotlin DSL accessors for project ':domain' is 52445db626c59922bbb926c9dd13ac1f
+Skipping Kotlin DSL accessors for project ':domain' as it is up-to-date.
+
+> Configure project :runtime
+Evaluating project ':runtime' using build file '/data/data/com.termux/files/home/Builder/runtime/build.gradle.kts'.
+The configuration :runtime:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :runtime:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :runtime:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :runtime:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+Using default execution profile
+Using Kotlin Gradle Plugin gradle82 variant
+Build cache key for Kotlin DSL accessors for project ':runtime' is f07598b04d31321f5ccf962ca4c2262e
+Skipping Kotlin DSL accessors for project ':runtime' as it is up-to-date.
+⚠️  Wasmtime library not found - native build disabled
+   WASM execution will not be available at runtime
+   Run ./scripts/build-wasmtime.sh to enable WASM support
+
+> Configure project :ui
+Evaluating project ':ui' using build file '/data/data/com.termux/files/home/Builder/ui/build.gradle.kts'.
+The configuration :ui:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :ui:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :ui:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :ui:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+Using default execution profile
+Using Kotlin Gradle Plugin gradle82 variant
+Build cache key for Kotlin DSL accessors for project ':ui' is f07598b04d31321f5ccf962ca4c2262e
+Skipping Kotlin DSL accessors for project ':ui' as it is up-to-date.
+All projects evaluated.
+The configuration :classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :app:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :app:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :app:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :app:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :app:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :app:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :app:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :app:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :app:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :app:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :data:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :data:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :data:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :data:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :data:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :data:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :data:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :data:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :data:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :data:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :runtime:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :runtime:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :runtime:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :runtime:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :runtime:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :runtime:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :runtime:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :runtime:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :runtime:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :runtime:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :ui:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :ui:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :ui:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :ui:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :ui:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :ui:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :ui:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :ui:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+The configuration :ui:classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+The configuration :ui:classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+Task path ':runtime:compileDebugKotlin' matched project ':runtime'
+Task name matched 'compileDebugKotlin'
+Selected primary task 'compileDebugKotlin' from project :runtime
+The configuration :core:mainSourceElements is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+Tasks to be executed: [task ':core:checkKotlinGradlePluginConfigurationErrors', task ':core:compileKotlin', task ':core:compileJava', task ':core:processResources', task ':core:classes', task ':core:jar', task ':runtime:checkKotlinGradlePluginConfigurationErrors', task ':runtime:preBuild', task ':runtime:preDebugBuild', task ':runtime:generateDebugBuildConfig', task ':runtime:generateDebugResValues', task ':runtime:generateDebugResources', task ':runtime:packageDebugResources', task ':runtime:parseDebugLocalResources', task ':runtime:processDebugManifest', task ':runtime:generateDebugRFile', task ':runtime:kaptGenerateStubsDebugKotlin', task ':runtime:kaptDebugKotlin', task ':runtime:compileDebugKotlin']
+Tasks that were excluded: []
+work action Parameters of JetifyTransform (Thread[#447,Execution worker,5,main]) started.
+Resolve mutations for :core:checkKotlinGradlePluginConfigurationErrors (Thread[#448,Execution worker Thread 2,5,main]) started.
+:core:checkKotlinGradlePluginConfigurationErrors (Thread[#448,Execution worker Thread 2,5,main]) started.
+work action Parameters of IdentityTransform (Thread[#449,Execution worker Thread 3,5,main]) started.
+Resolve mutations for :runtime:checkKotlinGradlePluginConfigurationErrors (Thread[#449,Execution worker Thread 3,5,main]) started.
+:runtime:checkKotlinGradlePluginConfigurationErrors (Thread[#449,Execution worker Thread 3,5,main]) started.
+
+> Task :runtime:checkKotlinGradlePluginConfigurationErrors
+Caching disabled for task ':runtime:checkKotlinGradlePluginConfigurationErrors' because:
+  This task renders reported diagnostics; caching this task will hide diagnostics and obscure issues in the build
+Task ':runtime:checkKotlinGradlePluginConfigurationErrors' is not up-to-date because:
+  Task has not declared any outputs despite executing actions.
+Resolve mutations for :runtime:preBuild (Thread[#449,Execution worker Thread 3,5,main]) started.
+:runtime:preBuild (Thread[#449,Execution worker Thread 3,5,main]) started.
+
+> Task :runtime:preBuild UP-TO-DATE
+Skipping task ':runtime:preBuild' as it has no actions.
+Resolve mutations for :runtime:preDebugBuild (Thread[#449,Execution worker Thread 3,5,main]) started.
+:runtime:preDebugBuild (Thread[#449,Execution worker Thread 3,5,main]) started.
+
+> Task :runtime:preDebugBuild UP-TO-DATE
+Skipping task ':runtime:preDebugBuild' as it has no actions.
+Resolve mutations for :runtime:generateDebugBuildConfig (Thread[#449,Execution worker Thread 3,5,main]) started.
+
+> Task :core:checkKotlinGradlePluginConfigurationErrors
+Caching disabled for task ':core:checkKotlinGradlePluginConfigurationErrors' because:
+  This task renders reported diagnostics; caching this task will hide diagnostics and obscure issues in the build
+Task ':core:checkKotlinGradlePluginConfigurationErrors' is not up-to-date because:
+  Task has not declared any outputs despite executing actions.
+:runtime:generateDebugBuildConfig (Thread[#449,Execution worker Thread 3,5,main]) started.
+Resolve mutations for :core:compileKotlin (Thread[#452,Execution worker Thread 5,5,main]) started.
+:core:compileKotlin (Thread[#452,Execution worker Thread 5,5,main]) started.
+
+> Task :runtime:generateDebugBuildConfig UP-TO-DATE
+Build cache key for task ':runtime:generateDebugBuildConfig' is 686923b78877016c6e9ff273f0d65beb
+Skipping task ':runtime:generateDebugBuildConfig' as it is up-to-date.
+Resolve mutations for :runtime:generateDebugResValues (Thread[#449,Execution worker Thread 3,5,main]) started.
+:runtime:generateDebugResValues (Thread[#449,Execution worker Thread 3,5,main]) started.
+
+> Task :runtime:generateDebugResValues UP-TO-DATE
+Build cache key for task ':runtime:generateDebugResValues' is 06563e73cdcc0685318e60d62016c04f
+Skipping task ':runtime:generateDebugResValues' as it is up-to-date.
+Resolve mutations for :runtime:generateDebugResources (Thread[#449,Execution worker Thread 3,5,main]) started.
+:runtime:generateDebugResources (Thread[#449,Execution worker Thread 3,5,main]) started.
+
+> Task :runtime:generateDebugResources UP-TO-DATE
+Skipping task ':runtime:generateDebugResources' as it has no actions.
+Resolve mutations for :runtime:packageDebugResources (Thread[#449,Execution worker Thread 3,5,main]) started.
+:runtime:packageDebugResources (Thread[#449,Execution worker Thread 3,5,main]) started.
+
+> Task :runtime:packageDebugResources UP-TO-DATE
+Build cache key for task ':runtime:packageDebugResources' is 3f753495c1390971220a775767cca9cc
+Skipping task ':runtime:packageDebugResources' as it is up-to-date.
+Resolve mutations for :runtime:parseDebugLocalResources (Thread[#449,Execution worker Thread 3,5,main]) started.
+:runtime:parseDebugLocalResources (Thread[#449,Execution worker Thread 3,5,main]) started.
+
+> Task :runtime:parseDebugLocalResources UP-TO-DATE
+Transforming android.jar with PlatformAttrTransform
+Transforming android.jar with PlatformAttrTransform
+Build cache key for task ':runtime:parseDebugLocalResources' is 667022735bb0b1646cec99c8c7b781ca
+Skipping task ':runtime:parseDebugLocalResources' as it is up-to-date.
+Resolve mutations for :runtime:processDebugManifest (Thread[#449,Execution worker Thread 3,5,main]) started.
+:runtime:processDebugManifest (Thread[#449,Execution worker Thread 3,5,main]) started.
+
+> Task :runtime:processDebugManifest UP-TO-DATE
+Build cache key for task ':runtime:processDebugManifest' is f5328c6541c72d0caa8798c89d936058
+Skipping task ':runtime:processDebugManifest' as it is up-to-date.
+Resolve mutations for :runtime:generateDebugRFile (Thread[#449,Execution worker Thread 3,5,main]) started.
+:runtime:generateDebugRFile (Thread[#449,Execution worker Thread 3,5,main]) started.
+
+> Task :runtime:generateDebugRFile UP-TO-DATE
+Transforming android.jar with PlatformAttrTransform
+Build cache key for task ':runtime:generateDebugRFile' is af475e7cc5789e6aee74e8a1400d4682
+Skipping task ':runtime:generateDebugRFile' as it is up-to-date.
+
+> Task :core:compileKotlin UP-TO-DATE
+Transforming kotlinx-serialization-core-jvm-1.6.2.jar with ClasspathEntrySnapshotTransform
+Transforming kotlinx-serialization-json-jvm-1.6.2.jar with ClasspathEntrySnapshotTransform
+Transforming kotlinx-coroutines-core-jvm-1.7.3.jar with ClasspathEntrySnapshotTransform
+Transforming kotlin-stdlib-jdk8-1.8.20.jar with ClasspathEntrySnapshotTransform
+Transforming kotlin-stdlib-jdk7-1.8.20.jar with ClasspathEntrySnapshotTransform
+Transforming kotlin-stdlib-1.9.21.jar with ClasspathEntrySnapshotTransform
+Transforming gson-2.10.1.jar with ClasspathEntrySnapshotTransform
+Transforming annotations-23.0.0.jar with ClasspathEntrySnapshotTransform
+Build cache key for task ':core:compileKotlin' is ee52223f2e9b5d8ebe180d01059ed55d
+Skipping task ':core:compileKotlin' as it is up-to-date.
+Resolve mutations for :core:compileJava (Thread[#452,Execution worker Thread 5,5,main]) started.
+:core:compileJava (Thread[#452,Execution worker Thread 5,5,main]) started.
+
+> Task :core:compileJava NO-SOURCE
+Skipping task ':core:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :core:processResources (Thread[#452,Execution worker Thread 5,5,main]) started.
+:core:processResources (Thread[#452,Execution worker Thread 5,5,main]) started.
+
+> Task :core:processResources NO-SOURCE
+Skipping task ':core:processResources' as it has no source files and no previous output files.
+Resolve mutations for :core:classes (Thread[#452,Execution worker Thread 5,5,main]) started.
+:core:classes (Thread[#452,Execution worker Thread 5,5,main]) started.
+
+> Task :core:classes UP-TO-DATE
+Skipping task ':core:classes' as it has no actions.
+Resolve mutations for :core:jar (Thread[#452,Execution worker Thread 5,5,main]) started.
+:core:jar (Thread[#452,Execution worker Thread 5,5,main]) started.
+
+> Task :core:jar UP-TO-DATE
+Caching disabled for task ':core:jar' because:
+  Not worth caching
+Skipping task ':core:jar' as it is up-to-date.
+work action resolve core.jar (project :core) (Thread[#452,Execution worker Thread 5,5,main]) started.
+JetifyTransform (Thread[#452,Execution worker Thread 5,5,main]) started.
+
+> Transform core.jar (project :core) with JetifyTransform
+Transforming core.jar (project :core) with JetifyTransform
+Build cache key for JetifyTransform: /data/data/com.termux/files/home/Builder/core/build/libs/core.jar is ec6533b69784a0e2478f42b4aa388ca5
+Skipping JetifyTransform: /data/data/com.termux/files/home/Builder/core/build/libs/core.jar as it is up-to-date.
+IdentityTransform (Thread[#452,Execution worker Thread 5,5,main]) started.
+
+> Transform core.jar (project :core) with IdentityTransform
+Transforming core.jar (project :core) with IdentityTransform
+Caching disabled for IdentityTransform: /data/data/com.termux/files/home/Builder/core/build/.transforms/53c9cb55bf1a209159b131b2c7806cfa/transformed/jetified-core.jar because:
+  Caching not enabled.
+Skipping IdentityTransform: /data/data/com.termux/files/home/Builder/core/build/.transforms/53c9cb55bf1a209159b131b2c7806cfa/transformed/jetified-core.jar as it is up-to-date.
+Resolve mutations for :runtime:kaptGenerateStubsDebugKotlin (Thread[#452,Execution worker Thread 5,5,main]) started.
+:runtime:kaptGenerateStubsDebugKotlin (Thread[#452,Execution worker Thread 5,5,main]) started.
+
+> Task :runtime:kaptGenerateStubsDebugKotlin UP-TO-DATE
+Transforming hilt-android-compiler-2.50.jar (com.google.dagger:hilt-android-compiler:2.50) with JetifyTransform
+Transforming dagger-compiler-2.50.jar (com.google.dagger:dagger-compiler:2.50) with JetifyTransform
+Transforming dagger-spi-2.50.jar (com.google.dagger:dagger-spi:2.50) with JetifyTransform
+Transforming jsr305-3.0.2.jar (com.google.code.findbugs:jsr305:3.0.2) with JetifyTransform
+Transforming dagger-2.50.jar (com.google.dagger:dagger:2.50) with JetifyTransform
+Transforming google-java-format-1.5.jar (com.google.googlejavaformat:google-java-format:1.5) with JetifyTransform
+Transforming failureaccess-1.0.1.jar (com.google.guava:failureaccess:1.0.1) with JetifyTransform
+Transforming guava-31.0.1-jre.jar (com.google.guava:guava:31.0.1-jre) with JetifyTransform
+Transforming symbol-processing-api-1.9.20-1.0.14.jar (com.google.devtools.ksp:symbol-processing-api:1.9.20-1.0.14) with JetifyTransform
+Transforming javapoet-1.13.0.jar (com.squareup:javapoet:1.13.0) with JetifyTransform
+Transforming javax.inject-1.jar (javax.inject:javax.inject:1) with JetifyTransform
+Transforming kotlin-reflect-1.6.10.jar (org.jetbrains.kotlin:kotlin-reflect:1.6.10) with JetifyTransform
+Transforming listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar (com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava) with JetifyTransform
+Transforming incap-0.2.jar (net.ltgt.gradle.incap:incap:0.2) with JetifyTransform
+Transforming kotlin-stdlib-jdk8-1.9.0.jar (org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0) with JetifyTransform
+Transforming kotlin-stdlib-jdk7-1.9.0.jar (org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.0) with JetifyTransform
+Transforming checker-qual-3.12.0.jar (org.checkerframework:checker-qual:3.12.0) with JetifyTransform
+Transforming checker-compat-qual-2.5.5.jar (org.checkerframework:checker-compat-qual:2.5.5) with JetifyTransform
+Transforming j2objc-annotations-1.3.jar (com.google.j2objc:j2objc-annotations:1.3) with JetifyTransform
+Transforming annotations-13.0.jar (org.jetbrains:annotations:13.0) with JetifyTransform
+Transforming kotlinpoet-1.11.0.jar (com.squareup:kotlinpoet:1.11.0) with JetifyTransform
+Transforming error_prone_annotations-2.7.1.jar (com.google.errorprone:error_prone_annotations:2.7.1) with JetifyTransform
+Transforming kotlin-stdlib-1.9.20.jar (org.jetbrains.kotlin:kotlin-stdlib:1.9.20) with JetifyTransform
+Transforming javac-shaded-9-dev-r4023-3.jar (com.google.errorprone:javac-shaded:9-dev-r4023-3) with JetifyTransform
+Transforming hilt-android-2.50.aar (com.google.dagger:hilt-android:2.50) with JetifyTransform
+Transforming hilt-android-2.50.aar (com.google.dagger:hilt-android:2.50) with AarToClassTransform
+Transforming kotlinx-serialization-core-jvm-1.6.2.jar (org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.6.2) with JetifyTransform
+Transforming kotlinx-serialization-core-jvm-1.6.2.jar (org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.6.2) with IdentityTransform
+Transforming activity-1.5.1.aar (androidx.activity:activity:1.5.1) with JetifyTransform
+Transforming timber-5.0.1.aar (com.jakewharton.timber:timber:5.0.1) with JetifyTransform
+Transforming lifecycle-viewmodel-savedstate-2.5.1.aar (androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.1) with JetifyTransform
+Transforming activity-1.5.1.aar (androidx.activity:activity:1.5.1) with AarToClassTransform
+Transforming timber-5.0.1.aar (com.jakewharton.timber:timber:5.0.1) with AarToClassTransform
+Transforming core-ktx-1.12.0.aar (androidx.core:core-ktx:1.12.0) with JetifyTransform
+Transforming fragment-1.5.1.aar (androidx.fragment:fragment:1.5.1) with JetifyTransform
+Transforming lifecycle-viewmodel-savedstate-2.5.1.aar (androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.1) with AarToClassTransform
+Transforming core-ktx-1.12.0.aar (androidx.core:core-ktx:1.12.0) with AarToClassTransform
+Transforming kotlinx-serialization-json-jvm-1.6.2.jar (org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.6.2) with JetifyTransform
+Transforming fragment-1.5.1.aar (androidx.fragment:fragment:1.5.1) with AarToClassTransform
+Transforming kotlinx-serialization-json-jvm-1.6.2.jar (org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.6.2) with IdentityTransform
+Transforming kotlinx-coroutines-core-jvm-1.7.3.jar (org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.3) with JetifyTransform
+Transforming kotlinx-coroutines-core-jvm-1.7.3.jar (org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.3) with IdentityTransform
+Transforming kotlin-stdlib-1.9.21.jar (org.jetbrains.kotlin:kotlin-stdlib:1.9.21) with JetifyTransform
+Transforming kotlin-stdlib-1.9.21.jar (org.jetbrains.kotlin:kotlin-stdlib:1.9.21) with IdentityTransform
+Transforming annotations-23.0.0.jar (org.jetbrains:annotations:23.0.0) with JetifyTransform
+Transforming customview-1.0.0.aar (androidx.customview:customview:1.0.0) with JetifyTransform
+Transforming annotations-23.0.0.jar (org.jetbrains:annotations:23.0.0) with IdentityTransform
+Transforming core-1.12.0.aar (androidx.core:core:1.12.0) with JetifyTransform
+Transforming core-1.12.0.aar (androidx.core:core:1.12.0) with JetifyTransform
+Transforming dagger-2.50.jar (com.google.dagger:dagger:2.50) with JetifyTransform
+Transforming core-1.12.0.aar (androidx.core:core:1.12.0) with JetifyTransform
+Transforming dagger-2.50.jar (com.google.dagger:dagger:2.50) with IdentityTransform
+Transforming core-1.12.0.aar (androidx.core:core:1.12.0) with AarToClassTransform
+Transforming viewpager-1.0.0.aar (androidx.viewpager:viewpager:1.0.0) with JetifyTransform
+Transforming javax.inject-1.jar (javax.inject:javax.inject:1) with JetifyTransform
+Transforming core-1.12.0.aar (androidx.core:core:1.12.0) with AarToClassTransform
+Transforming core-1.12.0.aar (androidx.core:core:1.12.0) with AarToClassTransform
+Transforming loader-1.0.0.aar (androidx.loader:loader:1.0.0) with JetifyTransform
+Transforming core-1.12.0.aar (androidx.core:core:1.12.0) with JetifyTransform
+Transforming annotation-experimental-1.3.1.aar (androidx.annotation:annotation-experimental:1.3.1) with JetifyTransform
+Transforming loader-1.0.0.aar (androidx.loader:loader:1.0.0) with AarToClassTransform
+Transforming lifecycle-viewmodel-2.5.1.aar (androidx.lifecycle:lifecycle-viewmodel:2.5.1) with JetifyTransform
+Transforming annotation-experimental-1.3.1.aar (androidx.annotation:annotation-experimental:1.3.1) with AarToClassTransform
+Transforming javax.inject-1.jar (javax.inject:javax.inject:1) with IdentityTransform
+Transforming savedstate-1.2.0.aar (androidx.savedstate:savedstate:1.2.0) with JetifyTransform
+Transforming jsr305-3.0.2.jar (com.google.code.findbugs:jsr305:3.0.2) with JetifyTransform
+Transforming kotlinx-coroutines-android-1.7.3.jar (org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3) with JetifyTransform
+Transforming jsr305-3.0.2.jar (com.google.code.findbugs:jsr305:3.0.2) with IdentityTransform
+Transforming viewpager-1.0.0.aar (androidx.viewpager:viewpager:1.0.0) with AarToClassTransform
+Transforming customview-1.0.0.aar (androidx.customview:customview:1.0.0) with AarToClassTransform
+Transforming kotlinx-coroutines-android-1.7.3.jar (org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3) with IdentityTransform
+Transforming lifecycle-viewmodel-2.5.1.aar (androidx.lifecycle:lifecycle-viewmodel:2.5.1) with AarToClassTransform
+Transforming savedstate-1.2.0.aar (androidx.savedstate:savedstate:1.2.0) with AarToClassTransform
+Transforming core-1.12.0.aar (androidx.core:core:1.12.0) with AarToClassTransform
+Transforming lifecycle-viewmodel-2.5.1.aar (androidx.lifecycle:lifecycle-viewmodel:2.5.1) with JetifyTransform
+Transforming lifecycle-livedata-2.0.0.aar (androidx.lifecycle:lifecycle-livedata:2.0.0) with JetifyTransform
+Transforming lifecycle-viewmodel-2.5.1.aar (androidx.lifecycle:lifecycle-viewmodel:2.5.1) with AarToClassTransform
+Transforming lifecycle-livedata-core-2.5.1.aar (androidx.lifecycle:lifecycle-livedata-core:2.5.1) with JetifyTransform
+Transforming lifecycle-runtime-2.5.1.aar (androidx.lifecycle:lifecycle-runtime:2.5.1) with JetifyTransform
+Transforming lifecycle-common-2.5.1.jar (androidx.lifecycle:lifecycle-common:2.5.1) with JetifyTransform
+Transforming lifecycle-runtime-2.5.1.aar (androidx.lifecycle:lifecycle-runtime:2.5.1) with AarToClassTransform
+Transforming lifecycle-livedata-core-2.5.1.aar (androidx.lifecycle:lifecycle-livedata-core:2.5.1) with AarToClassTransform
+Transforming lifecycle-common-2.5.1.jar (androidx.lifecycle:lifecycle-common:2.5.1) with IdentityTransform
+Transforming lifecycle-livedata-core-2.5.1.aar (androidx.lifecycle:lifecycle-livedata-core:2.5.1) with JetifyTransform
+Transforming collection-1.1.0.jar (androidx.collection:collection:1.1.0) with JetifyTransform
+Transforming lifecycle-livedata-core-2.5.1.aar (androidx.lifecycle:lifecycle-livedata-core:2.5.1) with AarToClassTransform
+Transforming core-runtime-2.1.0.aar (androidx.arch.core:core-runtime:2.1.0) with JetifyTransform
+Transforming versionedparcelable-1.1.1.aar (androidx.versionedparcelable:versionedparcelable:1.1.1) with JetifyTransform
+Transforming core-common-2.1.0.jar (androidx.arch.core:core-common:2.1.0) with JetifyTransform
+Transforming core-runtime-2.1.0.aar (androidx.arch.core:core-runtime:2.1.0) with AarToClassTransform
+Transforming kotlin-stdlib-jdk8-1.9.10.jar (org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.10) with JetifyTransform
+Transforming core-common-2.1.0.jar (androidx.arch.core:core-common:2.1.0) with IdentityTransform
+Transforming okio-jvm-3.6.0.jar (com.squareup.okio:okio-jvm:3.6.0) with JetifyTransform
+Transforming kotlin-stdlib-jdk8-1.9.10.jar (org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.10) with IdentityTransform
+Transforming kotlin-stdlib-jdk7-1.9.10.jar (org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.10) with JetifyTransform
+Transforming okio-jvm-3.6.0.jar (com.squareup.okio:okio-jvm:3.6.0) with IdentityTransform
+Transforming annotation-jvm-1.6.0.jar (androidx.annotation:annotation-jvm:1.6.0) with JetifyTransform
+Transforming collection-1.1.0.jar (androidx.collection:collection:1.1.0) with IdentityTransform
+Transforming hilt-core-2.50.jar (com.google.dagger:hilt-core:2.50) with JetifyTransform
+Transforming versionedparcelable-1.1.1.aar (androidx.versionedparcelable:versionedparcelable:1.1.1) with AarToClassTransform
+Transforming annotation-jvm-1.6.0.jar (androidx.annotation:annotation-jvm:1.6.0) with IdentityTransform
+Transforming okhttp-4.12.0.jar (com.squareup.okhttp3:okhttp:4.12.0) with JetifyTransform
+Transforming lifecycle-livedata-2.0.0.aar (androidx.lifecycle:lifecycle-livedata:2.0.0) with AarToClassTransform
+Transforming okhttp-4.12.0.jar (com.squareup.okhttp3:okhttp:4.12.0) with IdentityTransform
+Transforming hilt-core-2.50.jar (com.google.dagger:hilt-core:2.50) with IdentityTransform
+Transforming dagger-lint-aar-2.50.aar (com.google.dagger:dagger-lint-aar:2.50) with JetifyTransform
+Transforming dagger-lint-aar-2.50.aar (com.google.dagger:dagger-lint-aar:2.50) with AarToClassTransform
+Transforming kotlin-stdlib-jdk7-1.9.10.jar (org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.10) with IdentityTransform
+Transforming R.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-hilt-android-2.50-api.jar with ClasspathEntrySnapshotTransform
+Transforming fragment-1.5.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-activity-1.5.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-lifecycle-viewmodel-savedstate-2.5.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-core-ktx-1.12.0-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-timber-5.0.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-kotlinx-serialization-core-jvm-1.6.2.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-kotlinx-serialization-json-jvm-1.6.2.jar with ClasspathEntrySnapshotTransform
+Transforming loader-1.0.0-api.jar with ClasspathEntrySnapshotTransform
+Transforming viewpager-1.0.0-api.jar with ClasspathEntrySnapshotTransform
+Transforming customview-1.0.0-api.jar with ClasspathEntrySnapshotTransform
+Transforming core-1.12.0-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-annotation-experimental-1.3.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming lifecycle-viewmodel-2.5.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-savedstate-1.2.0-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-kotlinx-coroutines-core-jvm-1.7.3.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-kotlinx-coroutines-android-1.7.3.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-okhttp-4.12.0.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-okio-jvm-3.6.0.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-kotlin-stdlib-jdk8-1.9.10.jar with ClasspathEntrySnapshotTransform
+Transforming lifecycle-runtime-2.5.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming lifecycle-livedata-2.0.0-api.jar with ClasspathEntrySnapshotTransform
+Transforming lifecycle-livedata-core-2.5.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming lifecycle-common-2.5.1.jar with ClasspathEntrySnapshotTransform
+Transforming versionedparcelable-1.1.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming collection-1.1.0.jar with ClasspathEntrySnapshotTransform
+Transforming core-runtime-2.1.0-api.jar with ClasspathEntrySnapshotTransform
+Transforming core-common-2.1.0.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-annotation-jvm-1.6.0.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-kotlin-stdlib-jdk7-1.9.10.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-kotlin-stdlib-1.9.21.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-annotations-23.0.0.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-hilt-core-2.50.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-dagger-2.50.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-javax.inject-1.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-dagger-lint-aar-2.50-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-jsr305-3.0.2.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-core.jar with ClasspathEntrySnapshotTransform
+Transforming android.jar with ClasspathEntrySnapshotTransform
+Transforming core-lambda-stubs.jar with ClasspathEntrySnapshotTransform
+Build cache key for task ':runtime:kaptGenerateStubsDebugKotlin' is b9149e1d3663775552efdb7f7a0a3bd1
+Skipping task ':runtime:kaptGenerateStubsDebugKotlin' as it is up-to-date.
+Resolve mutations for :runtime:kaptDebugKotlin (Thread[#452,Execution worker Thread 5,5,main]) started.
+:runtime:kaptDebugKotlin (Thread[#452,Execution worker Thread 5,5,main]) started.
+
+> Task :runtime:kaptDebugKotlin UP-TO-DATE
+Transforming R.jar with StructureTransformAction
+Transforming jetified-hilt-android-2.50-api.jar with StructureTransformAction
+Transforming fragment-1.5.1-api.jar with StructureTransformAction
+Transforming jetified-activity-1.5.1-api.jar with StructureTransformAction
+Transforming jetified-lifecycle-viewmodel-savedstate-2.5.1-api.jar with StructureTransformAction
+Transforming jetified-core-ktx-1.12.0-api.jar with StructureTransformAction
+Transforming jetified-timber-5.0.1-api.jar with StructureTransformAction
+Transforming jetified-kotlinx-serialization-core-jvm-1.6.2.jar with StructureTransformAction
+Transforming jetified-kotlinx-serialization-json-jvm-1.6.2.jar with StructureTransformAction
+Transforming loader-1.0.0-api.jar with StructureTransformAction
+Transforming viewpager-1.0.0-api.jar with StructureTransformAction
+Transforming customview-1.0.0-api.jar with StructureTransformAction
+Transforming core-1.12.0-api.jar with StructureTransformAction
+Transforming jetified-annotation-experimental-1.3.1-api.jar with StructureTransformAction
+Transforming lifecycle-viewmodel-2.5.1-api.jar with StructureTransformAction
+Transforming jetified-savedstate-1.2.0-api.jar with StructureTransformAction
+Transforming jetified-kotlinx-coroutines-core-jvm-1.7.3.jar with StructureTransformAction
+Transforming jetified-kotlinx-coroutines-android-1.7.3.jar with StructureTransformAction
+Transforming jetified-okhttp-4.12.0.jar with StructureTransformAction
+Transforming jetified-okio-jvm-3.6.0.jar with StructureTransformAction
+Transforming jetified-kotlin-stdlib-jdk8-1.9.10.jar with StructureTransformAction
+Transforming lifecycle-runtime-2.5.1-api.jar with StructureTransformAction
+Transforming lifecycle-livedata-2.0.0-api.jar with StructureTransformAction
+Transforming lifecycle-livedata-core-2.5.1-api.jar with StructureTransformAction
+Transforming lifecycle-common-2.5.1.jar with StructureTransformAction
+Transforming versionedparcelable-1.1.1-api.jar with StructureTransformAction
+Transforming collection-1.1.0.jar with StructureTransformAction
+Transforming core-runtime-2.1.0-api.jar with StructureTransformAction
+Transforming core-common-2.1.0.jar with StructureTransformAction
+Transforming jetified-annotation-jvm-1.6.0.jar with StructureTransformAction
+Transforming jetified-kotlin-stdlib-jdk7-1.9.10.jar with StructureTransformAction
+Transforming jetified-kotlin-stdlib-1.9.21.jar with StructureTransformAction
+Transforming jetified-annotations-23.0.0.jar with StructureTransformAction
+Transforming jetified-hilt-core-2.50.jar with StructureTransformAction
+Transforming jetified-dagger-2.50.jar with StructureTransformAction
+Transforming jetified-javax.inject-1.jar with StructureTransformAction
+Transforming jetified-dagger-lint-aar-2.50-api.jar with StructureTransformAction
+Transforming jetified-jsr305-3.0.2.jar with StructureTransformAction
+Transforming jetified-core.jar with StructureTransformAction
+Transforming android.jar with StructureTransformAction
+Transforming core-lambda-stubs.jar with StructureTransformAction
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+Build cache key for task ':runtime:kaptDebugKotlin' is bf31d9b8bc4557a51b0aee909b8e0cc0
+Skipping task ':runtime:kaptDebugKotlin' as it is up-to-date.
+Resolve mutations for :runtime:compileDebugKotlin (Thread[#452,Execution worker Thread 5,5,main]) started.
+:runtime:compileDebugKotlin (Thread[#452,Execution worker Thread 5,5,main]) started.
+
+> Task :runtime:compileDebugKotlin
+Transforming R.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-hilt-android-2.50-api.jar with ClasspathEntrySnapshotTransform
+Transforming fragment-1.5.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-activity-1.5.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-lifecycle-viewmodel-savedstate-2.5.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-core-ktx-1.12.0-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-timber-5.0.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-kotlinx-serialization-core-jvm-1.6.2.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-kotlinx-serialization-json-jvm-1.6.2.jar with ClasspathEntrySnapshotTransform
+Transforming loader-1.0.0-api.jar with ClasspathEntrySnapshotTransform
+Transforming viewpager-1.0.0-api.jar with ClasspathEntrySnapshotTransform
+Transforming customview-1.0.0-api.jar with ClasspathEntrySnapshotTransform
+Transforming core-1.12.0-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-annotation-experimental-1.3.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming lifecycle-viewmodel-2.5.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-savedstate-1.2.0-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-kotlinx-coroutines-core-jvm-1.7.3.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-kotlinx-coroutines-android-1.7.3.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-okhttp-4.12.0.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-okio-jvm-3.6.0.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-kotlin-stdlib-jdk8-1.9.10.jar with ClasspathEntrySnapshotTransform
+Transforming lifecycle-runtime-2.5.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming lifecycle-livedata-2.0.0-api.jar with ClasspathEntrySnapshotTransform
+Transforming lifecycle-livedata-core-2.5.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming lifecycle-common-2.5.1.jar with ClasspathEntrySnapshotTransform
+Transforming versionedparcelable-1.1.1-api.jar with ClasspathEntrySnapshotTransform
+Transforming collection-1.1.0.jar with ClasspathEntrySnapshotTransform
+Transforming core-runtime-2.1.0-api.jar with ClasspathEntrySnapshotTransform
+Transforming core-common-2.1.0.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-annotation-jvm-1.6.0.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-kotlin-stdlib-jdk7-1.9.10.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-kotlin-stdlib-1.9.21.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-annotations-23.0.0.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-hilt-core-2.50.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-dagger-2.50.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-javax.inject-1.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-dagger-lint-aar-2.50-api.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-jsr305-3.0.2.jar with ClasspathEntrySnapshotTransform
+Transforming jetified-core.jar with ClasspathEntrySnapshotTransform
+Transforming android.jar with ClasspathEntrySnapshotTransform
+Transforming core-lambda-stubs.jar with ClasspathEntrySnapshotTransform
+Transforming debug with ClasspathEntrySnapshotTransform
+Build cache key for task ':runtime:compileDebugKotlin' is c93514e5452c679dc6c1109e28a4c5cb
+Task ':runtime:compileDebugKotlin' is not up-to-date because:
+  Task has failed previously.
+The input changes require a full rebuild for incremental task ':runtime:compileDebugKotlin'.
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/kotlin', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/main/java', not found
+file or directory '/data/data/com.termux/files/home/Builder/runtime/src/debug/java', not found
+Kotlin source files: /data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/HealthMonitor.kt, /data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/LogCollector.kt, /data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt, /data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/wasm/WasiConfig.kt, /data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/wasm/WasmRuntime.kt, /data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/wasm/permissions/PermissionEnforcer.kt, /data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/workflow/WorkflowContext.kt, /data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/workflow/WorkflowEngine.kt
+Java source files: /data/data/com.termux/files/home/Builder/runtime/build/generated/source/buildConfig/debug/com/builder/runtime/BuildConfig.java, /data/data/com.termux/files/home/Builder/runtime/build/generated/source/kapt/debug/com/builder/runtime/HealthMonitor_Factory.java, /data/data/com.termux/files/home/Builder/runtime/build/generated/source/kapt/debug/com/builder/runtime/LogCollector_Factory.java, /data/data/com.termux/files/home/Builder/runtime/build/generated/source/kapt/debug/com/builder/runtime/instance/InstanceManager_Factory.java
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: null
+i: found daemon on port 17680 (1170516 ms old), trying to connect
+i: connected to the daemon
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), areFileChangesKnown=false, modifiedFiles=null, deletedFiles=null, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/data/data/com.termux/files/home/Builder/runtime/build/kotlin/compileDebugKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/data/data/com.termux/files/home/Builder/runtime/build/kotlin/compileDebugKotlin/local-state/build-history.bin, useModuleDetection=true), usePreciseJavaTracking=true, outputFiles=[/data/data/com.termux/files/home/Builder/runtime/build/tmp/kotlin-classes/debug, /data/data/com.termux/files/home/Builder/runtime/build/kotlin/compileDebugKotlin/cacheable, /data/data/com.termux/files/home/Builder/runtime/build/kotlin/compileDebugKotlin/local-state])
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/HealthMonitor.kt:53:37 Type inference failed. The value of the type parameter K should be mentioned in input types (argument types, receiver type or expected type). Try to specify it explicitly.
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/HealthMonitor.kt:54:36 Type mismatch: inferred type is Long but String was expected
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/HealthMonitor.kt:160:26 Type mismatch: inferred type is Long but String was expected
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:11:20 Unresolved reference: data
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:41:62 Unresolved reference: httpClient
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:41:74 No value passed for parameter 'logCollector'
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:54:26 Unresolved reference: InstanceEntity
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:61:30 Unresolved reference: instanceDao
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:62:28 Unresolved reference: instanceDao
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:65:52 Unresolved reference: id
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:88:33 Unresolved reference: InstanceEntity
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:94:13 Unresolved reference: instanceDao
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:112:34 Unresolved reference: InstanceEntity
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:115:13 Unresolved reference: instanceDao
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:130:33 Unresolved reference: InstanceEntity
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:133:13 Unresolved reference: instanceDao
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:151:33 Unresolved reference: InstanceEntity
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:157:13 Unresolved reference: instanceDao
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:175:13 Unresolved reference: instanceDao
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:189:16 Unresolved reference: instanceDao
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:196:16 Unresolved reference: instanceDao
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:196:47 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:196:66 Unresolved reference: it
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:203:16 Unresolved reference: instanceDao
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:203:54 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:203:73 Unresolved reference: it
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:210:16 Unresolved reference: instanceDao
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:210:47 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:210:66 Unresolved reference: it
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/instance/InstanceManager.kt:308:30 Type mismatch: inferred type is Long but String was expected
+e: file:///data/data/com.termux/files/home/Builder/runtime/src/main/kotlin/com/builder/runtime/wasm/WasmRuntime.kt:14:37 Unresolved reference: PermissionEnforcer
+
+> Task :runtime:compileDebugKotlin FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':runtime:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+* Exception is:
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':runtime:compileDebugKotlin'.
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:149)
+	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:282)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:147)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:135)
+	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:199)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:157)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.internal.operations.DefaultBuildOperationExecutor.call(DefaultBuildOperationExecutor.java:73)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:337)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:324)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:317)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:463)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:380)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
+Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+	at org.gradle.workers.internal.DefaultWorkerExecutor$WorkItemExecution.waitForCompletion(DefaultWorkerExecutor.java:283)
+	at org.gradle.internal.work.DefaultAsyncWorkTracker.lambda$waitForItemsAndGatherFailures$2(DefaultAsyncWorkTracker.java:130)
+	at org.gradle.internal.Factories$1.create(Factories.java:31)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withoutLocks(DefaultWorkerLeaseService.java:321)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withoutLocks(DefaultWorkerLeaseService.java:304)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withoutLock(DefaultWorkerLeaseService.java:309)
+	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForItemsAndGatherFailures(DefaultAsyncWorkTracker.java:126)
+	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForItemsAndGatherFailures(DefaultAsyncWorkTracker.java:92)
+	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForAll(DefaultAsyncWorkTracker.java:78)
+	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForCompletion(DefaultAsyncWorkTracker.java:66)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:256)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:157)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.internal.operations.DefaultBuildOperationExecutor.run(DefaultBuildOperationExecutor.java:68)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeAction(TaskExecution.java:233)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeActions(TaskExecution.java:216)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeWithPreviousOutputFiles(TaskExecution.java:199)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.execute(TaskExecution.java:166)
+	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:105)
+	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:44)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:59)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:56)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:199)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:157)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.internal.operations.DefaultBuildOperationExecutor.call(DefaultBuildOperationExecutor.java:73)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:56)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:44)
+	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:67)
+	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:37)
+	at org.gradle.internal.execution.steps.CancelExecutionStep.execute(CancelExecutionStep.java:41)
+	at org.gradle.internal.execution.steps.TimeoutStep.executeWithoutTimeout(TimeoutStep.java:74)
+	at org.gradle.internal.execution.steps.TimeoutStep.execute(TimeoutStep.java:55)
+	at org.gradle.internal.execution.steps.CreateOutputsStep.execute(CreateOutputsStep.java:50)
+	at org.gradle.internal.execution.steps.CreateOutputsStep.execute(CreateOutputsStep.java:28)
+	at org.gradle.internal.execution.steps.CaptureStateAfterExecutionStep.executeDelegateBroadcastingChanges(CaptureStateAfterExecutionStep.java:100)
+	at org.gradle.internal.execution.steps.CaptureStateAfterExecutionStep.execute(CaptureStateAfterExecutionStep.java:72)
+	at org.gradle.internal.execution.steps.CaptureStateAfterExecutionStep.execute(CaptureStateAfterExecutionStep.java:50)
+	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:40)
+	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:29)
+	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithoutCache(BuildCacheStep.java:179)
+	at org.gradle.internal.execution.steps.BuildCacheStep.executeAndStoreInCache(BuildCacheStep.java:139)
+	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$executeWithCache$4(BuildCacheStep.java:106)
+	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$executeWithCache$5(BuildCacheStep.java:106)
+	at org.gradle.internal.Try$Success.map(Try.java:164)
+	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithCache(BuildCacheStep.java:80)
+	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$execute$0(BuildCacheStep.java:69)
+	at org.gradle.internal.Either$Left.fold(Either.java:115)
+	at org.gradle.internal.execution.caching.CachingState.fold(CachingState.java:59)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:68)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:46)
+	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:36)
+	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:25)
+	at org.gradle.internal.execution.steps.RecordOutputsStep.execute(RecordOutputsStep.java:36)
+	at org.gradle.internal.execution.steps.RecordOutputsStep.execute(RecordOutputsStep.java:22)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.executeBecause(SkipUpToDateStep.java:91)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.lambda$execute$2(SkipUpToDateStep.java:55)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:55)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:37)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:65)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:36)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:37)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:27)
+	at org.gradle.internal.execution.steps.ResolveCachingStateStep.execute(ResolveCachingStateStep.java:77)
+	at org.gradle.internal.execution.steps.ResolveCachingStateStep.execute(ResolveCachingStateStep.java:38)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:94)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:49)
+	at org.gradle.internal.execution.steps.CaptureStateBeforeExecutionStep.execute(CaptureStateBeforeExecutionStep.java:71)
+	at org.gradle.internal.execution.steps.CaptureStateBeforeExecutionStep.execute(CaptureStateBeforeExecutionStep.java:45)
+	at org.gradle.internal.execution.steps.SkipEmptyWorkStep.executeWithNonEmptySources(SkipEmptyWorkStep.java:177)
+	at org.gradle.internal.execution.steps.SkipEmptyWorkStep.execute(SkipEmptyWorkStep.java:86)
+	at org.gradle.internal.execution.steps.SkipEmptyWorkStep.execute(SkipEmptyWorkStep.java:53)
+	at org.gradle.internal.execution.steps.RemoveUntrackedExecutionStateStep.execute(RemoveUntrackedExecutionStateStep.java:32)
+	at org.gradle.internal.execution.steps.RemoveUntrackedExecutionStateStep.execute(RemoveUntrackedExecutionStateStep.java:21)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:36)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:23)
+	at org.gradle.internal.execution.steps.CleanupStaleOutputsStep.execute(CleanupStaleOutputsStep.java:75)
+	at org.gradle.internal.execution.steps.CleanupStaleOutputsStep.execute(CleanupStaleOutputsStep.java:41)
+	at org.gradle.internal.execution.steps.AssignWorkspaceStep.lambda$execute$0(AssignWorkspaceStep.java:32)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$4.withWorkspace(TaskExecution.java:293)
+	at org.gradle.internal.execution.steps.AssignWorkspaceStep.execute(AssignWorkspaceStep.java:30)
+	at org.gradle.internal.execution.steps.AssignWorkspaceStep.execute(AssignWorkspaceStep.java:21)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:37)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:27)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:47)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:34)
+	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:64)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:146)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:135)
+	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:199)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:157)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.internal.operations.DefaultBuildOperationExecutor.call(DefaultBuildOperationExecutor.java:73)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:337)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:324)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:317)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:463)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:380)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
+Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
+	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwExceptionIfCompilationFailed(tasksUtils.kt:20)
+	at org.jetbrains.kotlin.compilerRunner.GradleKotlinCompilerWork.run(GradleKotlinCompilerWork.kt:141)
+	at org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction.execute(GradleCompilerRunnerWithWorkers.kt:73)
+	at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:63)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:66)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:62)
+	at org.gradle.internal.classloader.ClassLoaderUtils.executeInClassloader(ClassLoaderUtils.java:100)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.lambda$execute$0(NoIsolationWorkerFactory.java:62)
+	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:44)
+	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:41)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:199)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:157)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.internal.operations.DefaultBuildOperationExecutor.call(DefaultBuildOperationExecutor.java:73)
+	at org.gradle.workers.internal.AbstractWorker.executeWrappedInBuildOperation(AbstractWorker.java:41)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.execute(NoIsolationWorkerFactory.java:59)
+	at org.gradle.workers.internal.DefaultWorkerExecutor.lambda$submitWork$0(DefaultWorkerExecutor.java:170)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runExecution(DefaultConditionalExecutionQueue.java:187)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.access$700(DefaultConditionalExecutionQueue.java:120)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner$1.run(DefaultConditionalExecutionQueue.java:162)
+	at org.gradle.internal.Factories$1.create(Factories.java:31)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:249)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:109)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:114)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:157)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:126)
+	... 2 more
+
+
+BUILD FAILED in 3s
+13 actionable tasks: 3 executed, 10 up-to-date
