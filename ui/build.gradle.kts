@@ -72,4 +72,17 @@ dependencies {
 
 kapt {
     correctErrorTypes = true
+
+    // Explicitly set JVM target for kapt to avoid inference from running JDK
+    javacOptions {
+        option("-source", "17")
+        option("-target", "17")
+    }
+}
+
+// Force kapt tasks to use JVM target 17
+tasks.withType<org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask>().configureEach {
+    kotlinOptions {
+        jvmTarget = "17"
+    }
 }

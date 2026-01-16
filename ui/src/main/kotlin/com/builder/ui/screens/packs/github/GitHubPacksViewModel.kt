@@ -46,16 +46,17 @@ class GitHubPacksViewModel @Inject constructor(
     }
 
     /**
-     * Initiates OAuth device flow.
+     * Initiates OAuth authorization code flow with PKCE.
      */
     fun initiateOAuth() {
         viewModelScope.launch {
-            gitHubRepository.initiateDeviceFlow().collect { state ->
+            gitHubRepository.initiateAuthCodeFlow().collect { state ->
                 when (state) {
                     is DeviceFlowState.Loading -> {
                         _uiState.update { it.copy(authState = AuthState.Loading) }
                     }
                     is DeviceFlowState.WaitingForUser -> {
+                        // Legacy device flow - still supported for backwards compatibility
                         _uiState.update {
                             it.copy(
                                 authState = AuthState.WaitingForUser(
@@ -64,6 +65,18 @@ class GitHubPacksViewModel @Inject constructor(
                                 )
                             )
                         }
+                    }
+                    is DeviceFlowState.WaitingForAuthorization -> {
+                        // Authorization code flow - browser opened
+                        _uiState.update {
+                            it.copy(
+                                authState = AuthState.WaitingForAuthorization(
+                                    authorizationUrl = state.authorizationUrl
+                                )
+                            )
+                        }
+                        // Start checking authentication status
+                        checkAuthenticationPeriodically()
                     }
                     is DeviceFlowState.Success -> {
                         _uiState.update {
@@ -79,6 +92,37 @@ class GitHubPacksViewModel @Inject constructor(
                             it.copy(authState = AuthState.Error(state.message))
                         }
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Periodically checks authentication status after browser is opened.
+     * This helps detect when the OAuth callback completes.
+     */
+    private fun checkAuthenticationPeriodically() {
+        viewModelScope.launch {
+            // Poll for authentication every 2 seconds
+            repeat(30) { // Try for up to 60 seconds
+                kotlinx.coroutines.delay(2000)
+                if (gitHubRepository.isAuthenticated()) {
+                    _uiState.update {
+                        it.copy(
+                            authState = AuthState.Success,
+                            isAuthenticated = true
+                        )
+                    }
+                    loadRepositories()
+                    return@launch
+                }
+            }
+            // Timeout after 60 seconds
+            if (!gitHubRepository.isAuthenticated()) {
+                _uiState.update {
+                    it.copy(
+                        authState = AuthState.Error("Authorization timed out. Please try again.")
+                    )
                 }
             }
         }
@@ -365,6 +409,7 @@ sealed class AuthState {
     object Idle : AuthState()
     object Loading : AuthState()
     data class WaitingForUser(val userCode: String, val verificationUri: String) : AuthState()
+    data class WaitingForAuthorization(val authorizationUrl: String) : AuthState()
     object Success : AuthState()
     data class Error(val message: String) : AuthState()
 }

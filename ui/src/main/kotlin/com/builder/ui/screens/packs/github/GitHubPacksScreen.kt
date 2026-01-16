@@ -118,8 +118,11 @@ fun OAuthScreen(authState: AuthState, onInitiateOAuth: () -> Unit) {
             }
             is AuthState.Loading -> {
                 CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Opening browser...")
             }
             is AuthState.WaitingForUser -> {
+                // Legacy device flow
                 Text("Visit: ${authState.verificationUri}")
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Enter code: ${authState.userCode}", style = MaterialTheme.typography.headlineMedium)
@@ -127,8 +130,18 @@ fun OAuthScreen(authState: AuthState, onInitiateOAuth: () -> Unit) {
                 CircularProgressIndicator()
                 Text("Waiting for authorization...")
             }
+            is AuthState.WaitingForAuthorization -> {
+                // Authorization code flow
+                Text("Browser opened!", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Please authorize Builder in your browser")
+                Spacer(modifier = Modifier.height(16.dp))
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Waiting for authorization...", style = MaterialTheme.typography.bodySmall)
+            }
             is AuthState.Success -> {
-                Text("✓ Authenticated successfully!")
+                Text("✓ Authenticated successfully!", style = MaterialTheme.typography.titleMedium)
             }
             is AuthState.Error -> {
                 Text("Error: ${authState.message}", color = MaterialTheme.colorScheme.error)

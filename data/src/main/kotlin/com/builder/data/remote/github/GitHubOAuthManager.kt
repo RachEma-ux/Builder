@@ -28,6 +28,11 @@ class GitHubOAuthManager @Inject constructor(
         private const val KEY_ACCESS_TOKEN = "access_token"
         private const val KEY_TOKEN_TYPE = "token_type"
         private const val KEY_SCOPE = "scope"
+        private const val KEY_CODE_VERIFIER = "code_verifier"
+        private const val KEY_STATE = "oauth_state"
+
+        const val REDIRECT_URI = "builder://oauth/callback"
+        private const val AUTHORIZATION_URL = "https://github.com/login/oauth/authorize"
     }
 
     private val masterKey = MasterKey.Builder(context)
@@ -43,7 +48,145 @@ class GitHubOAuthManager @Inject constructor(
     )
 
     /**
+     * Initiates Authorization Code Flow with PKCE.
+     * Opens browser to GitHub authorization page and returns the authorization URL.
+     *
+     * @return Flow emitting DeviceFlowState updates
+     */
+    fun initiateAuthCodeFlow(): Flow<DeviceFlowState> = flow {
+        try {
+            emit(DeviceFlowState.Loading)
+
+            // Generate PKCE parameters
+            val pkceParams = PKCEUtils.generatePKCEParams()
+
+            // Generate random state for CSRF protection
+            val state = generateRandomState()
+
+            // Store code verifier and state for later verification
+            encryptedPrefs.edit().apply {
+                putString(KEY_CODE_VERIFIER, pkceParams.codeVerifier)
+                putString(KEY_STATE, state)
+                apply()
+            }
+
+            // Build authorization URL
+            val authUrl = buildAuthorizationUrl(
+                clientId = GitHubOAuthService.CLIENT_ID,
+                redirectUri = REDIRECT_URI,
+                state = state,
+                codeChallenge = pkceParams.codeChallenge,
+                scope = "repo,workflow"
+            )
+
+            Timber.i("Opening browser for OAuth authorization: $authUrl")
+
+            // Open browser
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(authUrl))
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+
+            // Emit waiting state
+            emit(DeviceFlowState.WaitingForAuthorization(authUrl))
+
+        } catch (e: Exception) {
+            Timber.e(e, "Error initiating authorization code flow")
+            emit(DeviceFlowState.Error(e.message ?: "Unknown error"))
+        }
+    }
+
+    /**
+     * Handles the OAuth callback with authorization code.
+     * Exchanges the code for an access token.
+     *
+     * @param code The authorization code from GitHub
+     * @param state The state parameter for CSRF verification
+     * @return Flow emitting DeviceFlowState updates
+     */
+    suspend fun handleOAuthCallback(code: String, state: String): DeviceFlowState {
+        return try {
+            // Verify state matches (CSRF protection)
+            val savedState = encryptedPrefs.getString(KEY_STATE, null)
+            if (state != savedState) {
+                Timber.e("State mismatch: expected $savedState, got $state")
+                return DeviceFlowState.Error("Invalid state parameter")
+            }
+
+            // Get stored code verifier
+            val codeVerifier = encryptedPrefs.getString(KEY_CODE_VERIFIER, null)
+            if (codeVerifier == null) {
+                Timber.e("Code verifier not found")
+                return DeviceFlowState.Error("Code verifier not found")
+            }
+
+            // Exchange code for token
+            val tokenResponse = oauthService.exchangeCodeForToken(
+                clientId = GitHubOAuthService.CLIENT_ID,
+                code = code,
+                codeVerifier = codeVerifier,
+                redirectUri = REDIRECT_URI
+            )
+
+            val accessToken = tokenResponse.body()
+            if (!tokenResponse.isSuccessful || accessToken == null) {
+                Timber.e("Failed to exchange code for token: ${tokenResponse.code()}")
+                return DeviceFlowState.Error("Failed to get access token")
+            }
+
+            // Save token
+            saveAccessToken(accessToken)
+
+            // Clear temporary PKCE data
+            encryptedPrefs.edit().apply {
+                remove(KEY_CODE_VERIFIER)
+                remove(KEY_STATE)
+                apply()
+            }
+
+            Timber.i("Successfully obtained access token via authorization code flow")
+            DeviceFlowState.Success(accessToken.accessToken)
+
+        } catch (e: Exception) {
+            Timber.e(e, "Error handling OAuth callback")
+            DeviceFlowState.Error(e.message ?: "Unknown error")
+        }
+    }
+
+    /**
+     * Builds the GitHub authorization URL with PKCE parameters.
+     */
+    private fun buildAuthorizationUrl(
+        clientId: String,
+        redirectUri: String,
+        state: String,
+        codeChallenge: String,
+        scope: String
+    ): String {
+        return "$AUTHORIZATION_URL?" +
+                "client_id=$clientId&" +
+                "redirect_uri=${android.net.Uri.encode(redirectUri)}&" +
+                "state=$state&" +
+                "scope=${android.net.Uri.encode(scope)}&" +
+                "code_challenge=$codeChallenge&" +
+                "code_challenge_method=S256"
+    }
+
+    /**
+     * Generates a random state parameter for CSRF protection.
+     */
+    private fun generateRandomState(): String {
+        val secureRandom = java.security.SecureRandom()
+        val bytes = ByteArray(16)
+        secureRandom.nextBytes(bytes)
+        return android.util.Base64.encodeToString(
+            bytes,
+            android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING
+        )
+    }
+
+    /**
      * Initiates device flow and returns a flow that polls for completion.
+     * LEGACY: Consider using initiateAuthCodeFlow() instead for better UX.
      *
      * @return Flow emitting DeviceFlowState updates
      */

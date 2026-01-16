@@ -1,7 +1,8 @@
 package com.builder.core.model.github
 
 /**
- * Sealed class representing device flow states for GitHub OAuth.
+ * Sealed class representing OAuth flow states for GitHub authentication.
+ * Supports both Device Flow (legacy) and Authorization Code Flow with PKCE.
  */
 sealed class DeviceFlowState {
     /**
@@ -10,7 +11,7 @@ sealed class DeviceFlowState {
     object Loading : DeviceFlowState()
 
     /**
-     * Waiting for user to authorize the device code.
+     * Waiting for user to authorize the device code (Device Flow).
      *
      * @param userCode The code the user needs to enter on GitHub.
      * @param verificationUri The URL where the user should enter the code.
@@ -20,6 +21,16 @@ sealed class DeviceFlowState {
         val userCode: String,
         val verificationUri: String,
         val expiresIn: Int
+    ) : DeviceFlowState()
+
+    /**
+     * Waiting for user to authorize in browser (Authorization Code Flow).
+     * Browser has been opened, waiting for user to complete authorization.
+     *
+     * @param authorizationUrl The URL the user is authorizing at.
+     */
+    data class WaitingForAuthorization(
+        val authorizationUrl: String
     ) : DeviceFlowState()
 
     /**

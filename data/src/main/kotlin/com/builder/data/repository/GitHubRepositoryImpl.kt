@@ -26,6 +26,10 @@ class GitHubRepositoryImpl @Inject constructor(
     private val httpClient: OkHttpClient
 ) : GitHubRepository {
 
+    override fun initiateAuthCodeFlow(): Flow<DeviceFlowState> {
+        return oauthManager.initiateAuthCodeFlow()
+    }
+
     override fun initiateDeviceFlow(): Flow<DeviceFlowState> {
         return oauthManager.initiateDeviceFlow()
     }
