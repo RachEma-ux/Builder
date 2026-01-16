@@ -101,3 +101,10 @@ kapt {
         option("-target", "17")
     }
 }
+
+// Force kapt tasks to use JVM target 17
+tasks.withType<org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask>().configureEach {
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
