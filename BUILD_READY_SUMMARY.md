@@ -45,7 +45,32 @@ gradle/wrapper/
 
 ---
 
-## 🚀 How to Build (On Your Local Machine)
+## ⚡ **IMPORTANT: Recommended Build Method**
+
+### ✅ **Use GitHub Actions (Automated - No Local Setup Required)**
+
+**Builder is designed to be built on GitHub Actions, not locally.**
+
+**Why GitHub Actions?**
+- ✅ No Android SDK/NDK setup required
+- ✅ Consistent build environment
+- ✅ Automatic dependency management
+- ✅ Works even with network restrictions
+- ✅ APK artifacts automatically stored (30-90 days)
+
+**How to Build:**
+1. Push code to GitHub (branches: `main`, `develop`, or `claude/**`)
+2. GitHub Actions automatically builds
+3. Download APK from Actions tab → Artifacts
+4. Install on device
+
+**👉 See [BUILD_AND_DEPLOY.md](BUILD_AND_DEPLOY.md) for complete GitHub Actions workflow.**
+
+---
+
+## 🛠️ Alternative: Build Locally (Optional)
+
+**⚠️ Only needed for:** Active Android Studio development (UI editing, debugging)
 
 ### Prerequisites
 
