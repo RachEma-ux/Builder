@@ -76,40 +76,64 @@ Builder allows you to:
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### ⚡ **IMPORTANT: Builds Happen on GitHub Actions (Not Locally!)**
 
-- Android Studio Hedgehog or later
-- JDK 17+
-- Android SDK API 34+
-- Android NDK r25+ (for native builds)
-- Gradle 8.2+
+**Builder uses GitHub Actions for all builds.** You do NOT need to build locally or install Android SDK/NDK on your machine.
 
 ### Building the App
 
-1. **Clone the repository:**
+#### ✅ **Recommended: GitHub Actions (Automated)**
+
+This is the **official and recommended** way to build Builder:
+
+1. **Push code to GitHub:**
+
+```bash
+git push origin your-branch-name
+```
+
+2. **GitHub Actions automatically builds** (triggers on push to `main`, `develop`, or `claude/**` branches):
+   - ✅ Sets up Android SDK
+   - ✅ Downloads all dependencies
+   - ✅ Runs tests
+   - ✅ Builds Debug APK
+   - ✅ Builds Release APK
+   - ✅ Runs Lint checks
+
+3. **Download APK from GitHub Actions:**
+   - Go to the [Actions tab](https://github.com/RachEma-ux/Builder/actions)
+   - Select your workflow run
+   - Download `builder-debug-apk` artifact (retained for 30 days)
+   - Or `builder-release-apk` for production (retained for 90 days)
+
+4. **Install on your Android device:**
+   - Transfer APK to phone and open it, OR
+   - Use `adb install app-debug.apk`
+
+**See [BUILD_AND_DEPLOY.md](BUILD_AND_DEPLOY.md) for detailed workflow diagrams.**
+
+---
+
+#### 🔧 Optional: Local Development Build
+
+**Only needed for:** Active development with Android Studio (code editing, debugging)
+
+**Prerequisites:**
+- Android Studio Hedgehog or later
+- JDK 17+
+- Android SDK API 34+
+- Gradle 8.2+
+- ⚠️ **Internet connection** (for dependency downloads)
+
+**Steps:**
 
 ```bash
 git clone https://github.com/RachEma-ux/Builder.git
 cd Builder
-```
-
-2. **Open in Android Studio:**
-
-Open the project in Android Studio and let it sync Gradle dependencies.
-
-3. **Build the project:**
-
-```bash
 ./gradlew build
 ```
 
-4. **Run on device/emulator:**
-
-```bash
-./gradlew installDebug
-```
-
-Or use Android Studio's Run button.
+**Note:** Local builds may fail in restricted network environments. **Use GitHub Actions instead.**
 
 ---
 

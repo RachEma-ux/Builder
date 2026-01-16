@@ -2,6 +2,39 @@
 
 Get Builder up and running in **30 minutes** (or less)!
 
+---
+
+## ⚡ **CHOOSE YOUR PATH:**
+
+### 🎯 **Path A: Just Want to Build & Test?** → Use GitHub Actions (5 minutes)
+
+**✅ Recommended for:** Testing, deploying, contributing code
+
+**You DON'T need:**
+- ❌ Android Studio installed
+- ❌ Android SDK/NDK setup
+- ❌ Local build environment
+- ❌ Gradle configuration
+
+**Steps:**
+1. Fork the repo on GitHub
+2. Make changes in any text editor
+3. Push to GitHub
+4. Download APK from GitHub Actions
+5. Install on device
+
+**👉 See [BUILD_AND_DEPLOY.md](BUILD_AND_DEPLOY.md) for complete instructions.**
+
+---
+
+### 🛠️ **Path B: Active Android Development?** → Android Studio Setup (30 minutes)
+
+**Only needed if:** You're actively developing UI, debugging, or need IDE features
+
+**Continue reading below for local development setup...**
+
+---
+
 ## 📋 Prerequisites
 
 ### Required
