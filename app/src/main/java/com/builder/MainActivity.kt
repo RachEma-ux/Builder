@@ -91,12 +91,17 @@ class MainActivity : ComponentActivity() {
                             val result = oauthManager.handleOAuthCallback(code, state)
                             Timber.i("OAuth callback result: $result")
                             runOnUiThread {
-                                Toast.makeText(this@MainActivity, "OAuth result: $result", Toast.LENGTH_LONG).show()
+                                val msg = when (result) {
+                                    is com.builder.core.model.github.DeviceFlowState.Success -> "Success! Authenticated."
+                                    is com.builder.core.model.github.DeviceFlowState.Error -> "Error: ${result.message}"
+                                    else -> "Result: $result"
+                                }
+                                Toast.makeText(this@MainActivity, msg, Toast.LENGTH_LONG).show()
                             }
                         } catch (e: Exception) {
                             Timber.e(e, "OAuth callback failed")
                             runOnUiThread {
-                                Toast.makeText(this@MainActivity, "OAuth failed: ${e.message}", Toast.LENGTH_LONG).show()
+                                Toast.makeText(this@MainActivity, "Exception: ${e.message}", Toast.LENGTH_LONG).show()
                             }
                         }
                     }
