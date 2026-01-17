@@ -27,9 +27,26 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            // Use environment variables for CI, fallback to debug keystore for local builds
+            val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${System.getProperty("user.home")}/.android/debug.keystore"
+            val keystorePass = System.getenv("KEYSTORE_PASSWORD") ?: "android"
+            val keyAliasName = System.getenv("KEY_ALIAS") ?: "androiddebugkey"
+            val keyPass = System.getenv("KEY_PASSWORD") ?: "android"
+
+            storeFile = file(keystorePath)
+            storePassword = keystorePass
+            keyAlias = keyAliasName
+            keyPassword = keyPass
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
