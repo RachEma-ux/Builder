@@ -162,8 +162,7 @@ class GitHubPacksViewModel @Inject constructor(
                                 )
                             )
                         }
-                        // Start checking authentication status
-                        checkAuthenticationPeriodically()
+                        // Auth state is now observed via observeAuthState() - no polling needed
                     }
                     is DeviceFlowState.Success -> {
                         _uiState.update {
@@ -179,37 +178,6 @@ class GitHubPacksViewModel @Inject constructor(
                             it.copy(authState = AuthState.Error(state.message))
                         }
                     }
-                }
-            }
-        }
-    }
-
-    /**
-     * Periodically checks authentication status after browser is opened.
-     * This helps detect when the OAuth callback completes.
-     */
-    private fun checkAuthenticationPeriodically() {
-        viewModelScope.launch {
-            // Poll for authentication every 2 seconds
-            repeat(30) { // Try for up to 60 seconds
-                kotlinx.coroutines.delay(2000)
-                if (gitHubRepository.isAuthenticated()) {
-                    _uiState.update {
-                        it.copy(
-                            authState = AuthState.Success,
-                            isAuthenticated = true
-                        )
-                    }
-                    loadRepositories()
-                    return@launch
-                }
-            }
-            // Timeout after 60 seconds
-            if (!gitHubRepository.isAuthenticated()) {
-                _uiState.update {
-                    it.copy(
-                        authState = AuthState.Error("Authorization timed out. Please try again.")
-                    )
                 }
             }
         }
