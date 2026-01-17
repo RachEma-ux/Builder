@@ -48,7 +48,7 @@ class PackInstaller @Inject constructor(
             Timber.i("Installing pack from: $downloadUrl")
 
             // Step 1: Download pack zip to temp directory
-            val tempDir = packStorage.getTempDir()
+            val tempDir = packStorage.createStagingDir()
             val packZipFile = File(tempDir, "pack.zip")
 
             downloadFile(downloadUrl, packZipFile).onFailure {
