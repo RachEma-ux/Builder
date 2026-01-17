@@ -71,15 +71,17 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease
 
-      - name: Rename APK
+      - name: Rename APK and generate checksums
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/Builder-v${VERSION}.apk
 
-          # Generate checksum
+          # Generate checksums
           cd app/build/outputs/apk/release
           sha256sum Builder-v${VERSION}.apk > Builder-v${VERSION}.apk.sha256
-          cat Builder-v${VERSION}.apk.sha256
+          sha256sum Builder-v${VERSION}.apk > checksums.sha256
+          echo "Generated checksums:"
+          cat checksums.sha256
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
@@ -88,6 +90,7 @@ jobs:
           path: |
             app/build/outputs/apk/release/Builder-v*.apk
             app/build/outputs/apk/release/Builder-v*.apk.sha256
+            app/build/outputs/apk/release/checksums.sha256
           retention-days: 90
 
       - name: Create GitHub Release
@@ -97,6 +100,7 @@ jobs:
           files: |
             app/build/outputs/apk/release/Builder-v*.apk
             app/build/outputs/apk/release/Builder-v*.apk.sha256
+            app/build/outputs/apk/release/checksums.sha256
           generate_release_notes: true
           body: |
             ## Builder v${{ steps.version.outputs.version }}
