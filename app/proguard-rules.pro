@@ -3,8 +3,12 @@
 # Keep Tink classes
 -keep class com.google.crypto.tink.** { *; }
 
-# Ignore missing error prone annotations (used by Tink)
+# Ignore missing dependencies (used by Tink)
 -dontwarn com.google.errorprone.annotations.**
+-dontwarn com.google.api.client.**
+-dontwarn org.joda.time.**
+-dontwarn javax.annotation.**
+-dontwarn org.checkerframework.**
 
 # Keep Retrofit
 -keepattributes Signature
