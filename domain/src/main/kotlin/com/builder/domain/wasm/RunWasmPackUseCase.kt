@@ -1,14 +1,13 @@
 package com.builder.domain.wasm
 
-import com.builder.core.model.ExecutionLog
 import com.builder.core.model.ExecutionStatus
 import com.builder.core.model.WasmExecutionResult
 import com.builder.core.model.WasmExecutionState
+import com.builder.core.model.github.WorkflowRun
 import com.builder.core.repository.GitHubRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -56,8 +55,6 @@ class RunWasmPackUseCase @Inject constructor(
             return@flow
         }
 
-        Timber.i("Workflow triggered successfully, waiting for run to start...")
-
         // Step 2: Wait a bit for the workflow to be registered
         delay(3000)
 
@@ -78,12 +75,11 @@ class RunWasmPackUseCase @Inject constructor(
             return@flow
         }
 
-        Timber.i("Found workflow run: ${latestRun.id}")
         emit(WasmExecutionState.Running(latestRun.id, "Workflow started..."))
 
         // Step 4: Poll for completion
         var pollAttempt = 0
-        var currentRun = latestRun
+        var currentRun: WorkflowRun = latestRun
 
         while (!currentRun.isComplete() && pollAttempt < MAX_POLL_ATTEMPTS) {
             delay(POLL_INTERVAL_MS)
@@ -99,8 +95,6 @@ class RunWasmPackUseCase @Inject constructor(
                 }
                 emit(WasmExecutionState.Running(currentRun.id, status))
             }
-
-            Timber.d("Poll attempt $pollAttempt: status=${currentRun.status}, conclusion=${currentRun.conclusion}")
         }
 
         if (!currentRun.isComplete()) {
@@ -120,7 +114,7 @@ class RunWasmPackUseCase @Inject constructor(
         owner: String,
         repo: String,
         runId: Long,
-        workflowRun: com.builder.core.model.github.WorkflowRun
+        workflowRun: WorkflowRun
     ): WasmExecutionResult {
         // Get artifacts
         val artifactsResult = gitHubRepository.listArtifacts(owner, repo, runId)
