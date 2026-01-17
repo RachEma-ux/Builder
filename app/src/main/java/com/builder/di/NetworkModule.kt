@@ -1,5 +1,7 @@
 package com.builder.di
 
+import com.builder.data.di.GitHubClient
+import com.builder.data.di.GitHubOAuthClient
 import com.builder.data.remote.github.AuthInterceptor
 import com.builder.data.remote.github.GitHubApiService
 import com.builder.data.remote.github.GitHubOAuthService
@@ -16,22 +18,7 @@ import timber.log.Timber
 import java.net.InetAddress
 import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
-import javax.inject.Qualifier
 import javax.inject.Singleton
-
-/**
- * Qualifier for GitHub API OkHttp client.
- */
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class GitHubClient
-
-/**
- * Qualifier for GitHub OAuth OkHttp client.
- */
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class GitHubOAuthClient
 
 /**
  * Hilt module for network dependencies.

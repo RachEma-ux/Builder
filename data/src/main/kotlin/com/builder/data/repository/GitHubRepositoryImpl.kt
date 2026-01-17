@@ -5,7 +5,7 @@ import com.builder.core.model.github.DeviceFlowState
 import com.builder.data.remote.github.GitHubApiService
 import com.builder.data.remote.github.GitHubOAuthManager
 import com.builder.core.model.github.*
-import com.builder.di.GitHubClient
+import com.builder.data.di.GitHubClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow

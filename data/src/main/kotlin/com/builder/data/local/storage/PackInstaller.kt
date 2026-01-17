@@ -8,7 +8,7 @@ import com.builder.core.util.NamingConventions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import com.builder.di.GitHubClient
+import com.builder.data.di.GitHubClient
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import timber.log.Timber
