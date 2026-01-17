@@ -271,8 +271,8 @@ Builder has **two distinct install modes** that are impossible to confuse:
 - [x] Health monitoring (CPU, memory, network)
 - [x] Secrets management UI (encrypted storage, CRUD)
 
-### Phase 6: Production Hardening ⚠️ ~75% Complete
-- [ ] Security audit
+### Phase 6: Production Hardening ⚠️ ~90% Complete
+- [x] Security audit (see SECURITY_AUDIT.md)
 - [ ] Performance optimization
 - [x] Error handling (user-friendly messages)
 - [x] Documentation (comprehensive)
@@ -286,7 +286,8 @@ Builder has **two distinct install modes** that are impossible to confuse:
 | Task | Priority | Status |
 |------|----------|--------|
 | Persistent KV store | Medium | ✅ Complete |
-| Security audit | Medium | Not started |
+| Security audit | Medium | ✅ Complete |
+| Performance optimization | Low | Not started |
 | UI polish (animations) | Low | Not started |
 | Increase test coverage | Low | 15% current |
 
@@ -314,6 +315,12 @@ Builder has **two distinct install modes** that are impossible to confuse:
   - RoomKvStore implementing KvStore interface
   - Database version 3 with automatic migration
   - Per-pack key-value persistence for workflow state
+- **Security audit complete:** Comprehensive review of OAuth, file ops, network, storage
+  - ✅ OAuth: PKCE, encrypted token storage, CSRF protection
+  - ✅ Files: Zip slip protection, checksum verification
+  - ✅ Network: HTTPS only, conditional debug logging
+  - ✅ Storage: AES-256-GCM encrypted secrets
+  - See SECURITY_AUDIT.md for full report
 
 ---
 

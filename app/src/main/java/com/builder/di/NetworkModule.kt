@@ -1,5 +1,6 @@
 package com.builder.di
 
+import com.builder.BuildConfig
 import com.builder.data.di.GitHubClient
 import com.builder.data.di.GitHubOAuthClient
 import com.builder.data.remote.github.AuthInterceptor
@@ -93,7 +94,12 @@ object NetworkModule {
         return HttpLoggingInterceptor { message ->
             Timber.tag("OkHttp").d(message)
         }.apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            // Use BODY level only in debug builds to prevent token leakage in release logs
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.BASIC
+            }
         }
     }
 
