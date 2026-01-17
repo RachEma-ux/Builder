@@ -52,6 +52,9 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         Timber.d("MainActivity onNewIntent: ${intent.data}")
 
+        // Update the intent so it can be processed
+        setIntent(intent)
+
         // Handle OAuth callback when activity is brought back to foreground
         handleOAuthCallback(intent)
     }
@@ -66,6 +69,9 @@ class MainActivity : ComponentActivity() {
         if (data != null && data.scheme == "builder" && data.host == "oauth") {
             Timber.i("Received OAuth callback: $data")
 
+            // Clear the intent data to prevent reprocessing
+            intent?.data = null
+
             val code = data.getQueryParameter("code")
             val state = data.getQueryParameter("state")
             val error = data.getQueryParameter("error")
@@ -77,15 +83,18 @@ class MainActivity : ComponentActivity() {
                     // Error will be handled by the UI
                 }
                 code != null && state != null -> {
-                    Timber.i("Processing OAuth authorization code")
+                    Timber.i("Processing OAuth authorization code: code=${code.take(10)}..., state=$state")
                     lifecycleScope.launch {
-                        val result = oauthManager.handleOAuthCallback(code, state)
-                        Timber.i("OAuth callback result: $result")
-                        // Result will be picked up by the GitHubPacksViewModel
+                        try {
+                            val result = oauthManager.handleOAuthCallback(code, state)
+                            Timber.i("OAuth callback result: $result")
+                        } catch (e: Exception) {
+                            Timber.e(e, "OAuth callback failed")
+                        }
                     }
                 }
                 else -> {
-                    Timber.w("Invalid OAuth callback - missing code or state")
+                    Timber.w("Invalid OAuth callback - missing code or state. URI: $data")
                 }
             }
         }
