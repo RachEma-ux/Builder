@@ -30,7 +30,7 @@ interface GitHubOAuthService {
          * WARNING: This should ideally not be in source code for production.
          * Consider using BuildConfig or a backend proxy for production deployments.
          */
-        const val CLIENT_SECRET = "d0210f779c71ccc874107f3751e5ee06c7e4d7b0"
+        const val CLIENT_SECRET = "21f7b66f9e7e11a97aeda7d5047d65841011d7c5"
     }
 
     /**
