@@ -132,6 +132,7 @@ class GitHubOAuthManager @Inject constructor(
             // Exchange code for token
             val tokenResponse = oauthService.exchangeCodeForToken(
                 clientId = GitHubOAuthService.CLIENT_ID,
+                clientSecret = GitHubOAuthService.CLIENT_SECRET,
                 code = code,
                 codeVerifier = codeVerifier,
                 redirectUri = REDIRECT_URI
