@@ -86,17 +86,16 @@ jobs:
           ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/25.2.9519653
           CARGO_PROFILE_RELEASE_LTO: thin
           CARGO_BUILD_JOBS: 2
+          RUSTFLAGS: "-C opt-level=s"
         run: |
           cd /tmp/wasmtime
-          # Build wasmtime-c-api with minimal features for Android
+          # Build wasmtime-c-api for Android with default features
           cargo ndk \
             --target aarch64-linux-android \
             --platform ${{ env.ANDROID_API_LEVEL }} \
             build \
             --release \
-            --package wasmtime-c-api \
-            --no-default-features \
-            --features "runtime"
+            --package wasmtime-c-api
 
       - name: Build Wasmtime for x86_64
         if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
@@ -104,6 +103,7 @@ jobs:
           ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/25.2.9519653
           CARGO_PROFILE_RELEASE_LTO: thin
           CARGO_BUILD_JOBS: 2
+          RUSTFLAGS: "-C opt-level=s"
         run: |
           cd /tmp/wasmtime
           cargo ndk \
@@ -111,9 +111,7 @@ jobs:
             --platform ${{ env.ANDROID_API_LEVEL }} \
             build \
             --release \
-            --package wasmtime-c-api \
-            --no-default-features \
-            --features "runtime"
+            --package wasmtime-c-api
 
       - name: Copy and strip libraries
         if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
