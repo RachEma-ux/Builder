@@ -51,10 +51,52 @@ class GitHubPacksViewModel @Inject constructor(
      */
     fun debugBypassAuth() {
         Timber.w("DEBUG: Bypassing OAuth authentication")
+        val mockOwner = Owner(
+            login = "demo-user",
+            id = 1L,
+            avatarUrl = "https://github.com/identicons/demo.png",
+            type = "User"
+        )
+        val mockRepos = listOf(
+            Repository(
+                id = 1L,
+                name = "sample-pack",
+                fullName = "demo-user/sample-pack",
+                owner = mockOwner,
+                description = "A sample Builder pack for testing",
+                htmlUrl = "https://github.com/demo-user/sample-pack",
+                defaultBranch = "main",
+                private = false,
+                updatedAt = "2024-01-01T00:00:00Z"
+            ),
+            Repository(
+                id = 2L,
+                name = "another-pack",
+                fullName = "demo-user/another-pack",
+                owner = mockOwner,
+                description = "Another example pack",
+                htmlUrl = "https://github.com/demo-user/another-pack",
+                defaultBranch = "main",
+                private = false,
+                updatedAt = "2024-01-01T00:00:00Z"
+            )
+        )
+        val mockBranches = listOf(
+            Branch(name = "main", commit = BranchCommit(sha = "abc123", url = ""), protected = false),
+            Branch(name = "develop", commit = BranchCommit(sha = "def456", url = ""), protected = false)
+        )
+        val mockTags = listOf(
+            Tag(name = "v1.0.0", commit = TagCommit(sha = "abc123", url = ""), zipball_url = "", tarball_url = ""),
+            Tag(name = "v0.9.0", commit = TagCommit(sha = "xyz789", url = ""), zipball_url = "", tarball_url = "")
+        )
         _uiState.update {
             it.copy(
                 isAuthenticated = true,
-                authState = AuthState.Success
+                authState = AuthState.Success,
+                repositories = mockRepos,
+                selectedRepo = mockRepos.first(),
+                branches = mockBranches,
+                tags = mockTags
             )
         }
     }
