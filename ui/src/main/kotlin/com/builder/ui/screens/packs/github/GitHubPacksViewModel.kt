@@ -325,16 +325,19 @@ class GitHubPacksViewModel @Inject constructor(
     }
 
     /**
-     * Gets a release by tag.
+     * Gets a release by tag and auto-loads checksums.
      */
     private fun getReleaseByTag(owner: String, repo: String, tag: String) {
         viewModelScope.launch {
             gitHubRepository.getReleaseByTag(owner, repo, tag).fold(
                 onSuccess = { release ->
-                    _uiState.update { it.copy(selectedRelease = release) }
+                    _uiState.update { it.copy(selectedRelease = release, checksums = emptyMap()) }
+                    // Auto-load checksums for better UX
+                    loadChecksums(release)
                 },
                 onFailure = { error ->
                     Timber.e(error, "Failed to get release for tag: $tag")
+                    _uiState.update { it.copy(error = "Failed to load release: ${error.message}") }
                 }
             )
         }

@@ -583,25 +583,26 @@ fun AssetInstallItem(
                     )
                 }
 
-                if (checksum != null) {
+                if (loadingChecksums) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Loading...", style = MaterialTheme.typography.bodySmall)
+                    }
+                } else if (checksum != null) {
                     Button(
                         onClick = { onInstall(checksum) },
                         enabled = !installing
                     ) {
                         Text("Install")
                     }
-                } else if (loadingChecksums) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Loading...", style = MaterialTheme.typography.bodySmall)
-                    }
                 } else {
+                    // No checksum available - show retry button
                     OutlinedButton(
                         onClick = onLoadChecksums,
                         enabled = !installing
                     ) {
-                        Text("Load Checksum")
+                        Text("Retry")
                     }
                 }
             }
