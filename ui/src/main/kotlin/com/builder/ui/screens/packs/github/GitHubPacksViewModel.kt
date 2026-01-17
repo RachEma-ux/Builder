@@ -34,6 +34,7 @@ class GitHubPacksViewModel @Inject constructor(
 
     init {
         checkAuthentication()
+        observeAuthState()
     }
 
     /**
@@ -42,6 +43,36 @@ class GitHubPacksViewModel @Inject constructor(
     private fun checkAuthentication() {
         _uiState.update {
             it.copy(isAuthenticated = gitHubRepository.isAuthenticated())
+        }
+    }
+
+    /**
+     * Observes auth state changes from OAuth callback.
+     * This ensures immediate UI update when OAuth completes.
+     */
+    private fun observeAuthState() {
+        viewModelScope.launch {
+            gitHubRepository.authState.collect { state ->
+                when (state) {
+                    is DeviceFlowState.Success -> {
+                        Timber.i("Auth state changed to Success")
+                        _uiState.update {
+                            it.copy(
+                                authState = AuthState.Success,
+                                isAuthenticated = true
+                            )
+                        }
+                        loadRepositories()
+                    }
+                    is DeviceFlowState.Error -> {
+                        Timber.e("Auth state changed to Error: ${state.message}")
+                        _uiState.update {
+                            it.copy(authState = AuthState.Error(state.message))
+                        }
+                    }
+                    else -> { /* Ignore other states */ }
+                }
+            }
         }
     }
 

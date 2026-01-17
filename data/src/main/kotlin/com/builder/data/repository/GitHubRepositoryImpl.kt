@@ -7,6 +7,7 @@ import com.builder.data.remote.github.GitHubOAuthManager
 import com.builder.core.model.github.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -25,6 +26,9 @@ class GitHubRepositoryImpl @Inject constructor(
     private val oauthManager: GitHubOAuthManager,
     private val httpClient: OkHttpClient
 ) : GitHubRepository {
+
+    override val authState: StateFlow<DeviceFlowState?>
+        get() = oauthManager.authState
 
     override fun initiateAuthCodeFlow(): Flow<DeviceFlowState> {
         return oauthManager.initiateAuthCodeFlow()

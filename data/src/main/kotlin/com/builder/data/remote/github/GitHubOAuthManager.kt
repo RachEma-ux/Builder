@@ -9,6 +9,9 @@ import com.builder.core.model.github.DeviceFlowState
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import timber.log.Timber
 import javax.inject.Inject
@@ -46,6 +49,13 @@ class GitHubOAuthManager @Inject constructor(
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
+
+    /**
+     * Observable auth state that emits when authentication status changes.
+     * ViewModel can observe this to react immediately to OAuth callback completion.
+     */
+    private val _authState = MutableStateFlow<DeviceFlowState?>(null)
+    val authState: StateFlow<DeviceFlowState?> = _authState.asStateFlow()
 
     /**
      * Initiates Authorization Code Flow with PKCE.
@@ -152,11 +162,15 @@ class GitHubOAuthManager @Inject constructor(
             }
 
             Timber.i("Successfully obtained access token via authorization code flow")
-            DeviceFlowState.Success(token)
+            val successState = DeviceFlowState.Success(token)
+            _authState.value = successState
+            successState
 
         } catch (e: Exception) {
             Timber.e(e, "Error handling OAuth callback")
-            DeviceFlowState.Error(e.message ?: "Unknown error")
+            val errorState = DeviceFlowState.Error(e.message ?: "Unknown error")
+            _authState.value = errorState
+            errorState
         }
     }
 

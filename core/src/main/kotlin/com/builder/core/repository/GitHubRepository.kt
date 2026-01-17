@@ -2,11 +2,18 @@ package com.builder.core.repository
 
 import com.builder.core.model.github.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Repository interface for GitHub operations.
  */
 interface GitHubRepository {
+    /**
+     * Observable auth state that emits when authentication status changes.
+     * Observe this to react immediately to OAuth callback completion.
+     */
+    val authState: StateFlow<DeviceFlowState?>
+
     /**
      * Initiates OAuth authorization code flow with PKCE.
      * Opens browser and waits for callback via deep link.
