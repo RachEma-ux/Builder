@@ -241,18 +241,18 @@ Builder has **two distinct install modes** that are impossible to confuse:
 
 ### Phase 4: Runtimes 🔄 In Progress (Revised)
 
-**4A: Simplify Workflow**
-- [ ] Remove Android Wasmtime cross-compilation from CI
-- [ ] Add Wasmtime Linux installation step
-- [ ] Add WASM execution step with output capture
-- [ ] Create test WASM pack (hello world)
-- [ ] Test complete workflow end-to-end
+**4A: Simplify Workflow ✅ Complete**
+- [x] Remove Android Wasmtime cross-compilation from CI
+- [x] Add Wasmtime Linux installation step
+- [x] Add WASM execution step with output capture
+- [x] Create test WASM pack (hello world)
+- [x] Test complete workflow end-to-end
 
-**4B: Capture Results**
-- [ ] Upload execution results as artifact
-- [ ] User downloads artifact and tests locally
+**4B: Capture Results ✅ Complete**
+- [x] Upload execution results as artifact
+- [x] User downloads artifact and tests locally
 
-**4C: App Integration**
+**4C: App Integration** ⏳ Pending
 - [x] Workflow execution engine (on phone)
 - [x] Permission enforcement
 - [x] Progress tracking and cancellation
@@ -283,9 +283,7 @@ Builder has **two distinct install modes** that are impossible to confuse:
 
 | Task | Priority | Status |
 |------|----------|--------|
-| Implement GitHub WASM runtime (Phase 4A) | High | Next up |
-| Capture results as artifacts (Phase 4B) | High | Pending |
-| App integration for WASM runs (Phase 4C) | Medium | Pending |
+| App integration for WASM runs (Phase 4C) | High | Next up |
 | Secrets management UI | Medium | Not started |
 | Persistent KV store | Medium | Not started |
 | Security audit | Medium | Not started |
@@ -298,6 +296,9 @@ Builder has **two distinct install modes** that are impossible to confuse:
 - Install button appears directly after checksums load
 - Better error messages for missing releases
 - **Strategic pivot:** WASM runtime moved from Android to GitHub Actions
+- **Phase 4A Complete:** GitHub Actions now runs WASM packs (Wasmtime on Linux)
+- **Phase 4B Complete:** Execution results uploaded as downloadable artifacts
+- **Verified:** "Hello from Builder WASM Runtime!" executed successfully
 
 ---
 
