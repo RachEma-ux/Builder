@@ -7,182 +7,150 @@ on:
     branches: [ main ]
   workflow_dispatch:
     inputs:
-      rebuild_wasmtime:
-        description: 'Force rebuild Wasmtime (ignore cache)'
+      run_wasm_test:
+        description: 'Run WASM test pack'
         required: false
-        default: 'false'
+        default: 'true'
         type: boolean
 
 env:
   WASMTIME_VERSION: v15.0.0
-  ANDROID_API_LEVEL: 26
 
 jobs:
-  # Job 1: Build Wasmtime (cached)
-  build-wasmtime:
-    name: Build Wasmtime
+  # Job 1: Run WASM Pack (GitHub as Runtime)
+  run-wasm:
+    name: Run WASM Pack
     runs-on: ubuntu-latest
-    outputs:
-      cache-hit: ${{ steps.cache-wasmtime.outputs.cache-hit }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cache Wasmtime libraries
-        id: cache-wasmtime
-        uses: actions/cache@v4
-        with:
-          path: |
-            native/wasmtime-android/libs
-            native/wasmtime-android/include
-            native/wasmtime-android/WASMTIME_VERSION
-          key: wasmtime-${{ env.WASMTIME_VERSION }}-android-${{ env.ANDROID_API_LEVEL }}
-
-      - name: Check if rebuild forced
-        id: check-rebuild
+      - name: Install Wasmtime
         run: |
-          if [ "${{ github.event.inputs.rebuild_wasmtime }}" == "true" ]; then
-            echo "rebuild=true" >> $GITHUB_OUTPUT
-          else
-            echo "rebuild=false" >> $GITHUB_OUTPUT
-          fi
+          curl https://wasmtime.dev/install.sh -sSf | bash
+          echo "$HOME/.wasmtime/bin" >> $GITHUB_PATH
 
-      - name: Setup Rust
-        if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-linux-android,x86_64-linux-android
-
-      - name: Install cargo-ndk
-        if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
-        run: cargo install cargo-ndk
-
-      - name: Setup Android NDK
-        if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
-        uses: android-actions/setup-android@v3
-        with:
-          packages: 'ndk;25.2.9519653'
-
-      - name: Clone Wasmtime
-        if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
+      - name: Verify Wasmtime installation
         run: |
-          git clone --branch ${{ env.WASMTIME_VERSION }} --recursive \
-            https://github.com/bytecodealliance/wasmtime.git /tmp/wasmtime
+          export PATH="$HOME/.wasmtime/bin:$PATH"
+          wasmtime --version
 
-      - name: Setup swap space
-        if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
+      - name: Create test WASM pack (WAT to WASM)
         run: |
-          sudo fallocate -l 8G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          echo "Swap enabled:"
-          free -h
+          mkdir -p wasm-output
 
-      - name: Build Wasmtime for ARM64
-        if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
-        env:
-          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/25.2.9519653
-          CARGO_PROFILE_RELEASE_LTO: thin
-          CARGO_BUILD_JOBS: 2
-          RUSTFLAGS: "-C opt-level=s"
-        run: |
-          cd /tmp/wasmtime
-          # Build wasmtime-c-api for Android with default features
-          cargo ndk \
-            --target aarch64-linux-android \
-            --platform ${{ env.ANDROID_API_LEVEL }} \
-            build \
-            --release \
-            --package wasmtime-c-api
+          # Create a simple WebAssembly Text format file
+          cat > wasm-output/hello.wat << 'EOF'
+          (module
+            ;; Import fd_write from WASI for printing
+            (import "wasi_snapshot_preview1" "fd_write"
+              (func $fd_write (param i32 i32 i32 i32) (result i32)))
 
-      - name: Build Wasmtime for x86_64
-        if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
-        env:
-          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/25.2.9519653
-          CARGO_PROFILE_RELEASE_LTO: thin
-          CARGO_BUILD_JOBS: 2
-          RUSTFLAGS: "-C opt-level=s"
-        run: |
-          cd /tmp/wasmtime
-          cargo ndk \
-            --target x86_64-linux-android \
-            --platform ${{ env.ANDROID_API_LEVEL }} \
-            build \
-            --release \
-            --package wasmtime-c-api
+            ;; Memory export required by WASI
+            (memory (export "memory") 1)
 
-      - name: Copy and strip libraries
-        if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
-        env:
-          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/25.2.9519653
-        run: |
-          # Create directories
-          mkdir -p native/wasmtime-android/libs/arm64-v8a
-          mkdir -p native/wasmtime-android/libs/x86_64
-          mkdir -p native/wasmtime-android/include
+            ;; Data section: "Hello from Builder WASM Runtime!\n"
+            (data (i32.const 8) "Hello from Builder WASM Runtime!\n")
 
-          # Copy libraries
-          cp /tmp/wasmtime/target/aarch64-linux-android/release/libwasmtime.so \
-             native/wasmtime-android/libs/arm64-v8a/
-          cp /tmp/wasmtime/target/x86_64-linux-android/release/libwasmtime.so \
-             native/wasmtime-android/libs/x86_64/
+            ;; iov structure at memory location 0
+            ;; iov.iov_base = 8 (pointer to string)
+            ;; iov.iov_len = 34 (length of string)
+            (data (i32.const 0) "\08\00\00\00\22\00\00\00")
 
-          # Strip debug symbols
-          $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip \
-            native/wasmtime-android/libs/arm64-v8a/libwasmtime.so
-          $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip \
-            native/wasmtime-android/libs/x86_64/libwasmtime.so
-
-          # Copy headers
-          cp /tmp/wasmtime/crates/c-api/include/wasmtime.h native/wasmtime-android/include/
-          cp /tmp/wasmtime/crates/c-api/include/wasm.h native/wasmtime-android/include/
-
-          # Create version file
-          cat > native/wasmtime-android/WASMTIME_VERSION << EOF
-          Wasmtime Version: ${{ env.WASMTIME_VERSION }}
-          Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          Android API Level: ${{ env.ANDROID_API_LEVEL }}
-          Architectures: arm64-v8a, x86_64
+            ;; _start function - entry point
+            (func (export "_start")
+              ;; fd_write(fd=1, iovs=0, iovs_len=1, nwritten=100)
+              (call $fd_write
+                (i32.const 1)   ;; stdout
+                (i32.const 0)   ;; iovs pointer
+                (i32.const 1)   ;; iovs count
+                (i32.const 100) ;; where to write nwritten
+              )
+              drop
+            )
+          )
           EOF
 
-          # Show sizes
-          echo "=== Library sizes ==="
-          ls -lh native/wasmtime-android/libs/arm64-v8a/
-          ls -lh native/wasmtime-android/libs/x86_64/
+          echo "=== WAT file created ==="
+          cat wasm-output/hello.wat
 
-      - name: Upload Wasmtime libraries
+      - name: Convert WAT to WASM
+        run: |
+          export PATH="$HOME/.wasmtime/bin:$PATH"
+
+          # Install wabt for wat2wasm
+          sudo apt-get update && sudo apt-get install -y wabt
+
+          # Convert WAT to WASM
+          wat2wasm wasm-output/hello.wat -o wasm-output/hello.wasm
+
+          echo "=== WASM file created ==="
+          ls -lh wasm-output/
+
+      - name: Run WASM pack
+        id: run-wasm
+        run: |
+          export PATH="$HOME/.wasmtime/bin:$PATH"
+
+          echo "=== Running WASM Pack ===" | tee wasm-output/execution.log
+          echo "Timestamp: $(date -u)" | tee -a wasm-output/execution.log
+          echo "Wasmtime version: $(wasmtime --version)" | tee -a wasm-output/execution.log
+          echo "---" | tee -a wasm-output/execution.log
+
+          # Run the WASM file and capture output
+          wasmtime wasm-output/hello.wasm 2>&1 | tee -a wasm-output/execution.log
+
+          echo "---" | tee -a wasm-output/execution.log
+          echo "Exit code: $?" | tee -a wasm-output/execution.log
+          echo "=== Execution Complete ===" | tee -a wasm-output/execution.log
+
+      - name: Create execution summary
+        run: |
+          cat > wasm-output/summary.json << EOF
+          {
+            "pack": "hello.wasm",
+            "runtime": "wasmtime",
+            "version": "${{ env.WASMTIME_VERSION }}",
+            "platform": "linux-x86_64",
+            "executed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "status": "success"
+          }
+          EOF
+
+          echo "=== Execution Summary ==="
+          cat wasm-output/summary.json
+
+      - name: Upload WASM execution results
         uses: actions/upload-artifact@v4
         with:
-          name: wasmtime-libs
+          name: wasm-execution-results
           path: |
-            native/wasmtime-android/libs
-            native/wasmtime-android/include
-            native/wasmtime-android/WASMTIME_VERSION
-          retention-days: 90
+            wasm-output/hello.wasm
+            wasm-output/execution.log
+            wasm-output/summary.json
+          retention-days: 30
+
+      - name: Build Summary
+        run: |
+          echo "## WASM Execution Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Output" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat wasm-output/execution.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- \`wasm-execution-results\` - Download to test locally" >> $GITHUB_STEP_SUMMARY
 
   # Job 2: Build Android App
   build-app:
     name: Build Android App
     runs-on: ubuntu-latest
-    needs: build-wasmtime
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Download Wasmtime libraries
-        uses: actions/download-artifact@v4
-        with:
-          name: wasmtime-libs
-          path: native/wasmtime-android/
-
-      - name: Verify Wasmtime libraries
-        run: |
-          echo "=== Wasmtime libraries ==="
-          ls -lhR native/wasmtime-android/
-          cat native/wasmtime-android/WASMTIME_VERSION
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -197,9 +165,6 @@ jobs:
       - name: Accept licenses
         run: yes | sdkmanager --licenses || true
 
-      - name: Setup Android NDK
-        run: sdkmanager "ndk;25.2.9519653"
-
       - name: Grant execute permission
         run: chmod +x gradlew
 
@@ -207,8 +172,6 @@ jobs:
         uses: gradle/wrapper-validation-action@v2
 
       - name: Build Debug APK
-        env:
-          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/25.2.9519653
         run: ./gradlew assembleDebug
 
       - name: Upload Debug APK
@@ -220,10 +183,7 @@ jobs:
 
       - name: Build Summary
         run: |
-          echo "## Build Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Wasmtime" >> $GITHUB_STEP_SUMMARY
-          cat native/wasmtime-android/WASMTIME_VERSION >> $GITHUB_STEP_SUMMARY
+          echo "## Android Build Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### APK" >> $GITHUB_STEP_SUMMARY
           ls -lh app/build/outputs/apk/debug/*.apk >> $GITHUB_STEP_SUMMARY

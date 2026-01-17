@@ -200,6 +200,21 @@ Builder has **two distinct install modes** that are impossible to confuse:
 
 **Last Updated**: 2026-01-17
 
+### 🔄 Strategic Pivot: GitHub as Runtime
+
+**Original approach:** Phone = Runtime + UI, GitHub = Builder only
+**New approach:** GitHub = Builder + Runtime, Phone = UI/Dashboard
+
+**Why:** Cross-compiling Wasmtime for Android proved complex and error-prone. Running WASM on GitHub Actions is simpler, works immediately, and still achieves the "build → run → view results" experience.
+
+**Trade-offs:**
+- ✅ No native compilation needed
+- ✅ Works immediately
+- ⚠️ Requires internet connection
+- ⚠️ GitHub Actions usage limits apply
+
+---
+
 ### Phase 1: Core Infrastructure ✅ Complete
 - [x] Android app scaffold
 - [x] Core models (PackManifest, PackIndex, etc.)
@@ -224,11 +239,25 @@ Builder has **two distinct install modes** that are impossible to confuse:
 - [x] Zip slip vulnerability protection
 - [x] Naming convention validation
 
-### Phase 4: Runtimes ⚠️ Partial
-- [ ] WASM execution (Wasmtime integration) — **Blocked: needs native library build**
-- [x] Workflow execution engine
+### Phase 4: Runtimes 🔄 In Progress (Revised)
+
+**4A: Simplify Workflow**
+- [ ] Remove Android Wasmtime cross-compilation from CI
+- [ ] Add Wasmtime Linux installation step
+- [ ] Add WASM execution step with output capture
+- [ ] Create test WASM pack (hello world)
+- [ ] Test complete workflow end-to-end
+
+**4B: Capture Results**
+- [ ] Upload execution results as artifact
+- [ ] User downloads artifact and tests locally
+
+**4C: App Integration**
+- [x] Workflow execution engine (on phone)
 - [x] Permission enforcement
 - [x] Progress tracking and cancellation
+- [ ] Phone app triggers WASM runs via GitHub API
+- [ ] Phone app displays execution results/logs
 
 ### Phase 5: UI/UX ✅ ~90% Complete
 - [x] IBM-style sidebar navigation
@@ -254,18 +283,21 @@ Builder has **two distinct install modes** that are impossible to confuse:
 
 | Task | Priority | Status |
 |------|----------|--------|
-| Build Wasmtime for Android | High | Blocked (needs Rust toolchain) |
+| Implement GitHub WASM runtime (Phase 4A) | High | Next up |
+| Capture results as artifacts (Phase 4B) | High | Pending |
+| App integration for WASM runs (Phase 4C) | Medium | Pending |
 | Secrets management UI | Medium | Not started |
 | Persistent KV store | Medium | Not started |
 | Security audit | Medium | Not started |
 | UI polish (animations) | Low | Not started |
 | Increase test coverage | Low | 15% current |
 
-### ✅ Recent Fixes (2026-01-17)
+### ✅ Recent Updates (2026-01-17)
 - Fixed Production tab 404 error when tag has no release
 - Auto-load checksums when selecting a release
 - Install button appears directly after checksums load
 - Better error messages for missing releases
+- **Strategic pivot:** WASM runtime moved from Android to GitHub Actions
 
 ---
 
