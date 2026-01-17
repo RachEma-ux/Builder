@@ -261,7 +261,7 @@ Builder has **two distinct install modes** that are impossible to confuse:
 - [x] WASM Run screen with repository/branch selection
 - [x] Bottom navigation bar for screen switching
 
-### Phase 5: UI/UX ✅ ~90% Complete
+### Phase 5: UI/UX ✅ Complete
 - [x] IBM-style sidebar navigation
 - [x] GitHub Packs screen (Dev/Prod tabs)
 - [x] Production tab: auto-load checksums, Install button
@@ -269,7 +269,7 @@ Builder has **two distinct install modes** that are impossible to confuse:
 - [x] Instance management screen
 - [x] Logs viewer with filtering/search
 - [x] Health monitoring (CPU, memory, network)
-- [ ] Secrets management UI
+- [x] Secrets management UI (encrypted storage, CRUD)
 
 ### Phase 6: Production Hardening ⚠️ ~60% Complete
 - [ ] Security audit
@@ -285,7 +285,6 @@ Builder has **two distinct install modes** that are impossible to confuse:
 
 | Task | Priority | Status |
 |------|----------|--------|
-| Secrets management UI | Medium | Not started |
 | Persistent KV store | Medium | Not started |
 | Security audit | Medium | Not started |
 | UI polish (animations) | Low | Not started |
@@ -306,6 +305,10 @@ Builder has **two distinct install modes** that are impossible to confuse:
   - Real-time execution status with polling
   - Execution history display
   - Bottom navigation bar for app-wide navigation
+- **Phase 5 Complete:** Secrets management UI
+  - Add/edit/delete secrets with encrypted storage (AES-256)
+  - Secrets stored using Android EncryptedSharedPreferences
+  - Integration with pack requiredEnv for runtime access
 
 ---
 

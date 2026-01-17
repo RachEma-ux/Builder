@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -140,7 +141,8 @@ sealed class BottomNavItem(
     val label: String
 ) {
     object GitHubPacks : BottomNavItem(Screen.GitHubPacks.route, Icons.Default.Cloud, "Packs")
-    object WasmRun : BottomNavItem(Screen.WasmRun.route, Icons.Default.PlayCircle, "WASM Run")
+    object WasmRun : BottomNavItem(Screen.WasmRun.route, Icons.Default.PlayCircle, "Run")
+    object Secrets : BottomNavItem(Screen.Secrets.route, Icons.Default.VpnKey, "Secrets")
     object Instances : BottomNavItem(Screen.Instances.route, Icons.Default.Inventory, "Instances")
 }
 
@@ -153,6 +155,7 @@ fun BuilderApp() {
     val bottomNavItems = listOf(
         BottomNavItem.GitHubPacks,
         BottomNavItem.WasmRun,
+        BottomNavItem.Secrets,
         BottomNavItem.Instances
     )
 

@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.builder.ui.screens.instances.InstancesScreen
 import com.builder.ui.screens.packs.github.GitHubPacksScreen
+import com.builder.ui.screens.secrets.SecretsScreen
 import com.builder.ui.screens.wasm.WasmRunScreen
 
 /**
@@ -17,6 +18,7 @@ sealed class Screen(val route: String) {
     object GitHubPacks : Screen("github_packs")
     object Instances : Screen("instances")
     object WasmRun : Screen("wasm_run")
+    object Secrets : Screen("secrets")
     object Logs : Screen("logs")
     object Health : Screen("health")
 }
@@ -45,6 +47,10 @@ fun BuilderNavHost(
 
         composable(Screen.WasmRun.route) {
             WasmRunScreen()
+        }
+
+        composable(Screen.Secrets.route) {
+            SecretsScreen()
         }
 
         // TODO: Add Logs and Health screens when implemented
