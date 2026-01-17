@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.builder.core.model.InstallMode
 import com.builder.core.model.InstallSource
 import com.builder.core.repository.GitHubRepository
-import com.builder.data.remote.github.DeviceFlowState
-import com.builder.data.remote.github.models.*
+import com.builder.core.model.github.DeviceFlowState
+import com.builder.core.model.github.*
 import com.builder.domain.github.ListRepositoriesUseCase
 import com.builder.domain.pack.InstallPackUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,6 +34,7 @@ class GitHubPacksViewModel @Inject constructor(
 
     init {
         checkAuthentication()
+        observeAuthState()
     }
 
     /**
@@ -42,6 +43,92 @@ class GitHubPacksViewModel @Inject constructor(
     private fun checkAuthentication() {
         _uiState.update {
             it.copy(isAuthenticated = gitHubRepository.isAuthenticated())
+        }
+    }
+
+    /**
+     * Observes auth state changes from OAuth callback.
+     * This ensures immediate UI update when OAuth completes.
+     */
+    private fun observeAuthState() {
+        viewModelScope.launch {
+            gitHubRepository.authState.collect { state ->
+                when (state) {
+                    is DeviceFlowState.Success -> {
+                        Timber.i("Auth state changed to Success")
+                        _uiState.update {
+                            it.copy(
+                                authState = AuthState.Success,
+                                isAuthenticated = true
+                            )
+                        }
+                        loadRepositories()
+                    }
+                    is DeviceFlowState.Error -> {
+                        Timber.e("Auth state changed to Error: ${state.message}")
+                        _uiState.update {
+                            it.copy(authState = AuthState.Error(state.message))
+                        }
+                    }
+                    else -> { /* Ignore other states */ }
+                }
+            }
+        }
+    }
+
+    /**
+     * Debug bypass for OAuth - allows testing app without network.
+     * Only for development/testing purposes.
+     */
+    fun debugBypassAuth() {
+        Timber.w("DEBUG: Bypassing OAuth authentication")
+        val mockOwner = Owner(
+            login = "demo-user",
+            id = 1L,
+            avatarUrl = "https://github.com/identicons/demo.png",
+            type = "User"
+        )
+        val mockRepos = listOf(
+            Repository(
+                id = 1L,
+                name = "sample-pack",
+                fullName = "demo-user/sample-pack",
+                owner = mockOwner,
+                description = "A sample Builder pack for testing",
+                htmlUrl = "https://github.com/demo-user/sample-pack",
+                defaultBranch = "main",
+                private = false,
+                updatedAt = "2024-01-01T00:00:00Z"
+            ),
+            Repository(
+                id = 2L,
+                name = "another-pack",
+                fullName = "demo-user/another-pack",
+                owner = mockOwner,
+                description = "Another example pack",
+                htmlUrl = "https://github.com/demo-user/another-pack",
+                defaultBranch = "main",
+                private = false,
+                updatedAt = "2024-01-01T00:00:00Z"
+            )
+        )
+        val mockBranches = listOf(
+            Branch(name = "main", commit = BranchCommit(sha = "abc123", url = ""), protected = false),
+            Branch(name = "develop", commit = BranchCommit(sha = "def456", url = ""), protected = false)
+        )
+        val mockTags = listOf(
+            Tag(name = "v1.0.0", commit = TagCommit(sha = "abc123", url = ""), zipball_url = "", tarball_url = ""),
+            Tag(name = "v0.9.0", commit = TagCommit(sha = "xyz789", url = ""), zipball_url = "", tarball_url = "")
+        )
+        _uiState.update {
+            it.copy(
+                isAuthenticated = true,
+                authState = AuthState.Success,
+                repositories = mockRepos,
+                selectedRepo = mockRepos.first(),
+                branches = mockBranches,
+                tags = mockTags
+            )
         }
     }
 
@@ -75,8 +162,7 @@ class GitHubPacksViewModel @Inject constructor(
                                 )
                             )
                         }
-                        // Start checking authentication status
-                        checkAuthenticationPeriodically()
+                        // Auth state is now observed via observeAuthState() - no polling needed
                     }
                     is DeviceFlowState.Success -> {
                         _uiState.update {
@@ -92,37 +178,6 @@ class GitHubPacksViewModel @Inject constructor(
                             it.copy(authState = AuthState.Error(state.message))
                         }
                     }
-                }
-            }
-        }
-    }
-
-    /**
-     * Periodically checks authentication status after browser is opened.
-     * This helps detect when the OAuth callback completes.
-     */
-    private fun checkAuthenticationPeriodically() {
-        viewModelScope.launch {
-            // Poll for authentication every 2 seconds
-            repeat(30) { // Try for up to 60 seconds
-                kotlinx.coroutines.delay(2000)
-                if (gitHubRepository.isAuthenticated()) {
-                    _uiState.update {
-                        it.copy(
-                            authState = AuthState.Success,
-                            isAuthenticated = true
-                        )
-                    }
-                    loadRepositories()
-                    return@launch
-                }
-            }
-            // Timeout after 60 seconds
-            if (!gitHubRepository.isAuthenticated()) {
-                _uiState.update {
-                    it.copy(
-                        authState = AuthState.Error("Authorization timed out. Please try again.")
-                    )
                 }
             }
         }
@@ -259,29 +314,23 @@ class GitHubPacksViewModel @Inject constructor(
 
     /**
      * Selects a tag (for Production mode).
+     * Looks up the release from already-loaded releases list.
      */
     fun selectTag(tag: Tag) {
-        _uiState.update { it.copy(selectedTag = tag) }
+        _uiState.update { it.copy(selectedTag = tag, selectedRelease = null, checksums = emptyMap()) }
 
-        // Get release for this tag
-        _uiState.value.selectedRepo?.let { repo ->
-            getReleaseByTag(repo.owner.login, repo.name, tag.name)
-        }
-    }
+        // Find release matching this tag from already-loaded releases
+        val release = _uiState.value.releases.find { it.tagName == tag.name }
 
-    /**
-     * Gets a release by tag.
-     */
-    private fun getReleaseByTag(owner: String, repo: String, tag: String) {
-        viewModelScope.launch {
-            gitHubRepository.getReleaseByTag(owner, repo, tag).fold(
-                onSuccess = { release ->
-                    _uiState.update { it.copy(selectedRelease = release) }
-                },
-                onFailure = { error ->
-                    Timber.e(error, "Failed to get release for tag: $tag")
-                }
-            )
+        if (release != null) {
+            _uiState.update { it.copy(selectedRelease = release) }
+            // Auto-load checksums for better UX
+            loadChecksums(release)
+        } else {
+            // Tag exists but no GitHub Release was created for it
+            _uiState.update {
+                it.copy(error = "No release found for tag '${tag.name}'. Create a GitHub Release from this tag to install packs.")
+            }
         }
     }
 
@@ -373,6 +422,67 @@ class GitHubPacksViewModel @Inject constructor(
     }
 
     /**
+     * Loads checksums from the checksums.sha256 release asset.
+     * Format: "<sha256>  <filename>" (two spaces separator)
+     */
+    fun loadChecksums(release: Release) {
+        val checksumAsset = release.getChecksums()
+        if (checksumAsset == null) {
+            _uiState.update {
+                it.copy(error = "No checksums.sha256 file found in release")
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(loadingChecksums = true) }
+
+            gitHubRepository.downloadFile(checksumAsset.browserDownloadUrl).fold(
+                onSuccess = { content ->
+                    val checksumMap = parseChecksumFile(content)
+                    _uiState.update {
+                        it.copy(
+                            checksums = checksumMap,
+                            loadingChecksums = false
+                        )
+                    }
+                    Timber.i("Loaded ${checksumMap.size} checksums")
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Failed to load checksums")
+                    _uiState.update {
+                        it.copy(
+                            loadingChecksums = false,
+                            error = "Failed to load checksums: ${error.message}"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    /**
+     * Parses checksums.sha256 file content.
+     * Format: "<sha256>  <filename>" (two spaces separator per sha256sum standard)
+     */
+    private fun parseChecksumFile(content: String): Map<String, String> {
+        return content.lines()
+            .filter { it.isNotBlank() }
+            .mapNotNull { line ->
+                // Format: "sha256  filename" or "sha256 *filename" (binary mode)
+                val parts = line.split(Regex("\\s+"), limit = 2)
+                if (parts.size == 2) {
+                    val checksum = parts[0]
+                    val filename = parts[1].removePrefix("*") // Remove binary mode indicator
+                    filename to checksum
+                } else {
+                    null
+                }
+            }
+            .toMap()
+    }
+
+    /**
      * Clears error message.
      */
     fun clearError() {
@@ -397,6 +507,8 @@ data class GitHubPacksUiState(
     val workflowRuns: List<WorkflowRun> = emptyList(),
     val releases: List<Release> = emptyList(),
     val selectedRelease: Release? = null,
+    val checksums: Map<String, String> = emptyMap(),
+    val loadingChecksums: Boolean = false,
     val installing: Boolean = false,
     val installSuccess: String? = null,
     val error: String? = null

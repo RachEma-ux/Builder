@@ -8,6 +8,7 @@ import com.builder.core.util.NamingConventions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import com.builder.data.di.GitHubClient
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import timber.log.Timber
@@ -24,7 +25,7 @@ import javax.inject.Singleton
 @Singleton
 class PackInstaller @Inject constructor(
     private val packStorage: PackStorage,
-    private val httpClient: OkHttpClient
+    @GitHubClient private val httpClient: OkHttpClient
 ) {
     private val json = Json {
         ignoreUnknownKeys = true
@@ -48,7 +49,7 @@ class PackInstaller @Inject constructor(
             Timber.i("Installing pack from: $downloadUrl")
 
             // Step 1: Download pack zip to temp directory
-            val tempDir = packStorage.getTempDir()
+            val tempDir = packStorage.createStagingDir()
             val packZipFile = File(tempDir, "pack.zip")
 
             downloadFile(downloadUrl, packZipFile).onFailure {

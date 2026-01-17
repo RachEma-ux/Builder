@@ -4,10 +4,12 @@ import com.builder.core.repository.GitHubRepository
 import com.builder.core.repository.InstanceRepository
 import com.builder.core.repository.LogRepository
 import com.builder.core.repository.PackRepository
+import com.builder.core.repository.SecretRepository
 import com.builder.data.instance.InstanceManager
 import com.builder.data.repository.GitHubRepositoryImpl
 import com.builder.data.repository.LogRepositoryImpl
 import com.builder.data.repository.PackRepositoryImpl
+import com.builder.data.repository.SecretRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -47,4 +49,10 @@ abstract class RepositoryModule {
     abstract fun bindLogRepository(
         impl: LogRepositoryImpl
     ): LogRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSecretRepository(
+        impl: SecretRepositoryImpl
+    ): SecretRepository
 }

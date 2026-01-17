@@ -22,7 +22,15 @@ interface GitHubOAuthService {
          * For production deployments, consider using BuildConfig.
          * See docs/GITHUB_OAUTH_SETUP.md Section 2.2 for BuildConfig approach.
          */
-        const val CLIENT_ID = "Ov23li1oiyTmHw29pwBs" // ✅ Configured
+        const val CLIENT_ID = "Ov23li1oiyTmHw29pwBs"
+
+        /**
+         * GitHub OAuth Client Secret
+         *
+         * WARNING: This should ideally not be in source code for production.
+         * Consider using BuildConfig or a backend proxy for production deployments.
+         */
+        const val CLIENT_SECRET = "21f7b66f9e7e11a97aeda7d5047d65841011d7c5"
     }
 
     /**
@@ -59,8 +67,10 @@ interface GitHubOAuthService {
     @POST("login/oauth/access_token")
     suspend fun exchangeCodeForToken(
         @Field("client_id") clientId: String,
+        @Field("client_secret") clientSecret: String,
         @Field("code") code: String,
         @Field("code_verifier") codeVerifier: String,
-        @Field("redirect_uri") redirectUri: String = "builder://oauth/callback"
+        @Field("redirect_uri") redirectUri: String = "builder://oauth/callback",
+        @Field("grant_type") grantType: String = "authorization_code"
     ): Response<AccessTokenResponse>
 }

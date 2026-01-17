@@ -2,11 +2,18 @@ package com.builder.core.repository
 
 import com.builder.core.model.github.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Repository interface for GitHub operations.
  */
 interface GitHubRepository {
+    /**
+     * Observable auth state that emits when authentication status changes.
+     * Observe this to react immediately to OAuth callback completion.
+     */
+    val authState: StateFlow<DeviceFlowState?>
+
     /**
      * Initiates OAuth authorization code flow with PKCE.
      * Opens browser and waits for callback via deep link.
@@ -84,7 +91,13 @@ interface GitHubRepository {
     suspend fun listArtifacts(owner: String, repo: String, runId: Long): Result<List<Artifact>>
 
     /**
-     * Downloads a file from GitHub (artifact or release asset).
+     * Downloads a file from GitHub (artifact or release asset) to a local path.
      */
     suspend fun downloadFile(url: String, destination: String): Result<Unit>
+
+    /**
+     * Downloads a file from GitHub and returns its text content.
+     * Useful for small text files like checksums.sha256.
+     */
+    suspend fun downloadFile(url: String): Result<String>
 }

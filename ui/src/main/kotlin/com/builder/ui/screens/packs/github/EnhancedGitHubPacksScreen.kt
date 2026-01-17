@@ -8,7 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.builder.core.model.InstallMode
-import com.builder.data.remote.github.models.WorkflowRun
+import com.builder.core.model.github.WorkflowRun
 import com.builder.ui.components.*
 
 /**

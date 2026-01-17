@@ -1,8 +1,13 @@
 package com.builder.ui.screens.instances
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -62,15 +67,34 @@ fun InstancesScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(uiState.instances) { instance ->
-                            InstanceCard(
-                                instance = instance,
-                                onStart = { viewModel.startInstance(it) },
-                                onPause = { viewModel.pauseInstance(it) },
-                                onStop = { viewModel.stopInstance(it) },
-                                onDelete = { viewModel.deleteInstance(it.id) },
-                                isOperating = uiState.operatingOnId == instance.id
-                            )
+                        itemsIndexed(
+                            items = uiState.instances,
+                            key = { _, instance -> instance.id }
+                        ) { index, instance ->
+                            AnimatedVisibility(
+                                visible = true,
+                                enter = fadeIn(
+                                    animationSpec = tween(
+                                        durationMillis = 300,
+                                        delayMillis = index * 50
+                                    )
+                                ) + slideInVertically(
+                                    animationSpec = tween(
+                                        durationMillis = 300,
+                                        delayMillis = index * 50
+                                    ),
+                                    initialOffsetY = { it / 2 }
+                                )
+                            ) {
+                                InstanceCard(
+                                    instance = instance,
+                                    onStart = { viewModel.startInstance(it) },
+                                    onPause = { viewModel.pauseInstance(it) },
+                                    onStop = { viewModel.stopInstance(it) },
+                                    onDelete = { viewModel.deleteInstance(it.id) },
+                                    isOperating = uiState.operatingOnId == instance.id
+                                )
+                            }
                         }
                     }
                 }

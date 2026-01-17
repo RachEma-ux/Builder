@@ -1,5 +1,6 @@
 package com.builder.ui.components
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -8,8 +9,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
-import com.builder.data.remote.github.models.Repository
+import com.builder.core.model.github.Repository
+import com.builder.core.model.github.Branch
+import com.builder.core.model.github.Tag
 
 /**
  * Dropdown selector for GitHub repositories.
@@ -82,9 +86,9 @@ fun RepositoryDropdown(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BranchDropdown(
-    branches: List<com.builder.data.remote.github.models.Branch>,
-    selectedBranch: com.builder.data.remote.github.models.Branch?,
-    onSelectBranch: (com.builder.data.remote.github.models.Branch) -> Unit,
+    branches: List<Branch>,
+    selectedBranch: Branch?,
+    onSelectBranch: (Branch) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
@@ -144,9 +148,9 @@ fun BranchDropdown(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TagDropdown(
-    tags: List<com.builder.data.remote.github.models.Tag>,
-    selectedTag: com.builder.data.remote.github.models.Tag?,
-    onSelectTag: (com.builder.data.remote.github.models.Tag) -> Unit,
+    tags: List<Tag>,
+    selectedTag: Tag?,
+    onSelectTag: (Tag) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
@@ -222,10 +226,21 @@ fun InstallModeBadge(mode: com.builder.core.model.InstallMode) {
 }
 
 /**
- * Loading indicator with message.
+ * Loading indicator with message and pulsing animation.
  */
 @Composable
 fun LoadingIndicator(message: String, modifier: Modifier = Modifier) {
+    val infiniteTransition = rememberInfiniteTransition(label = "loading")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.6f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "alpha"
+    )
+
     Row(
         modifier = modifier.padding(16.dp),
         horizontalArrangement = Arrangement.Center,
@@ -233,7 +248,10 @@ fun LoadingIndicator(message: String, modifier: Modifier = Modifier) {
     ) {
         CircularProgressIndicator(modifier = Modifier.size(24.dp))
         Spacer(modifier = Modifier.width(12.dp))
-        Text(message)
+        Text(
+            text = message,
+            modifier = Modifier.alpha(alpha)
+        )
     }
 }
 

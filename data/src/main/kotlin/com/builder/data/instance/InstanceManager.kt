@@ -9,7 +9,7 @@ import com.builder.data.local.db.dao.InstanceDao
 import com.builder.data.local.db.entities.InstanceEntity
 import com.builder.runtime.LogCollector
 import com.builder.runtime.wasm.WasmRuntime
-import com.builder.runtime.workflow.InMemoryKvStore
+import com.builder.runtime.workflow.KvStore
 import com.builder.runtime.workflow.WorkflowContext
 import com.builder.runtime.workflow.WorkflowEngine
 import kotlinx.coroutines.flow.Flow
@@ -29,10 +29,10 @@ class InstanceManager(
     private val instanceDao: InstanceDao,
     private val wasmRuntime: WasmRuntime,
     private val httpClient: OkHttpClient,
-    private val logCollector: LogCollector
+    private val logCollector: LogCollector,
+    private val kvStore: KvStore
 ) : InstanceRepository {
     private val json = Json { ignoreUnknownKeys = true }
-    private val kvStore = InMemoryKvStore()
     private val workflowEngine = WorkflowEngine(wasmRuntime, httpClient, kvStore, logCollector)
 
     // Track running instances
@@ -74,12 +74,22 @@ class InstanceManager(
         envVars: Map<String, String>
     ): Result<Unit> {
         return try {
-            // Check if already running
-            if (runningInstances.containsKey(instance.id)) {
-                return Result.failure(IllegalStateException("Instance already running"))
+            // Check if already running and reserve slot (synchronized to prevent race condition)
+            val executor = synchronized(runningInstances) {
+                if (runningInstances.containsKey(instance.id)) {
+                    return Result.failure(IllegalStateException("Instance already running"))
+                }
+                // Create executor based on pack type
+                val exec = when (pack.type) {
+                    PackType.WASM -> createWasmExecutor(instance, pack, envVars)
+                    PackType.WORKFLOW -> createWorkflowExecutor(instance, pack, envVars)
+                }
+                // Reserve slot before releasing lock
+                runningInstances[instance.id] = exec
+                exec
             }
 
-            // Update state to running
+            // Update state to running (suspend call outside synchronized block)
             val updatedEntity = InstanceEntity.from(
                 instance.copy(
                     state = InstanceState.RUNNING,
@@ -88,14 +98,6 @@ class InstanceManager(
             )
             instanceDao.update(updatedEntity)
 
-            // Create executor based on pack type
-            val executor = when (pack.type) {
-                PackType.WASM -> createWasmExecutor(instance, pack, envVars)
-                PackType.WORKFLOW -> createWorkflowExecutor(instance, pack, envVars)
-            }
-
-            runningInstances[instance.id] = executor
-
             // Start execution
             executor.start()
 
@@ -103,6 +105,10 @@ class InstanceManager(
             Result.success(Unit)
         } catch (e: Exception) {
             Timber.e(e, "Failed to start instance")
+            // Clean up reserved slot on failure
+            synchronized(runningInstances) {
+                runningInstances.remove(instance.id)
+            }
             // Revert state
             val revertedEntity = InstanceEntity.from(
                 instance.copy(state = InstanceState.STOPPED)
@@ -117,8 +123,9 @@ class InstanceManager(
      */
     override suspend fun pauseInstance(instance: Instance): Result<Unit> {
         return try {
-            val executor = runningInstances[instance.id]
-                ?: return Result.failure(IllegalStateException("Instance not running"))
+            val executor = synchronized(runningInstances) {
+                runningInstances[instance.id]
+            } ?: return Result.failure(IllegalStateException("Instance not running"))
 
             executor.pause()
 
@@ -140,7 +147,9 @@ class InstanceManager(
      */
     override suspend fun stopInstance(instance: Instance): Result<Unit> {
         return try {
-            val executor = runningInstances.remove(instance.id)
+            val executor = synchronized(runningInstances) {
+                runningInstances.remove(instance.id)
+            }
             executor?.stop()
 
             val updatedEntity = InstanceEntity.from(
@@ -164,8 +173,11 @@ class InstanceManager(
      */
     override suspend fun deleteInstance(instanceId: Long): Result<Unit> {
         return try {
-            // Stop if running
-            runningInstances.remove(instanceId)?.stop()
+            // Stop if running (synchronized access)
+            val executor = synchronized(runningInstances) {
+                runningInstances.remove(instanceId)
+            }
+            executor?.stop()
 
             instanceDao.deleteById(instanceId)
 

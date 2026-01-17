@@ -21,6 +21,9 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+        freeCompilerArgs += listOf(
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
+        )
     }
 
     buildFeatures {
@@ -52,6 +55,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.compose.animation:animation")
     implementation("androidx.navigation:navigation-compose:2.7.6")
 
     // Hilt
@@ -61,6 +65,9 @@ dependencies {
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // Logging
+    implementation("com.jakewharton.timber:timber:5.0.1")
 
     // Testing
     testImplementation("junit:junit:4.13.2")
@@ -72,17 +79,4 @@ dependencies {
 
 kapt {
     correctErrorTypes = true
-
-    // Explicitly set JVM target for kapt to avoid inference from running JDK
-    javacOptions {
-        option("-source", "17")
-        option("-target", "17")
-    }
-}
-
-// Force kapt tasks to use JVM target 17
-tasks.withType<org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask>().configureEach {
-    kotlinOptions {
-        jvmTarget = "17"
-    }
 }

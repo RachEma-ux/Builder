@@ -1,9 +1,14 @@
 package com.builder.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -276,8 +281,24 @@ fun LogsList(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(logs, key = { it.id }) { log ->
-            LogItem(log = log)
+        itemsIndexed(logs, key = { _, log -> log.id }) { index, log ->
+            AnimatedVisibility(
+                visible = true,
+                enter = fadeIn(
+                    animationSpec = tween(
+                        durationMillis = 200,
+                        delayMillis = (index * 30).coerceAtMost(300)
+                    )
+                ) + slideInVertically(
+                    animationSpec = tween(
+                        durationMillis = 200,
+                        delayMillis = (index * 30).coerceAtMost(300)
+                    ),
+                    initialOffsetY = { it / 4 }
+                )
+            ) {
+                LogItem(log = log)
+            }
         }
     }
 }
@@ -424,7 +445,11 @@ fun getLevelColor(level: LogLevel): Color {
     }
 }
 
+// Cached date formatter to avoid creating new instance on every call
+private val timestampFormatter by lazy {
+    SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
+}
+
 fun formatTimestamp(timestamp: Long): String {
-    val formatter = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
-    return formatter.format(Date(timestamp))
+    return timestampFormatter.format(Date(timestamp))
 }

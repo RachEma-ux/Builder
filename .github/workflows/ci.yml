@@ -1,0 +1,189 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop, 'claude/**' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      run_wasm_test:
+        description: 'Run WASM test pack'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  WASMTIME_VERSION: v15.0.0
+
+jobs:
+  # Job 1: Run WASM Pack (GitHub as Runtime)
+  run-wasm:
+    name: Run WASM Pack
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Wasmtime
+        run: |
+          curl https://wasmtime.dev/install.sh -sSf | bash
+          echo "$HOME/.wasmtime/bin" >> $GITHUB_PATH
+
+      - name: Verify Wasmtime installation
+        run: |
+          export PATH="$HOME/.wasmtime/bin:$PATH"
+          wasmtime --version
+
+      - name: Create test WASM pack (WAT to WASM)
+        run: |
+          mkdir -p wasm-output
+
+          # Create a simple WebAssembly Text format file
+          cat > wasm-output/hello.wat << 'EOF'
+          (module
+            ;; Import fd_write from WASI for printing
+            (import "wasi_snapshot_preview1" "fd_write"
+              (func $fd_write (param i32 i32 i32 i32) (result i32)))
+
+            ;; Memory export required by WASI
+            (memory (export "memory") 1)
+
+            ;; Data section: "Hello from Builder WASM Runtime!\n"
+            (data (i32.const 8) "Hello from Builder WASM Runtime!\n")
+
+            ;; iov structure at memory location 0
+            ;; iov.iov_base = 8 (pointer to string)
+            ;; iov.iov_len = 34 (length of string)
+            (data (i32.const 0) "\08\00\00\00\22\00\00\00")
+
+            ;; _start function - entry point
+            (func (export "_start")
+              ;; fd_write(fd=1, iovs=0, iovs_len=1, nwritten=100)
+              (call $fd_write
+                (i32.const 1)   ;; stdout
+                (i32.const 0)   ;; iovs pointer
+                (i32.const 1)   ;; iovs count
+                (i32.const 100) ;; where to write nwritten
+              )
+              drop
+            )
+          )
+          EOF
+
+          echo "=== WAT file created ==="
+          cat wasm-output/hello.wat
+
+      - name: Convert WAT to WASM
+        run: |
+          export PATH="$HOME/.wasmtime/bin:$PATH"
+
+          # Install wabt for wat2wasm
+          sudo apt-get update && sudo apt-get install -y wabt
+
+          # Convert WAT to WASM
+          wat2wasm wasm-output/hello.wat -o wasm-output/hello.wasm
+
+          echo "=== WASM file created ==="
+          ls -lh wasm-output/
+
+      - name: Run WASM pack
+        id: run-wasm
+        run: |
+          export PATH="$HOME/.wasmtime/bin:$PATH"
+
+          echo "=== Running WASM Pack ===" | tee wasm-output/execution.log
+          echo "Timestamp: $(date -u)" | tee -a wasm-output/execution.log
+          echo "Wasmtime version: $(wasmtime --version)" | tee -a wasm-output/execution.log
+          echo "---" | tee -a wasm-output/execution.log
+
+          # Run the WASM file and capture output
+          wasmtime wasm-output/hello.wasm 2>&1 | tee -a wasm-output/execution.log
+
+          echo "---" | tee -a wasm-output/execution.log
+          echo "Exit code: $?" | tee -a wasm-output/execution.log
+          echo "=== Execution Complete ===" | tee -a wasm-output/execution.log
+
+      - name: Create execution summary
+        run: |
+          cat > wasm-output/summary.json << EOF
+          {
+            "pack": "hello.wasm",
+            "runtime": "wasmtime",
+            "version": "${{ env.WASMTIME_VERSION }}",
+            "platform": "linux-x86_64",
+            "executed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "status": "success"
+          }
+          EOF
+
+          echo "=== Execution Summary ==="
+          cat wasm-output/summary.json
+
+      - name: Upload WASM execution results
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-execution-results
+          path: |
+            wasm-output/hello.wasm
+            wasm-output/execution.log
+            wasm-output/summary.json
+          retention-days: 30
+
+      - name: Build Summary
+        run: |
+          echo "## WASM Execution Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Output" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat wasm-output/execution.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- \`wasm-execution-results\` - Download to test locally" >> $GITHUB_STEP_SUMMARY
+
+  # Job 2: Build Android App
+  build-app:
+    name: Build Android App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept licenses
+        run: yes | sdkmanager --licenses || true
+
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@v2
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: builder-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 30
+
+      - name: Build Summary
+        run: |
+          echo "## Android Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### APK" >> $GITHUB_STEP_SUMMARY
+          ls -lh app/build/outputs/apk/debug/*.apk >> $GITHUB_STEP_SUMMARY

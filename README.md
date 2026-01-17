@@ -198,42 +198,146 @@ Builder has **two distinct install modes** that are impossible to confuse:
 
 ## 🎯 Roadmap
 
-### Phase 1: Core Infrastructure ✅ (Scaffolding Complete)
+**Last Updated**: 2026-01-17
+
+### 🔄 Strategic Pivot: GitHub as Runtime
+
+**Original approach:** Phone = Runtime + UI, GitHub = Builder only
+**New approach:** GitHub = Builder + Runtime, Phone = UI/Dashboard
+
+**Why:** Cross-compiling Wasmtime for Android proved complex and error-prone. Running WASM on GitHub Actions is simpler, works immediately, and still achieves the "build → run → view results" experience.
+
+**Trade-offs:**
+- ✅ No native compilation needed
+- ✅ Works immediately
+- ⚠️ Requires internet connection
+- ⚠️ GitHub Actions usage limits apply
+
+---
+
+### Phase 1: Core Infrastructure ✅ Complete
 - [x] Android app scaffold
 - [x] Core models (PackManifest, PackIndex, etc.)
 - [x] WASM runtime structure
 - [x] Workflow runtime structure
 - [x] Build system configuration
 
-### Phase 2: GitHub Integration (In Progress)
-- [ ] OAuth device flow
-- [ ] Repository listing
-- [ ] Workflow dispatch
-- [ ] Artifact/Release downloads
+### Phase 2: GitHub Integration ✅ Complete
+- [x] OAuth authorization code flow with PKCE
+- [x] Repository listing
+- [x] Branch/tag/release browsing
+- [x] Workflow dispatch
+- [x] Artifact downloads (Dev mode)
+- [x] Release asset downloads (Prod mode)
+- [x] Encrypted token storage
 
-### Phase 3: Pack Management
-- [ ] Local pack installation
-- [ ] Dev vs Prod mode enforcement
-- [ ] Checksum verification
-- [ ] Pack lifecycle management
+### Phase 3: Pack Management ✅ Complete
+- [x] Local pack installation pipeline
+- [x] Dev vs Prod mode enforcement (separate tabs)
+- [x] Checksum verification (SHA-256, mandatory for Prod)
+- [x] Pack lifecycle management
+- [x] Zip slip vulnerability protection
+- [x] Naming convention validation
 
-### Phase 4: Runtimes
-- [ ] WASM execution (Wasmtime integration)
-- [ ] Workflow execution
-- [ ] Permission enforcement
+### Phase 4: Runtimes ✅ Complete (Revised)
 
-### Phase 5: UI/UX
-- [ ] IBM-style sidebar navigation
-- [ ] GitHub Packs screen (Dev/Prod tabs)
-- [ ] Instance management screen
-- [ ] Logs viewer
-- [ ] Secrets management
+**4A: Simplify Workflow ✅ Complete**
+- [x] Remove Android Wasmtime cross-compilation from CI
+- [x] Add Wasmtime Linux installation step
+- [x] Add WASM execution step with output capture
+- [x] Create test WASM pack (hello world)
+- [x] Test complete workflow end-to-end
 
-### Phase 6: Production Hardening
-- [ ] Security audit
-- [ ] Performance optimization
-- [ ] Error handling
-- [ ] Documentation
+**4B: Capture Results ✅ Complete**
+- [x] Upload execution results as artifact
+- [x] User downloads artifact and tests locally
+
+**4C: App Integration** ✅ Complete
+- [x] Workflow execution engine (on phone)
+- [x] Permission enforcement
+- [x] Progress tracking and cancellation
+- [x] Phone app triggers WASM runs via GitHub API
+- [x] Phone app displays execution results/logs
+- [x] WASM Run screen with repository/branch selection
+- [x] Bottom navigation bar for screen switching
+
+### Phase 5: UI/UX ✅ Complete
+- [x] IBM-style sidebar navigation
+- [x] GitHub Packs screen (Dev/Prod tabs)
+- [x] Production tab: auto-load checksums, Install button
+- [x] Dev tab: branch selection, workflow artifacts
+- [x] Instance management screen
+- [x] Logs viewer with filtering/search
+- [x] Health monitoring (CPU, memory, network)
+- [x] Secrets management UI (encrypted storage, CRUD)
+
+### Phase 6: Production Hardening ✅ Complete
+- [x] Security audit (see SECURITY_AUDIT.md)
+- [x] Performance optimization (database indexes, LazyColumn keys, cached formatters)
+- [x] Error handling (user-friendly messages)
+- [x] Documentation (comprehensive)
+- [x] CI/CD pipeline (GitHub Actions)
+- [x] Persistent KV store (Room database)
+- [x] UI polish (staggered list animations, pulsing loaders)
+- [x] Test coverage (~50%)
+
+---
+
+### 🚧 Remaining Work
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Persistent KV store | Medium | ✅ Complete |
+| Security audit | Medium | ✅ Complete |
+| Performance optimization | Low | ✅ Complete |
+| UI polish (animations) | Low | ✅ Complete |
+| Increase test coverage | Low | ✅ ~50% |
+
+### ✅ Recent Updates (2026-01-17)
+- Fixed Production tab 404 error when tag has no release
+- Auto-load checksums when selecting a release
+- Install button appears directly after checksums load
+- Better error messages for missing releases
+- **Strategic pivot:** WASM runtime moved from Android to GitHub Actions
+- **Phase 4A Complete:** GitHub Actions now runs WASM packs (Wasmtime on Linux)
+- **Phase 4B Complete:** Execution results uploaded as downloadable artifacts
+- **Verified:** "Hello from Builder WASM Runtime!" executed successfully
+- **Phase 4C Complete:** App integration for triggering WASM runs
+  - New WASM Run screen for triggering GitHub Actions workflows
+  - Repository and branch selection UI
+  - Real-time execution status with polling
+  - Execution history display
+  - Bottom navigation bar for app-wide navigation
+- **Phase 5 Complete:** Secrets management UI
+  - Add/edit/delete secrets with encrypted storage (AES-256)
+  - Secrets stored using Android EncryptedSharedPreferences
+  - Integration with pack requiredEnv for runtime access
+- **Persistent KV store:** Migrated from InMemoryKvStore to Room database
+  - KvEntity with composite primary key (packId, key)
+  - RoomKvStore implementing KvStore interface
+  - Database version 3 with automatic migration
+  - Per-pack key-value persistence for workflow state
+- **Security audit complete:** Comprehensive review of OAuth, file ops, network, storage
+  - ✅ OAuth: PKCE, encrypted token storage, CSRF protection
+  - ✅ Files: Zip slip protection, checksum verification
+  - ✅ Network: HTTPS only, conditional debug logging
+  - ✅ Storage: AES-256-GCM encrypted secrets
+  - See SECURITY_AUDIT.md for full report
+- **Test coverage improved:** Added unit tests for core utilities and domain use cases
+  - NamingConventionsTest: Pack filename validation (14 tests)
+  - ChecksumsTest: SHA-256 hashing and verification (11 tests)
+  - ListRepositoriesUseCaseTest: GitHub repository listing (4 tests)
+  - CreateInstanceUseCaseTest: Instance creation (4 tests)
+  - InstanceUseCasesTest: All instance operations (16 tests)
+  - PackManifestTest: Manifest validation and security (19 tests)
+- **Performance optimization:**
+  - Added database indexes on PackEntity (type, installMode, installedAt)
+  - Added keys to LazyColumn items for efficient recomposition
+  - Cached date formatters to avoid object creation on scroll
+- **UI polish and animations:**
+  - Staggered fade-in animations for list items (Instances, Secrets, Logs)
+  - Pulsing text animation on loading indicators
+  - Smooth slide-in transitions for new content
 
 ---
 
