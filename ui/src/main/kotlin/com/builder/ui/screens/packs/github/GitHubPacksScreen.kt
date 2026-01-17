@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.builder.core.model.InstallMode
+import com.builder.core.model.github.Repository
 
 /**
  * Main screen for installing packs from GitHub.
@@ -232,7 +233,7 @@ fun DevModeBanner() {
             .fillMaxWidth()
             .padding(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.warningContainer
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
         )
     ) {
         Text(
@@ -263,10 +264,10 @@ fun ProdModeBanner() {
 
 @Composable
 fun RepositorySelector(
-    repositories: List<com.builder.data.remote.github.models.Repository>,
-    selectedRepo: com.builder.data.remote.github.models.Repository?,
+    repositories: List<Repository>,
+    selectedRepo: Repository?,
     loading: Boolean,
-    onSelectRepo: (com.builder.data.remote.github.models.Repository) -> Unit,
+    onSelectRepo: (Repository) -> Unit,
     onRefresh: () -> Unit
 ) {
     Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
