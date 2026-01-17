@@ -74,19 +74,24 @@ jobs:
         if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/25.2.9519653
+          CARGO_PROFILE_RELEASE_LTO: thin
         run: |
           cd /tmp/wasmtime
+          # Build with minimal features for Android compatibility
           cargo ndk \
             --target aarch64-linux-android \
             --platform ${{ env.ANDROID_API_LEVEL }} \
             build \
             --release \
-            --manifest-path crates/c-api/Cargo.toml
+            --package wasmtime-c-api \
+            --no-default-features \
+            --features "cranelift"
 
       - name: Build Wasmtime for x86_64
         if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/25.2.9519653
+          CARGO_PROFILE_RELEASE_LTO: thin
         run: |
           cd /tmp/wasmtime
           cargo ndk \
@@ -94,7 +99,9 @@ jobs:
             --platform ${{ env.ANDROID_API_LEVEL }} \
             build \
             --release \
-            --manifest-path crates/c-api/Cargo.toml
+            --package wasmtime-c-api \
+            --no-default-features \
+            --features "cranelift"
 
       - name: Copy and strip libraries
         if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
