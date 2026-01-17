@@ -1,20 +1,28 @@
 package com.builder.ui.screens.packs.github
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.builder.core.model.InstallMode
 import com.builder.core.model.github.Release
 import com.builder.core.model.github.ReleaseAsset
 import com.builder.core.model.github.Repository
+import com.builder.core.util.DebugLogger
 import timber.log.Timber
 
 /**
@@ -26,12 +34,25 @@ fun GitHubPacksScreen(
     viewModel: GitHubPacksViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showDebugDialog by remember { mutableStateOf(false) }
+
+    // Debug log dialog
+    if (showDebugDialog) {
+        DebugLogDialog(
+            debugLogger = viewModel.debugLogger,
+            onDismiss = { showDebugDialog = false }
+        )
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("GitHub Packs") },
                 actions = {
+                    // Debug logs button
+                    TextButton(onClick = { showDebugDialog = true }) {
+                        Text("Logs")
+                    }
                     if (uiState.isAuthenticated) {
                         TextButton(onClick = { viewModel.logout() }) {
                             Text("Logout")
@@ -85,7 +106,7 @@ fun GitHubPacksScreen(
                 // Mode-specific content
                 when (uiState.selectedTab) {
                     InstallMode.DEV -> DevModeContent(uiState, viewModel)
-                    InstallMode.PROD -> ProdModeContent(uiState, viewModel)
+                    InstallMode.PROD -> ProdModeContent(uiState, viewModel, viewModel.debugLogger)
                 }
 
                 // Error/Success messages
@@ -390,7 +411,7 @@ fun DevModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel)
 }
 
 @Composable
-fun ProdModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel) {
+fun ProdModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel, debugLogger: DebugLogger? = null) {
     var tagExpanded by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
@@ -509,7 +530,8 @@ fun ProdModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel
                                 },
                                 onLoadChecksums = {
                                     viewModel.loadChecksums(release)
-                                }
+                                },
+                                debugLogger = debugLogger
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
@@ -566,11 +588,19 @@ fun AssetInstallItem(
     checksums: Map<String, String>,
     checksumsNotAvailable: Boolean,
     onInstall: (String) -> Unit,
-    onLoadChecksums: () -> Unit
+    onLoadChecksums: () -> Unit,
+    debugLogger: DebugLogger? = null
 ) {
     val context = LocalContext.current
     val checksum = checksums[asset.name]
     val sizeInMb = asset.size / (1024.0 * 1024.0)
+
+    // Log UI state for debugging
+    LaunchedEffect(installing, loadingChecksums, checksum, checksumsNotAvailable) {
+        debugLogger?.i("AssetUI", "Asset: ${asset.name}")
+        debugLogger?.i("AssetUI", "  installing=$installing, loadingChecksums=$loadingChecksums")
+        debugLogger?.i("AssetUI", "  checksum=${checksum?.take(16) ?: "null"}, checksumsNotAvailable=$checksumsNotAvailable")
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -616,8 +646,11 @@ fun AssetInstallItem(
                 } else if (checksum != null) {
                     Button(
                         onClick = {
+                            debugLogger?.logSync("INFO", "Button", "=== INSTALL BUTTON CLICKED ===")
+                            debugLogger?.logSync("INFO", "Button", "Asset: ${asset.name}")
+                            debugLogger?.logSync("INFO", "Button", "Checksum: ${checksum.take(32)}...")
                             Timber.i("Install button clicked for ${asset.name}")
-                            Toast.makeText(context, "Starting install...", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Install clicked! Check logs...", Toast.LENGTH_SHORT).show()
                             onInstall(checksum)
                         }
                     ) {
@@ -627,8 +660,10 @@ fun AssetInstallItem(
                     // No checksum file in release - allow install without verification
                     Button(
                         onClick = {
+                            debugLogger?.logSync("INFO", "Button", "=== INSTALL (NO VERIFY) CLICKED ===")
+                            debugLogger?.logSync("INFO", "Button", "Asset: ${asset.name}")
                             Timber.i("Install (No Verify) button clicked for ${asset.name}")
-                            Toast.makeText(context, "Starting install (no verify)...", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Install clicked! Check logs...", Toast.LENGTH_SHORT).show()
                             onInstall("")
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -639,7 +674,11 @@ fun AssetInstallItem(
                     }
                 } else {
                     // Checksums should be available but not loaded yet
-                    OutlinedButton(onClick = onLoadChecksums) {
+                    debugLogger?.logSync("DEBUG", "AssetUI", "Showing Load Checksums button for ${asset.name}")
+                    OutlinedButton(onClick = {
+                        debugLogger?.logSync("INFO", "Button", "Load Checksums clicked for ${asset.name}")
+                        onLoadChecksums()
+                    }) {
                         Text("Load Checksums")
                     }
                 }
@@ -662,4 +701,90 @@ fun AssetInstallItem(
             }
         }
     }
+}
+
+/**
+ * Dialog to view and share debug logs.
+ */
+@Composable
+fun DebugLogDialog(
+    debugLogger: DebugLogger,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val logs = remember { debugLogger.getLogsAsString() }
+    var refreshTrigger by remember { mutableIntStateOf(0) }
+    val currentLogs = remember(refreshTrigger) { debugLogger.getLogsAsString() }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Debug Logs") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 400.dp)
+            ) {
+                // Action buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            refreshTrigger++
+                            Toast.makeText(context, "Logs refreshed", Toast.LENGTH_SHORT).show()
+                        }
+                    ) {
+                        Text("Refresh")
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            val clip = ClipData.newPlainText("Builder Debug Logs", currentLogs)
+                            clipboard.setPrimaryClip(clip)
+                            Toast.makeText(context, "Logs copied to clipboard!", Toast.LENGTH_LONG).show()
+                        }
+                    ) {
+                        Text("Copy All")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Log path info
+                Text(
+                    text = "Log file: ${debugLogger.getLogFilePath()}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Logs content
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Text(
+                        text = currentLogs.ifEmpty { "No logs yet. Try clicking Install." },
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .verticalScroll(rememberScrollState()),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
 }
