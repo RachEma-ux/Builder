@@ -379,42 +379,55 @@ class GitHubPacksViewModel @Inject constructor(
      * If checksum is empty, installation proceeds without verification.
      */
     fun installFromRelease(release: Release, asset: ReleaseAsset, checksum: String) {
+        Timber.i("installFromRelease called: ${asset.name}, checksum=$checksum")
         viewModelScope.launch {
-            _uiState.update { it.copy(installing = true) }
+            try {
+                _uiState.update { it.copy(installing = true, error = null) }
+                Timber.i("Starting installation from: ${asset.browserDownloadUrl}")
 
-            val installSource = InstallSource.prod(
-                tag = release.tagName,
-                releaseUrl = asset.browserDownloadUrl,
-                timestamp = System.currentTimeMillis()
-            )
+                val installSource = InstallSource.prod(
+                    tag = release.tagName,
+                    releaseUrl = asset.browserDownloadUrl,
+                    timestamp = System.currentTimeMillis()
+                )
 
-            // Pass null if checksum is empty (no verification)
-            val expectedChecksum = checksum.ifEmpty { null }
+                // Pass null if checksum is empty (no verification)
+                val expectedChecksum = checksum.ifEmpty { null }
+                Timber.i("Expected checksum: ${expectedChecksum?.take(16) ?: "none"}")
 
-            installPackUseCase(
-                downloadUrl = asset.browserDownloadUrl,
-                installSource = installSource,
-                expectedChecksum = expectedChecksum
-            ).fold(
-                onSuccess = { pack ->
-                    Timber.i("Pack installed successfully: ${pack.id}")
-                    _uiState.update {
-                        it.copy(
-                            installing = false,
-                            installSuccess = "Pack ${pack.name} installed successfully"
-                        )
+                installPackUseCase(
+                    downloadUrl = asset.browserDownloadUrl,
+                    installSource = installSource,
+                    expectedChecksum = expectedChecksum
+                ).fold(
+                    onSuccess = { pack ->
+                        Timber.i("Pack installed successfully: ${pack.id}")
+                        _uiState.update {
+                            it.copy(
+                                installing = false,
+                                installSuccess = "Pack ${pack.name} installed successfully"
+                            )
+                        }
+                    },
+                    onFailure = { error ->
+                        Timber.e(error, "Pack installation failed")
+                        _uiState.update {
+                            it.copy(
+                                installing = false,
+                                error = "Installation failed: ${error.message}"
+                            )
+                        }
                     }
-                },
-                onFailure = { error ->
-                    Timber.e(error, "Pack installation failed")
-                    _uiState.update {
-                        it.copy(
-                            installing = false,
-                            error = "Installation failed: ${error.message}"
-                        )
-                    }
+                )
+            } catch (e: Exception) {
+                Timber.e(e, "Unexpected error during installation")
+                _uiState.update {
+                    it.copy(
+                        installing = false,
+                        error = "Unexpected error: ${e.message}"
+                    )
                 }
-            )
+            }
         }
     }
 
