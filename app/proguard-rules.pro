@@ -36,6 +36,14 @@
 -keep class dagger.hilt.** { *; }
 -keep class javax.inject.** { *; }
 -keep class * extends dagger.hilt.android.internal.managers.ComponentSupplier { *; }
+-keep class * extends androidx.lifecycle.ViewModel { *; }
+-keep class **ViewModel { *; }
+-keep class **UseCase { *; }
+
+# Keep Hilt generated classes
+-keep class *_HiltModules* { *; }
+-keep class *_Factory { *; }
+-keep class *_MembersInjector { *; }
 
 # Keep Room entities
 -keep class * extends androidx.room.RoomDatabase
@@ -45,6 +53,14 @@
 # Keep data classes for serialization
 -keep class com.builder.core.model.** { *; }
 -keep class com.builder.data.local.db.entities.** { *; }
+
+# Keep GitHub API model classes (Gson serialization)
+-keep class com.builder.core.model.github.** { *; }
+-keepclassmembers class com.builder.core.model.github.** { *; }
+
+# Keep data layer models
+-keep class com.builder.data.remote.** { *; }
+-keepclassmembers class com.builder.data.remote.** { *; }
 
 # Keep Compose
 -keep class androidx.compose.** { *; }
