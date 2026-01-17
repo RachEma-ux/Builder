@@ -263,6 +263,8 @@ fun RepositorySelector(
     onSelectRepo: (Repository) -> Unit,
     onRefresh: () -> Unit
 ) {
+    var expanded by remember { mutableStateOf(false) }
+
     Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -278,13 +280,50 @@ fun RepositorySelector(
                 }
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+
             if (loading) {
                 CircularProgressIndicator()
-            } else if (selectedRepo != null) {
-                Text(selectedRepo.fullName, style = MaterialTheme.typography.bodyLarge)
             } else if (repositories.isNotEmpty()) {
-                Text("Select a repository from the list")
-                // TODO: Add dropdown/list of repositories
+                // Dropdown for repository selection
+                Box {
+                    OutlinedButton(
+                        onClick = { expanded = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = selectedRepo?.fullName ?: "Select repository",
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(" ▼")
+                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.fillMaxWidth(0.9f)
+                    ) {
+                        repositories.forEach { repo ->
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text(repo.fullName, style = MaterialTheme.typography.bodyLarge)
+                                        repo.description?.let {
+                                            Text(
+                                                it,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    onSelectRepo(repo)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
             } else {
                 Text("No repositories loaded")
             }
