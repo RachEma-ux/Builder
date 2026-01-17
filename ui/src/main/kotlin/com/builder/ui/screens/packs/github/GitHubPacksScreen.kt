@@ -392,6 +392,31 @@ fun ProdModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel
     var tagExpanded by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+        // Error display
+        uiState.error?.let { error ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(onClick = { viewModel.clearError() }) {
+                        Text("Dismiss")
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         // Tag selector
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -466,6 +491,7 @@ fun ProdModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel
                                 asset = asset,
                                 release = release,
                                 installing = uiState.installing,
+                                loadingChecksums = uiState.loadingChecksums,
                                 checksums = uiState.checksums,
                                 onInstall = { checksum ->
                                     viewModel.installFromRelease(release, asset, checksum)
@@ -525,6 +551,7 @@ fun AssetInstallItem(
     asset: ReleaseAsset,
     release: Release,
     installing: Boolean,
+    loadingChecksums: Boolean,
     checksums: Map<String, String>,
     onInstall: (String) -> Unit,
     onLoadChecksums: () -> Unit
@@ -562,6 +589,12 @@ fun AssetInstallItem(
                         enabled = !installing
                     ) {
                         Text("Install")
+                    }
+                } else if (loadingChecksums) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Loading...", style = MaterialTheme.typography.bodySmall)
                     }
                 } else {
                     OutlinedButton(
