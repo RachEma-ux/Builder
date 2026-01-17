@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.builder.core.model.InstallMode
 import com.builder.core.model.InstallSource
 import com.builder.core.repository.GitHubRepository
-import com.builder.data.remote.github.DeviceFlowState
+import com.builder.core.model.github.DeviceFlowState
 import com.builder.data.remote.github.models.*
 import com.builder.domain.github.ListRepositoriesUseCase
 import com.builder.domain.pack.InstallPackUseCase
