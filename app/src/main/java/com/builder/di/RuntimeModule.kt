@@ -4,10 +4,12 @@ import com.builder.core.repository.InstanceRepository
 import com.builder.core.repository.LogRepository
 import com.builder.data.instance.InstanceManager
 import com.builder.data.local.db.dao.InstanceDao
+import com.builder.data.local.RoomKvStore
 import com.builder.runtime.LogCollector
 import com.builder.runtime.wasm.permissions.PermissionEnforcer
 import com.builder.runtime.wasm.WasiConfig
 import com.builder.runtime.wasm.WasmRuntime
+import com.builder.runtime.workflow.KvStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -42,6 +44,12 @@ object RuntimeModule {
 
     @Provides
     @Singleton
+    fun provideKvStore(roomKvStore: RoomKvStore): KvStore {
+        return roomKvStore
+    }
+
+    @Provides
+    @Singleton
     fun provideWasmRuntime(
         wasiConfig: WasiConfig,
         permissionEnforcer: PermissionEnforcer
@@ -58,13 +66,15 @@ object RuntimeModule {
         instanceDao: InstanceDao,
         wasmRuntime: WasmRuntime,
         httpClient: OkHttpClient,
-        logCollector: LogCollector
+        logCollector: LogCollector,
+        kvStore: KvStore
     ): InstanceManager {
         return InstanceManager(
             instanceDao = instanceDao,
             wasmRuntime = wasmRuntime,
             httpClient = httpClient,
-            logCollector = logCollector
+            logCollector = logCollector,
+            kvStore = kvStore
         )
     }
 }

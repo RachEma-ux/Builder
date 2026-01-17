@@ -271,13 +271,13 @@ Builder has **two distinct install modes** that are impossible to confuse:
 - [x] Health monitoring (CPU, memory, network)
 - [x] Secrets management UI (encrypted storage, CRUD)
 
-### Phase 6: Production Hardening ⚠️ ~60% Complete
+### Phase 6: Production Hardening ⚠️ ~75% Complete
 - [ ] Security audit
 - [ ] Performance optimization
 - [x] Error handling (user-friendly messages)
 - [x] Documentation (comprehensive)
 - [x] CI/CD pipeline (GitHub Actions)
-- [ ] Persistent KV store (currently in-memory)
+- [x] Persistent KV store (Room database)
 
 ---
 
@@ -285,7 +285,7 @@ Builder has **two distinct install modes** that are impossible to confuse:
 
 | Task | Priority | Status |
 |------|----------|--------|
-| Persistent KV store | Medium | Not started |
+| Persistent KV store | Medium | ✅ Complete |
 | Security audit | Medium | Not started |
 | UI polish (animations) | Low | Not started |
 | Increase test coverage | Low | 15% current |
@@ -309,6 +309,11 @@ Builder has **two distinct install modes** that are impossible to confuse:
   - Add/edit/delete secrets with encrypted storage (AES-256)
   - Secrets stored using Android EncryptedSharedPreferences
   - Integration with pack requiredEnv for runtime access
+- **Persistent KV store:** Migrated from InMemoryKvStore to Room database
+  - KvEntity with composite primary key (packId, key)
+  - RoomKvStore implementing KvStore interface
+  - Database version 3 with automatic migration
+  - Per-pack key-value persistence for workflow state
 
 ---
 

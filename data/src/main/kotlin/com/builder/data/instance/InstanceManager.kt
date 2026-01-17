@@ -9,7 +9,7 @@ import com.builder.data.local.db.dao.InstanceDao
 import com.builder.data.local.db.entities.InstanceEntity
 import com.builder.runtime.LogCollector
 import com.builder.runtime.wasm.WasmRuntime
-import com.builder.runtime.workflow.InMemoryKvStore
+import com.builder.runtime.workflow.KvStore
 import com.builder.runtime.workflow.WorkflowContext
 import com.builder.runtime.workflow.WorkflowEngine
 import kotlinx.coroutines.flow.Flow
@@ -29,10 +29,10 @@ class InstanceManager(
     private val instanceDao: InstanceDao,
     private val wasmRuntime: WasmRuntime,
     private val httpClient: OkHttpClient,
-    private val logCollector: LogCollector
+    private val logCollector: LogCollector,
+    private val kvStore: KvStore
 ) : InstanceRepository {
     private val json = Json { ignoreUnknownKeys = true }
-    private val kvStore = InMemoryKvStore()
     private val workflowEngine = WorkflowEngine(wasmRuntime, httpClient, kvStore, logCollector)
 
     // Track running instances
