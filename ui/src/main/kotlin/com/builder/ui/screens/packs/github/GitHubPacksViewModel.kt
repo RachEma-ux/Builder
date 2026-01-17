@@ -376,6 +376,7 @@ class GitHubPacksViewModel @Inject constructor(
 
     /**
      * Installs a pack from release asset (Production mode).
+     * If checksum is empty, installation proceeds without verification.
      */
     fun installFromRelease(release: Release, asset: ReleaseAsset, checksum: String) {
         viewModelScope.launch {
@@ -387,10 +388,13 @@ class GitHubPacksViewModel @Inject constructor(
                 timestamp = System.currentTimeMillis()
             )
 
+            // Pass null if checksum is empty (no verification)
+            val expectedChecksum = checksum.ifEmpty { null }
+
             installPackUseCase(
                 downloadUrl = asset.browserDownloadUrl,
                 installSource = installSource,
-                expectedChecksum = checksum
+                expectedChecksum = expectedChecksum
             ).fold(
                 onSuccess = { pack ->
                     Timber.i("Pack installed successfully: ${pack.id}")
@@ -428,14 +432,20 @@ class GitHubPacksViewModel @Inject constructor(
     fun loadChecksums(release: Release) {
         val checksumAsset = release.getChecksums()
         if (checksumAsset == null) {
+            // No checksum file found - allow installation without verification
+            Timber.w("No checksum file found in release ${release.tagName}")
             _uiState.update {
-                it.copy(error = "No checksums.sha256 file found in release")
+                it.copy(
+                    checksums = emptyMap(),
+                    checksumsNotAvailable = true,
+                    loadingChecksums = false
+                )
             }
             return
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(loadingChecksums = true) }
+            _uiState.update { it.copy(loadingChecksums = true, checksumsNotAvailable = false) }
 
             gitHubRepository.downloadFile(checksumAsset.browserDownloadUrl).fold(
                 onSuccess = { content ->
@@ -443,7 +453,8 @@ class GitHubPacksViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             checksums = checksumMap,
-                            loadingChecksums = false
+                            loadingChecksums = false,
+                            checksumsNotAvailable = checksumMap.isEmpty()
                         )
                     }
                     Timber.i("Loaded ${checksumMap.size} checksums")
@@ -453,7 +464,8 @@ class GitHubPacksViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             loadingChecksums = false,
-                            error = "Failed to load checksums: ${error.message}"
+                            checksums = emptyMap(),
+                            checksumsNotAvailable = true
                         )
                     }
                 }
@@ -508,6 +520,7 @@ data class GitHubPacksUiState(
     val releases: List<Release> = emptyList(),
     val selectedRelease: Release? = null,
     val checksums: Map<String, String> = emptyMap(),
+    val checksumsNotAvailable: Boolean = false,
     val loadingChecksums: Boolean = false,
     val installing: Boolean = false,
     val installSuccess: String? = null,

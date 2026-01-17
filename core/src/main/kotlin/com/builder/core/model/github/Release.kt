@@ -39,9 +39,14 @@ data class Release(
 
     /**
      * Gets the checksums.sha256 asset if present.
+     * Falls back to any .sha256 file if checksums.sha256 is not found.
      */
     fun getChecksums(): ReleaseAsset? {
-        return findAsset("checksums.sha256")
+        // First try exact match
+        findAsset("checksums.sha256")?.let { return it }
+
+        // Fallback: look for any .sha256 file
+        return assets.find { it.name.endsWith(".sha256") }
     }
 }
 

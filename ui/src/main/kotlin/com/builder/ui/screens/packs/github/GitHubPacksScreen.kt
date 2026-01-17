@@ -493,6 +493,7 @@ fun ProdModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel
                                 installing = uiState.installing,
                                 loadingChecksums = uiState.loadingChecksums,
                                 checksums = uiState.checksums,
+                                checksumsNotAvailable = uiState.checksumsNotAvailable,
                                 onInstall = { checksum ->
                                     viewModel.installFromRelease(release, asset, checksum)
                                 },
@@ -553,6 +554,7 @@ fun AssetInstallItem(
     installing: Boolean,
     loadingChecksums: Boolean,
     checksums: Map<String, String>,
+    checksumsNotAvailable: Boolean,
     onInstall: (String) -> Unit,
     onLoadChecksums: () -> Unit
 ) {
@@ -596,13 +598,24 @@ fun AssetInstallItem(
                     ) {
                         Text("Install")
                     }
+                } else if (checksumsNotAvailable) {
+                    // No checksum file in release - allow install without verification
+                    Button(
+                        onClick = { onInstall("") },
+                        enabled = !installing,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiary
+                        )
+                    ) {
+                        Text("Install (No Verify)")
+                    }
                 } else {
-                    // No checksum available - show retry button
+                    // Checksums should be available but not loaded yet
                     OutlinedButton(
                         onClick = onLoadChecksums,
                         enabled = !installing
                     ) {
-                        Text("Retry")
+                        Text("Load Checksums")
                     }
                 }
             }
@@ -613,6 +626,13 @@ fun AssetInstallItem(
                     text = "SHA256: ${checksum.take(16)}...",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else if (checksumsNotAvailable) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Warning: No checksum verification available",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
                 )
             }
         }
