@@ -32,7 +32,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle (skip tests)
-        run: ./gradlew build -x test -x testDebugUnitTest -x testReleaseUnitTest
+        run: ./gradlew build -x test -x testDebugUnitTest -x testReleaseUnitTest --no-build-cache
 
       - name: Run unit tests
         run: ./gradlew test
