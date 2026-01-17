@@ -314,32 +314,23 @@ class GitHubPacksViewModel @Inject constructor(
 
     /**
      * Selects a tag (for Production mode).
+     * Looks up the release from already-loaded releases list.
      */
     fun selectTag(tag: Tag) {
-        _uiState.update { it.copy(selectedTag = tag) }
+        _uiState.update { it.copy(selectedTag = tag, selectedRelease = null, checksums = emptyMap()) }
 
-        // Get release for this tag
-        _uiState.value.selectedRepo?.let { repo ->
-            getReleaseByTag(repo.owner.login, repo.name, tag.name)
-        }
-    }
+        // Find release matching this tag from already-loaded releases
+        val release = _uiState.value.releases.find { it.tagName == tag.name }
 
-    /**
-     * Gets a release by tag and auto-loads checksums.
-     */
-    private fun getReleaseByTag(owner: String, repo: String, tag: String) {
-        viewModelScope.launch {
-            gitHubRepository.getReleaseByTag(owner, repo, tag).fold(
-                onSuccess = { release ->
-                    _uiState.update { it.copy(selectedRelease = release, checksums = emptyMap()) }
-                    // Auto-load checksums for better UX
-                    loadChecksums(release)
-                },
-                onFailure = { error ->
-                    Timber.e(error, "Failed to get release for tag: $tag")
-                    _uiState.update { it.copy(error = "Failed to load release: ${error.message}") }
-                }
-            )
+        if (release != null) {
+            _uiState.update { it.copy(selectedRelease = release) }
+            // Auto-load checksums for better UX
+            loadChecksums(release)
+        } else {
+            // Tag exists but no GitHub Release was created for it
+            _uiState.update {
+                it.copy(error = "No release found for tag '${tag.name}'. Create a GitHub Release from this tag to install packs.")
+            }
         }
     }
 
