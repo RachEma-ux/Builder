@@ -468,20 +468,21 @@ fun ProdModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel
                     Text("Release: ${release.name ?: release.tagName}", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Filter pack assets (zip files, excluding checksums)
+                    // Filter installable assets (zip packs or apk files, excluding checksums)
                     val packAssets = release.assets.filter {
-                        it.name.endsWith(".zip") && !it.name.contains("checksum")
+                        (it.name.endsWith(".zip") || it.name.endsWith(".apk")) &&
+                            !it.name.contains("checksum") && !it.name.endsWith(".sha256")
                     }
 
                     if (packAssets.isEmpty()) {
                         Text(
-                            "No pack assets found in this release",
+                            "No installable assets found in this release",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyMedium
                         )
                     } else {
                         Text(
-                            "Available Packs (${packAssets.size}):",
+                            "Available Assets (${packAssets.size}):",
                             style = MaterialTheme.typography.titleSmall
                         )
                         Spacer(modifier = Modifier.height(8.dp))
