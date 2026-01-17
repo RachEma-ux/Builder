@@ -110,26 +110,8 @@ fun OAuthScreen(
 ) {
     val context = LocalContext.current
 
-    // Track if browser was already opened to prevent loops
-    var browserOpenedForCode by remember { mutableStateOf<String?>(null) }
-
-    // Automatically open browser when we get the user code (only once per code)
-    LaunchedEffect(authState) {
-        if (authState is AuthState.WaitingForUser && browserOpenedForCode != authState.userCode) {
-            browserOpenedForCode = authState.userCode
-            // Open browser with pre-filled code
-            val url = "${authState.verificationUri}?user_code=${authState.userCode}"
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            context.startActivity(intent)
-        }
-    }
-
-    // Reset browser opened flag when going back to Idle state
-    LaunchedEffect(authState) {
-        if (authState is AuthState.Idle) {
-            browserOpenedForCode = null
-        }
-    }
+    // Note: Browser is opened automatically by GitHubOAuthManager when using auth code flow.
+    // No need to open browser from UI - that was causing the loop.
 
     Column(
         modifier = Modifier
