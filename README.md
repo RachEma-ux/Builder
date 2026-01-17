@@ -289,7 +289,7 @@ Builder has **two distinct install modes** that are impossible to confuse:
 | Security audit | Medium | ✅ Complete |
 | Performance optimization | Low | Not started |
 | UI polish (animations) | Low | Not started |
-| Increase test coverage | Low | 15% current |
+| Increase test coverage | Low | ~35% (improved) |
 
 ### ✅ Recent Updates (2026-01-17)
 - Fixed Production tab 404 error when tag has no release
@@ -321,6 +321,11 @@ Builder has **two distinct install modes** that are impossible to confuse:
   - ✅ Network: HTTPS only, conditional debug logging
   - ✅ Storage: AES-256-GCM encrypted secrets
   - See SECURITY_AUDIT.md for full report
+- **Test coverage improved:** Added unit tests for core utilities and domain use cases
+  - NamingConventionsTest: Pack filename validation (14 tests)
+  - ChecksumsTest: SHA-256 hashing and verification (11 tests)
+  - ListRepositoriesUseCaseTest: GitHub repository listing (4 tests)
+  - CreateInstanceUseCaseTest: Instance creation (4 tests)
 
 ---
 
