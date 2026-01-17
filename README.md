@@ -198,42 +198,74 @@ Builder has **two distinct install modes** that are impossible to confuse:
 
 ## 🎯 Roadmap
 
-### Phase 1: Core Infrastructure ✅ (Scaffolding Complete)
+**Last Updated**: 2026-01-17
+
+### Phase 1: Core Infrastructure ✅ Complete
 - [x] Android app scaffold
 - [x] Core models (PackManifest, PackIndex, etc.)
 - [x] WASM runtime structure
 - [x] Workflow runtime structure
 - [x] Build system configuration
 
-### Phase 2: GitHub Integration (In Progress)
-- [ ] OAuth device flow
-- [ ] Repository listing
-- [ ] Workflow dispatch
-- [ ] Artifact/Release downloads
+### Phase 2: GitHub Integration ✅ Complete
+- [x] OAuth authorization code flow with PKCE
+- [x] Repository listing
+- [x] Branch/tag/release browsing
+- [x] Workflow dispatch
+- [x] Artifact downloads (Dev mode)
+- [x] Release asset downloads (Prod mode)
+- [x] Encrypted token storage
 
-### Phase 3: Pack Management
-- [ ] Local pack installation
-- [ ] Dev vs Prod mode enforcement
-- [ ] Checksum verification
-- [ ] Pack lifecycle management
+### Phase 3: Pack Management ✅ Complete
+- [x] Local pack installation pipeline
+- [x] Dev vs Prod mode enforcement (separate tabs)
+- [x] Checksum verification (SHA-256, mandatory for Prod)
+- [x] Pack lifecycle management
+- [x] Zip slip vulnerability protection
+- [x] Naming convention validation
 
-### Phase 4: Runtimes
-- [ ] WASM execution (Wasmtime integration)
-- [ ] Workflow execution
-- [ ] Permission enforcement
+### Phase 4: Runtimes ⚠️ Partial
+- [ ] WASM execution (Wasmtime integration) — **Blocked: needs native library build**
+- [x] Workflow execution engine
+- [x] Permission enforcement
+- [x] Progress tracking and cancellation
 
-### Phase 5: UI/UX
-- [ ] IBM-style sidebar navigation
-- [ ] GitHub Packs screen (Dev/Prod tabs)
-- [ ] Instance management screen
-- [ ] Logs viewer
-- [ ] Secrets management
+### Phase 5: UI/UX ✅ ~90% Complete
+- [x] IBM-style sidebar navigation
+- [x] GitHub Packs screen (Dev/Prod tabs)
+- [x] Production tab: auto-load checksums, Install button
+- [x] Dev tab: branch selection, workflow artifacts
+- [x] Instance management screen
+- [x] Logs viewer with filtering/search
+- [x] Health monitoring (CPU, memory, network)
+- [ ] Secrets management UI
 
-### Phase 6: Production Hardening
+### Phase 6: Production Hardening ⚠️ ~60% Complete
 - [ ] Security audit
 - [ ] Performance optimization
-- [ ] Error handling
-- [ ] Documentation
+- [x] Error handling (user-friendly messages)
+- [x] Documentation (comprehensive)
+- [x] CI/CD pipeline (GitHub Actions)
+- [ ] Persistent KV store (currently in-memory)
+
+---
+
+### 🚧 Remaining Work
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Build Wasmtime for Android | High | Blocked (needs Rust toolchain) |
+| Secrets management UI | Medium | Not started |
+| Persistent KV store | Medium | Not started |
+| Security audit | Medium | Not started |
+| UI polish (animations) | Low | Not started |
+| Increase test coverage | Low | 15% current |
+
+### ✅ Recent Fixes (2026-01-17)
+- Fixed Production tab 404 error when tag has no release
+- Auto-load checksums when selecting a release
+- Install button appears directly after checksums load
+- Better error messages for missing releases
 
 ---
 
