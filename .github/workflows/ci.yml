@@ -50,7 +50,7 @@ jobs:
 
       - name: Setup Rust
         if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android,x86_64-linux-android
 
