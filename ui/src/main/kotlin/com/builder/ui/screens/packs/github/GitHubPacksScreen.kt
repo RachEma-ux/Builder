@@ -333,20 +333,115 @@ fun RepositorySelector(
 
 @Composable
 fun DevModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel) {
+    var branchExpanded by remember { mutableStateOf(false) }
+
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-        Text("Dev Mode Content", style = MaterialTheme.typography.titleMedium)
-        Text("Branches: ${uiState.branches.size}")
-        Text("Workflow Runs: ${uiState.workflowRuns.size}")
-        // TODO: Add branch selector, workflow run list, artifact download
+        // Branch selector
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Branch", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (uiState.branches.isNotEmpty()) {
+                    Box {
+                        OutlinedButton(
+                            onClick = { branchExpanded = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = uiState.selectedBranch?.name ?: "Select branch",
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(" ▼")
+                        }
+                        DropdownMenu(
+                            expanded = branchExpanded,
+                            onDismissRequest = { branchExpanded = false },
+                            modifier = Modifier.fillMaxWidth(0.9f)
+                        ) {
+                            uiState.branches.forEach { branch ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(branch.name, style = MaterialTheme.typography.bodyLarge)
+                                    },
+                                    onClick = {
+                                        viewModel.selectBranch(branch)
+                                        branchExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Text("No branches loaded", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Workflow runs info
+        Text("Workflow Runs: ${uiState.workflowRuns.size}", style = MaterialTheme.typography.bodyMedium)
     }
 }
 
 @Composable
 fun ProdModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel) {
+    var tagExpanded by remember { mutableStateOf(false) }
+
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-        Text("Production Mode Content", style = MaterialTheme.typography.titleMedium)
-        Text("Tags: ${uiState.tags.size}")
-        Text("Releases: ${uiState.releases.size}")
-        // TODO: Add tag selector, release details, asset download with checksum
+        // Tag selector
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Tag / Release", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (uiState.tags.isNotEmpty()) {
+                    Box {
+                        OutlinedButton(
+                            onClick = { tagExpanded = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = uiState.selectedTag?.name ?: "Select tag",
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(" ▼")
+                        }
+                        DropdownMenu(
+                            expanded = tagExpanded,
+                            onDismissRequest = { tagExpanded = false },
+                            modifier = Modifier.fillMaxWidth(0.9f)
+                        ) {
+                            uiState.tags.forEach { tag ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(tag.name, style = MaterialTheme.typography.bodyLarge)
+                                    },
+                                    onClick = {
+                                        viewModel.selectTag(tag)
+                                        tagExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Text("No tags loaded", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Release info
+        uiState.selectedRelease?.let { release ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Release: ${release.name ?: release.tagName}", style = MaterialTheme.typography.titleMedium)
+                    Text("Assets: ${release.assets.size}", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
     }
 }
