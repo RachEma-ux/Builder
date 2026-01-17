@@ -61,6 +61,7 @@ interface GitHubOAuthService {
         @Field("client_id") clientId: String,
         @Field("code") code: String,
         @Field("code_verifier") codeVerifier: String,
-        @Field("redirect_uri") redirectUri: String = "builder://oauth/callback"
+        @Field("redirect_uri") redirectUri: String = "builder://oauth/callback",
+        @Field("grant_type") grantType: String = "authorization_code"
     ): Response<AccessTokenResponse>
 }

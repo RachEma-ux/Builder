@@ -129,9 +129,16 @@ class GitHubOAuthManager @Inject constructor(
 
             val accessToken = tokenResponse.body()
             val token = accessToken?.accessToken
+
+            // Check for error response from GitHub (HTTP 200 but with error field)
+            if (accessToken?.error != null) {
+                Timber.e("GitHub OAuth error: ${accessToken.error} - ${accessToken.errorDescription}")
+                return DeviceFlowState.Error("GitHub: ${accessToken.errorDescription ?: accessToken.error}")
+            }
+
             if (!tokenResponse.isSuccessful || accessToken == null || token == null) {
-                Timber.e("Failed to exchange code for token: ${tokenResponse.code()}")
-                return DeviceFlowState.Error("Failed to get access token")
+                Timber.e("Failed to exchange code for token: HTTP ${tokenResponse.code()}")
+                return DeviceFlowState.Error("Failed to get access token (HTTP ${tokenResponse.code()})")
             }
 
             // Save token
