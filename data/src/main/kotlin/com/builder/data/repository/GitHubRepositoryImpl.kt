@@ -5,6 +5,7 @@ import com.builder.core.model.github.DeviceFlowState
 import com.builder.data.remote.github.GitHubApiService
 import com.builder.data.remote.github.GitHubOAuthManager
 import com.builder.core.model.github.*
+import com.builder.di.GitHubClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +25,7 @@ import javax.inject.Singleton
 class GitHubRepositoryImpl @Inject constructor(
     private val apiService: GitHubApiService,
     private val oauthManager: GitHubOAuthManager,
-    private val httpClient: OkHttpClient
+    @GitHubClient private val httpClient: OkHttpClient
 ) : GitHubRepository {
 
     override val authState: StateFlow<DeviceFlowState?>
@@ -245,6 +246,31 @@ class GitHubRepositoryImpl @Inject constructor(
                 Result.success(Unit)
             } catch (e: Exception) {
                 Timber.e(e, "File download failed")
+                Result.failure(e)
+            }
+        }
+    }
+
+    override suspend fun downloadFile(url: String): Result<String> {
+        return withContext(Dispatchers.IO) {
+            try {
+                Timber.d("Downloading file content from: $url")
+
+                val request = Request.Builder().url(url).build()
+                val response = httpClient.newCall(request).execute()
+
+                if (!response.isSuccessful) {
+                    return@withContext Result.failure(
+                        Exception("Download failed: ${response.code}")
+                    )
+                }
+
+                val content = response.body?.string() ?: ""
+
+                Timber.i("File content downloaded successfully (${content.length} chars)")
+                Result.success(content)
+            } catch (e: Exception) {
+                Timber.e(e, "File content download failed")
                 Result.failure(e)
             }
         }

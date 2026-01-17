@@ -11,6 +11,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.builder.core.model.InstallMode
+import com.builder.core.model.github.Release
+import com.builder.core.model.github.ReleaseAsset
 import com.builder.core.model.github.Repository
 
 /**
@@ -434,13 +436,150 @@ fun ProdModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Release info
+        // Release info and assets
         uiState.selectedRelease?.let { release ->
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("Release: ${release.name ?: release.tagName}", style = MaterialTheme.typography.titleMedium)
-                    Text("Assets: ${release.assets.size}", style = MaterialTheme.typography.bodyMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Filter pack assets (zip files, excluding checksums)
+                    val packAssets = release.assets.filter {
+                        it.name.endsWith(".zip") && !it.name.contains("checksum")
+                    }
+
+                    if (packAssets.isEmpty()) {
+                        Text(
+                            "No pack assets found in this release",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    } else {
+                        Text(
+                            "Available Packs (${packAssets.size}):",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        packAssets.forEach { asset ->
+                            AssetInstallItem(
+                                asset = asset,
+                                release = release,
+                                installing = uiState.installing,
+                                checksums = uiState.checksums,
+                                onInstall = { checksum ->
+                                    viewModel.installFromRelease(release, asset, checksum)
+                                },
+                                onLoadChecksums = {
+                                    viewModel.loadChecksums(release)
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
                 }
+            }
+        }
+
+        // Installation progress
+        if (uiState.installing) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text("Installing pack...")
+                }
+            }
+        }
+
+        // Success message
+        uiState.installSuccess?.let { message ->
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                Text(
+                    text = message,
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AssetInstallItem(
+    asset: ReleaseAsset,
+    release: Release,
+    installing: Boolean,
+    checksums: Map<String, String>,
+    onInstall: (String) -> Unit,
+    onLoadChecksums: () -> Unit
+) {
+    val checksum = checksums[asset.name]
+    val sizeInMb = asset.size / (1024.0 * 1024.0)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = asset.name,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "%.2f MB".format(sizeInMb),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (checksum != null) {
+                    Button(
+                        onClick = { onInstall(checksum) },
+                        enabled = !installing
+                    ) {
+                        Text("Install")
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = onLoadChecksums,
+                        enabled = !installing
+                    ) {
+                        Text("Load Checksum")
+                    }
+                }
+            }
+
+            if (checksum != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "SHA256: ${checksum.take(16)}...",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

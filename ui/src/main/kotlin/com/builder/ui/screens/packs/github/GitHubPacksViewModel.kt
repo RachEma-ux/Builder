@@ -428,6 +428,67 @@ class GitHubPacksViewModel @Inject constructor(
     }
 
     /**
+     * Loads checksums from the checksums.sha256 release asset.
+     * Format: "<sha256>  <filename>" (two spaces separator)
+     */
+    fun loadChecksums(release: Release) {
+        val checksumAsset = release.getChecksums()
+        if (checksumAsset == null) {
+            _uiState.update {
+                it.copy(error = "No checksums.sha256 file found in release")
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(loadingChecksums = true) }
+
+            gitHubRepository.downloadFile(checksumAsset.browserDownloadUrl).fold(
+                onSuccess = { content ->
+                    val checksumMap = parseChecksumFile(content)
+                    _uiState.update {
+                        it.copy(
+                            checksums = checksumMap,
+                            loadingChecksums = false
+                        )
+                    }
+                    Timber.i("Loaded ${checksumMap.size} checksums")
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Failed to load checksums")
+                    _uiState.update {
+                        it.copy(
+                            loadingChecksums = false,
+                            error = "Failed to load checksums: ${error.message}"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    /**
+     * Parses checksums.sha256 file content.
+     * Format: "<sha256>  <filename>" (two spaces separator per sha256sum standard)
+     */
+    private fun parseChecksumFile(content: String): Map<String, String> {
+        return content.lines()
+            .filter { it.isNotBlank() }
+            .mapNotNull { line ->
+                // Format: "sha256  filename" or "sha256 *filename" (binary mode)
+                val parts = line.split(Regex("\\s+"), limit = 2)
+                if (parts.size == 2) {
+                    val checksum = parts[0]
+                    val filename = parts[1].removePrefix("*") // Remove binary mode indicator
+                    filename to checksum
+                } else {
+                    null
+                }
+            }
+            .toMap()
+    }
+
+    /**
      * Clears error message.
      */
     fun clearError() {
@@ -452,6 +513,8 @@ data class GitHubPacksUiState(
     val workflowRuns: List<WorkflowRun> = emptyList(),
     val releases: List<Release> = emptyList(),
     val selectedRelease: Release? = null,
+    val checksums: Map<String, String> = emptyMap(),
+    val loadingChecksums: Boolean = false,
     val installing: Boolean = false,
     val installSuccess: String? = null,
     val error: String? = null

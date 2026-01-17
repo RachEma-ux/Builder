@@ -91,7 +91,13 @@ interface GitHubRepository {
     suspend fun listArtifacts(owner: String, repo: String, runId: Long): Result<List<Artifact>>
 
     /**
-     * Downloads a file from GitHub (artifact or release asset).
+     * Downloads a file from GitHub (artifact or release asset) to a local path.
      */
     suspend fun downloadFile(url: String, destination: String): Result<Unit>
+
+    /**
+     * Downloads a file from GitHub and returns its text content.
+     * Useful for small text files like checksums.sha256.
+     */
+    suspend fun downloadFile(url: String): Result<String>
 }
