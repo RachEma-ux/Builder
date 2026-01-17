@@ -6,15 +6,166 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      rebuild_wasmtime:
+        description: 'Force rebuild Wasmtime (ignore cache)'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  WASMTIME_VERSION: v15.0.0
+  ANDROID_API_LEVEL: 26
 
 jobs:
-  validate:
-    name: Validate Project
+  # Job 1: Build Wasmtime (cached)
+  build-wasmtime:
+    name: Build Wasmtime
     runs-on: ubuntu-latest
+    outputs:
+      cache-hit: ${{ steps.cache-wasmtime.outputs.cache-hit }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Cache Wasmtime libraries
+        id: cache-wasmtime
+        uses: actions/cache@v4
+        with:
+          path: |
+            native/wasmtime-android/libs
+            native/wasmtime-android/include
+            native/wasmtime-android/WASMTIME_VERSION
+          key: wasmtime-${{ env.WASMTIME_VERSION }}-android-${{ env.ANDROID_API_LEVEL }}
+
+      - name: Check if rebuild forced
+        id: check-rebuild
+        run: |
+          if [ "${{ github.event.inputs.rebuild_wasmtime }}" == "true" ]; then
+            echo "rebuild=true" >> $GITHUB_OUTPUT
+          else
+            echo "rebuild=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Rust
+        if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
+        uses: dtolnay/rust-action@stable
+        with:
+          targets: aarch64-linux-android,x86_64-linux-android
+
+      - name: Install cargo-ndk
+        if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
+        run: cargo install cargo-ndk
+
+      - name: Setup Android NDK
+        if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'ndk;25.2.9519653'
+
+      - name: Clone Wasmtime
+        if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
+        run: |
+          git clone --depth 1 --branch ${{ env.WASMTIME_VERSION }} \
+            https://github.com/bytecodealliance/wasmtime.git /tmp/wasmtime
+
+      - name: Build Wasmtime for ARM64
+        if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/25.2.9519653
+        run: |
+          cd /tmp/wasmtime
+          cargo ndk \
+            --target aarch64-linux-android \
+            --platform ${{ env.ANDROID_API_LEVEL }} \
+            build \
+            --release \
+            --manifest-path crates/c-api/Cargo.toml
+
+      - name: Build Wasmtime for x86_64
+        if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/25.2.9519653
+        run: |
+          cd /tmp/wasmtime
+          cargo ndk \
+            --target x86_64-linux-android \
+            --platform ${{ env.ANDROID_API_LEVEL }} \
+            build \
+            --release \
+            --manifest-path crates/c-api/Cargo.toml
+
+      - name: Copy and strip libraries
+        if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/25.2.9519653
+        run: |
+          # Create directories
+          mkdir -p native/wasmtime-android/libs/arm64-v8a
+          mkdir -p native/wasmtime-android/libs/x86_64
+          mkdir -p native/wasmtime-android/include
+
+          # Copy libraries
+          cp /tmp/wasmtime/target/aarch64-linux-android/release/libwasmtime.so \
+             native/wasmtime-android/libs/arm64-v8a/
+          cp /tmp/wasmtime/target/x86_64-linux-android/release/libwasmtime.so \
+             native/wasmtime-android/libs/x86_64/
+
+          # Strip debug symbols
+          $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip \
+            native/wasmtime-android/libs/arm64-v8a/libwasmtime.so
+          $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip \
+            native/wasmtime-android/libs/x86_64/libwasmtime.so
+
+          # Copy headers
+          cp /tmp/wasmtime/crates/c-api/include/wasmtime.h native/wasmtime-android/include/
+          cp /tmp/wasmtime/crates/c-api/include/wasm.h native/wasmtime-android/include/
+
+          # Create version file
+          cat > native/wasmtime-android/WASMTIME_VERSION << EOF
+          Wasmtime Version: ${{ env.WASMTIME_VERSION }}
+          Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          Android API Level: ${{ env.ANDROID_API_LEVEL }}
+          Architectures: arm64-v8a, x86_64
+          EOF
+
+          # Show sizes
+          echo "=== Library sizes ==="
+          ls -lh native/wasmtime-android/libs/arm64-v8a/
+          ls -lh native/wasmtime-android/libs/x86_64/
+
+      - name: Upload Wasmtime libraries
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasmtime-libs
+          path: |
+            native/wasmtime-android/libs
+            native/wasmtime-android/include
+            native/wasmtime-android/WASMTIME_VERSION
+          retention-days: 90
+
+  # Job 2: Build Android App
+  build-app:
+    name: Build Android App
+    runs-on: ubuntu-latest
+    needs: build-wasmtime
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Wasmtime libraries
+        uses: actions/download-artifact@v4
+        with:
+          name: wasmtime-libs
+          path: native/wasmtime-android/
+
+      - name: Verify Wasmtime libraries
+        run: |
+          echo "=== Wasmtime libraries ==="
+          ls -lhR native/wasmtime-android/
+          cat native/wasmtime-android/WASMTIME_VERSION
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -29,40 +180,18 @@ jobs:
       - name: Accept licenses
         run: yes | sdkmanager --licenses || true
 
+      - name: Setup Android NDK
+        run: sdkmanager "ndk;25.2.9519653"
+
       - name: Grant execute permission
         run: chmod +x gradlew
 
       - name: Validate Gradle wrapper
         uses: gradle/wrapper-validation-action@v2
 
-      - name: Check Gradle
-        run: ./gradlew --version
-
-      - name: Resolve dependencies
-        run: ./gradlew dependencies --configuration debugRuntimeClasspath || true
-
-      # Step 2: Compile core module (JVM library, not Android)
-      - name: Compile core module
-        run: ./gradlew :core:compileKotlin
-
-      # Step 3: Compile runtime module (Android library)
-      - name: Compile runtime module
-        run: ./gradlew :runtime:compileDebugKotlin
-
-      # Step 4: Compile domain module (JVM library)
-      - name: Compile domain module
-        run: ./gradlew :domain:compileKotlin
-
-      # Step 5: Compile data module (Android library)
-      - name: Compile data module
-        run: ./gradlew :data:compileDebugKotlin
-
-      # Step 6: Compile app module (Android application)
-      - name: Compile app module
-        run: ./gradlew :app:compileDebugKotlin
-
-      # Step 7: Build Debug APK
       - name: Build Debug APK
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/25.2.9519653
         run: ./gradlew assembleDebug
 
       - name: Upload Debug APK
@@ -71,3 +200,13 @@ jobs:
           name: builder-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 30
+
+      - name: Build Summary
+        run: |
+          echo "## Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Wasmtime" >> $GITHUB_STEP_SUMMARY
+          cat native/wasmtime-android/WASMTIME_VERSION >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### APK" >> $GITHUB_STEP_SUMMARY
+          ls -lh app/build/outputs/apk/debug/*.apk >> $GITHUB_STEP_SUMMARY
