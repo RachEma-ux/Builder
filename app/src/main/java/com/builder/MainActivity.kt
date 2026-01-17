@@ -3,6 +3,7 @@ package com.builder
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -84,12 +85,19 @@ class MainActivity : ComponentActivity() {
                 }
                 code != null && state != null -> {
                     Timber.i("Processing OAuth authorization code: code=${code.take(10)}..., state=$state")
+                    Toast.makeText(this, "OAuth callback received!", Toast.LENGTH_SHORT).show()
                     lifecycleScope.launch {
                         try {
                             val result = oauthManager.handleOAuthCallback(code, state)
                             Timber.i("OAuth callback result: $result")
+                            runOnUiThread {
+                                Toast.makeText(this@MainActivity, "OAuth result: $result", Toast.LENGTH_LONG).show()
+                            }
                         } catch (e: Exception) {
                             Timber.e(e, "OAuth callback failed")
+                            runOnUiThread {
+                                Toast.makeText(this@MainActivity, "OAuth failed: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
                         }
                     }
                 }
