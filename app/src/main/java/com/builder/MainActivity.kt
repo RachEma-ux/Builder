@@ -7,13 +7,30 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Inventory
+import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.builder.data.remote.github.GitHubOAuthManager
-import com.builder.ui.screens.packs.github.GitHubPacksScreen
+import com.builder.ui.navigation.BuilderNavHost
+import com.builder.ui.navigation.Screen
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -114,10 +131,58 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Navigation items for bottom bar.
+ */
+sealed class BottomNavItem(
+    val route: String,
+    val icon: ImageVector,
+    val label: String
+) {
+    object GitHubPacks : BottomNavItem(Screen.GitHubPacks.route, Icons.Default.Cloud, "Packs")
+    object WasmRun : BottomNavItem(Screen.WasmRun.route, Icons.Default.PlayCircle, "WASM Run")
+    object Instances : BottomNavItem(Screen.Instances.route, Icons.Default.Inventory, "Instances")
+}
+
 @Composable
 fun BuilderApp() {
-    // Main app UI with GitHub Packs screen
-    GitHubPacksScreen()
+    val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+
+    val bottomNavItems = listOf(
+        BottomNavItem.GitHubPacks,
+        BottomNavItem.WasmRun,
+        BottomNavItem.Instances
+    )
+
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                bottomNavItems.forEach { item ->
+                    NavigationBarItem(
+                        icon = { Icon(item.icon, contentDescription = item.label) },
+                        label = { Text(item.label) },
+                        selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
+                        onClick = {
+                            navController.navigate(item.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    ) { innerPadding ->
+        BuilderNavHost(
+            navController = navController,
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
 }
 
 @Composable

@@ -239,7 +239,7 @@ Builder has **two distinct install modes** that are impossible to confuse:
 - [x] Zip slip vulnerability protection
 - [x] Naming convention validation
 
-### Phase 4: Runtimes 🔄 In Progress (Revised)
+### Phase 4: Runtimes ✅ Complete (Revised)
 
 **4A: Simplify Workflow ✅ Complete**
 - [x] Remove Android Wasmtime cross-compilation from CI
@@ -252,12 +252,14 @@ Builder has **two distinct install modes** that are impossible to confuse:
 - [x] Upload execution results as artifact
 - [x] User downloads artifact and tests locally
 
-**4C: App Integration** ⏳ Pending
+**4C: App Integration** ✅ Complete
 - [x] Workflow execution engine (on phone)
 - [x] Permission enforcement
 - [x] Progress tracking and cancellation
-- [ ] Phone app triggers WASM runs via GitHub API
-- [ ] Phone app displays execution results/logs
+- [x] Phone app triggers WASM runs via GitHub API
+- [x] Phone app displays execution results/logs
+- [x] WASM Run screen with repository/branch selection
+- [x] Bottom navigation bar for screen switching
 
 ### Phase 5: UI/UX ✅ ~90% Complete
 - [x] IBM-style sidebar navigation
@@ -283,7 +285,6 @@ Builder has **two distinct install modes** that are impossible to confuse:
 
 | Task | Priority | Status |
 |------|----------|--------|
-| App integration for WASM runs (Phase 4C) | High | Next up |
 | Secrets management UI | Medium | Not started |
 | Persistent KV store | Medium | Not started |
 | Security audit | Medium | Not started |
@@ -299,6 +300,12 @@ Builder has **two distinct install modes** that are impossible to confuse:
 - **Phase 4A Complete:** GitHub Actions now runs WASM packs (Wasmtime on Linux)
 - **Phase 4B Complete:** Execution results uploaded as downloadable artifacts
 - **Verified:** "Hello from Builder WASM Runtime!" executed successfully
+- **Phase 4C Complete:** App integration for triggering WASM runs
+  - New WASM Run screen for triggering GitHub Actions workflows
+  - Repository and branch selection UI
+  - Real-time execution status with polling
+  - Execution history display
+  - Bottom navigation bar for app-wide navigation
 
 ---
 
