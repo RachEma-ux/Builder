@@ -1,6 +1,5 @@
 package com.builder.core.util
 
-import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -9,15 +8,12 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Debug logger that writes to a file for easy export and debugging.
- * Logs are stored in the app's cache directory.
+ * Uses a singleton pattern for simplicity.
  */
-@Singleton
-class DebugLogger @Inject constructor() {
+object DebugLogger {
 
     private var logFile: File? = null
     private val mutex = Mutex()
@@ -25,19 +21,20 @@ class DebugLogger @Inject constructor() {
     private val logs = mutableListOf<String>()
 
     /**
-     * Initialize the logger with app context.
+     * Initialize the logger with a cache directory path.
      * Must be called before logging.
      */
-    fun init(context: Context) {
-        val cacheDir = context.cacheDir
+    fun init(cacheDir: File) {
         logFile = File(cacheDir, "debug_log.txt")
         // Clear old logs on init
         logFile?.writeText("=== Builder Debug Log ===\n")
         logFile?.appendText("Started: ${dateFormat.format(Date())}\n")
         logFile?.appendText("========================\n\n")
-        logs.clear()
-        logs.add("=== Builder Debug Log ===")
-        logs.add("Started: ${dateFormat.format(Date())}")
+        synchronized(logs) {
+            logs.clear()
+            logs.add("=== Builder Debug Log ===")
+            logs.add("Started: ${dateFormat.format(Date())}")
+        }
     }
 
     /**

@@ -27,15 +27,14 @@ import javax.inject.Inject
 class GitHubPacksViewModel @Inject constructor(
     private val gitHubRepository: GitHubRepository,
     private val listRepositoriesUseCase: ListRepositoriesUseCase,
-    private val installPackUseCase: InstallPackUseCase,
-    val debugLogger: DebugLogger
+    private val installPackUseCase: InstallPackUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GitHubPacksUiState())
     val uiState: StateFlow<GitHubPacksUiState> = _uiState.asStateFlow()
 
     init {
-        debugLogger.logSync("INFO", "GitHubVM", "ViewModel initialized")
+        DebugLogger.logSync("INFO", "GitHubVM", "ViewModel initialized")
         checkAuthentication()
         observeAuthState()
     }
@@ -320,21 +319,21 @@ class GitHubPacksViewModel @Inject constructor(
      * Looks up the release from already-loaded releases list.
      */
     fun selectTag(tag: Tag) {
-        debugLogger.logSync("INFO", "Tag", "Tag selected: ${tag.name}")
-        debugLogger.logSync("INFO", "Tag", "Available releases: ${_uiState.value.releases.map { it.tagName }}")
+        DebugLogger.logSync("INFO", "Tag", "Tag selected: ${tag.name}")
+        DebugLogger.logSync("INFO", "Tag", "Available releases: ${_uiState.value.releases.map { it.tagName }}")
         _uiState.update { it.copy(selectedTag = tag, selectedRelease = null, checksums = emptyMap()) }
 
         // Find release matching this tag from already-loaded releases
         val release = _uiState.value.releases.find { it.tagName == tag.name }
-        debugLogger.logSync("INFO", "Tag", "Matching release: ${release?.tagName ?: "NOT FOUND"}")
+        DebugLogger.logSync("INFO", "Tag", "Matching release: ${release?.tagName ?: "NOT FOUND"}")
 
         if (release != null) {
-            debugLogger.logSync("INFO", "Tag", "Release assets: ${release.assets.map { it.name }}")
+            DebugLogger.logSync("INFO", "Tag", "Release assets: ${release.assets.map { it.name }}")
             _uiState.update { it.copy(selectedRelease = release) }
             // Auto-load checksums for better UX
             loadChecksums(release)
         } else {
-            debugLogger.logSync("WARN", "Tag", "No release found for tag ${tag.name}")
+            DebugLogger.logSync("WARN", "Tag", "No release found for tag ${tag.name}")
             // Tag exists but no GitHub Release was created for it
             _uiState.update {
                 it.copy(error = "No release found for tag '${tag.name}'. Create a GitHub Release from this tag to install packs.")
@@ -387,43 +386,43 @@ class GitHubPacksViewModel @Inject constructor(
      * If checksum is empty, installation proceeds without verification.
      */
     fun installFromRelease(release: Release, asset: ReleaseAsset, checksum: String) {
-        debugLogger.logSync("INFO", "Install", "=== INSTALL STARTED ===")
-        debugLogger.logSync("INFO", "Install", "Asset: ${asset.name}")
-        debugLogger.logSync("INFO", "Install", "Release: ${release.tagName}")
-        debugLogger.logSync("INFO", "Install", "URL: ${asset.browserDownloadUrl}")
-        debugLogger.logSync("INFO", "Install", "Checksum: ${checksum.take(32)}...")
+        DebugLogger.logSync("INFO", "Install", "=== INSTALL STARTED ===")
+        DebugLogger.logSync("INFO", "Install", "Asset: ${asset.name}")
+        DebugLogger.logSync("INFO", "Install", "Release: ${release.tagName}")
+        DebugLogger.logSync("INFO", "Install", "URL: ${asset.browserDownloadUrl}")
+        DebugLogger.logSync("INFO", "Install", "Checksum: ${checksum.take(32)}...")
         Timber.i("installFromRelease called: ${asset.name}, checksum=$checksum")
 
         viewModelScope.launch {
             try {
-                debugLogger.i("Install", "Updating UI state to installing=true")
+                DebugLogger.i("Install", "Updating UI state to installing=true")
                 _uiState.update { it.copy(installing = true, error = null) }
-                debugLogger.i("Install", "UI state updated")
+                DebugLogger.i("Install", "UI state updated")
                 Timber.i("Starting installation from: ${asset.browserDownloadUrl}")
 
-                debugLogger.i("Install", "Creating InstallSource")
+                DebugLogger.i("Install", "Creating InstallSource")
                 val installSource = InstallSource.prod(
                     tag = release.tagName,
                     releaseUrl = asset.browserDownloadUrl,
                     timestamp = System.currentTimeMillis()
                 )
-                debugLogger.i("Install", "InstallSource created: $installSource")
+                DebugLogger.i("Install", "InstallSource created: $installSource")
 
                 // Pass null if checksum is empty (no verification)
                 val expectedChecksum = checksum.ifEmpty { null }
-                debugLogger.i("Install", "Expected checksum: ${expectedChecksum?.take(16) ?: "none (will skip verification)"}")
+                DebugLogger.i("Install", "Expected checksum: ${expectedChecksum?.take(16) ?: "none (will skip verification)"}")
                 Timber.i("Expected checksum: ${expectedChecksum?.take(16) ?: "none"}")
 
-                debugLogger.i("Install", "Calling installPackUseCase...")
+                DebugLogger.i("Install", "Calling installPackUseCase...")
                 installPackUseCase(
                     downloadUrl = asset.browserDownloadUrl,
                     installSource = installSource,
                     expectedChecksum = expectedChecksum
                 ).fold(
                     onSuccess = { pack ->
-                        debugLogger.i("Install", "=== INSTALL SUCCESS ===")
-                        debugLogger.i("Install", "Pack ID: ${pack.id}")
-                        debugLogger.i("Install", "Pack Name: ${pack.name}")
+                        DebugLogger.i("Install", "=== INSTALL SUCCESS ===")
+                        DebugLogger.i("Install", "Pack ID: ${pack.id}")
+                        DebugLogger.i("Install", "Pack Name: ${pack.name}")
                         Timber.i("Pack installed successfully: ${pack.id}")
                         _uiState.update {
                             it.copy(
@@ -433,8 +432,8 @@ class GitHubPacksViewModel @Inject constructor(
                         }
                     },
                     onFailure = { error ->
-                        debugLogger.e("Install", "=== INSTALL FAILED ===", error)
-                        debugLogger.e("Install", "Error message: ${error.message}")
+                        DebugLogger.e("Install", "=== INSTALL FAILED ===", error)
+                        DebugLogger.e("Install", "Error message: ${error.message}")
                         Timber.e(error, "Pack installation failed")
                         _uiState.update {
                             it.copy(
@@ -445,7 +444,7 @@ class GitHubPacksViewModel @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
-                debugLogger.e("Install", "=== UNEXPECTED ERROR ===", e)
+                DebugLogger.e("Install", "=== UNEXPECTED ERROR ===", e)
                 Timber.e(e, "Unexpected error during installation")
                 _uiState.update {
                     it.copy(
@@ -469,15 +468,15 @@ class GitHubPacksViewModel @Inject constructor(
      * Format: "<sha256>  <filename>" (two spaces separator)
      */
     fun loadChecksums(release: Release) {
-        debugLogger.logSync("INFO", "Checksum", "Loading checksums for release ${release.tagName}")
-        debugLogger.logSync("INFO", "Checksum", "Release assets: ${release.assets.map { "${it.name} (${it.browserDownloadUrl})" }}")
+        DebugLogger.logSync("INFO", "Checksum", "Loading checksums for release ${release.tagName}")
+        DebugLogger.logSync("INFO", "Checksum", "Release assets: ${release.assets.map { "${it.name} (${it.browserDownloadUrl})" }}")
 
         val checksumAsset = release.getChecksums()
-        debugLogger.logSync("INFO", "Checksum", "Checksum asset: ${checksumAsset?.name ?: "NOT FOUND"}")
+        DebugLogger.logSync("INFO", "Checksum", "Checksum asset: ${checksumAsset?.name ?: "NOT FOUND"}")
 
         if (checksumAsset == null) {
             // No checksum file found - allow installation without verification
-            debugLogger.logSync("WARN", "Checksum", "No checksum file found - will allow install without verification")
+            DebugLogger.logSync("WARN", "Checksum", "No checksum file found - will allow install without verification")
             Timber.w("No checksum file found in release ${release.tagName}")
             _uiState.update {
                 it.copy(
@@ -490,14 +489,14 @@ class GitHubPacksViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            debugLogger.i("Checksum", "Downloading checksum file from ${checksumAsset.browserDownloadUrl}")
+            DebugLogger.i("Checksum", "Downloading checksum file from ${checksumAsset.browserDownloadUrl}")
             _uiState.update { it.copy(loadingChecksums = true, checksumsNotAvailable = false) }
 
             gitHubRepository.downloadFile(checksumAsset.browserDownloadUrl).fold(
                 onSuccess = { content ->
-                    debugLogger.i("Checksum", "Checksum file content:\n$content")
+                    DebugLogger.i("Checksum", "Checksum file content:\n$content")
                     val checksumMap = parseChecksumFile(content)
-                    debugLogger.i("Checksum", "Parsed checksums: $checksumMap")
+                    DebugLogger.i("Checksum", "Parsed checksums: $checksumMap")
                     _uiState.update {
                         it.copy(
                             checksums = checksumMap,
@@ -508,7 +507,7 @@ class GitHubPacksViewModel @Inject constructor(
                     Timber.i("Loaded ${checksumMap.size} checksums")
                 },
                 onFailure = { error ->
-                    debugLogger.e("Checksum", "Failed to load checksums", error)
+                    DebugLogger.e("Checksum", "Failed to load checksums", error)
                     Timber.e(error, "Failed to load checksums")
                     _uiState.update {
                         it.copy(

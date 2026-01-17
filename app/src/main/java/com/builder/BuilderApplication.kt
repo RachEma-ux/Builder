@@ -4,7 +4,6 @@ import android.app.Application
 import com.builder.core.util.DebugLogger
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
-import javax.inject.Inject
 
 /**
  * Main application class for Builder.
@@ -12,9 +11,6 @@ import javax.inject.Inject
  */
 @HiltAndroidApp
 class BuilderApplication : Application() {
-
-    @Inject
-    lateinit var debugLogger: DebugLogger
 
     override fun onCreate() {
         super.onCreate()
@@ -25,11 +21,11 @@ class BuilderApplication : Application() {
         }
 
         // Initialize debug file logger
-        debugLogger.init(this)
-        debugLogger.logSync("INFO", "App", "Builder application started")
-        debugLogger.logSync("INFO", "App", "Version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
-        debugLogger.logSync("INFO", "App", "Device: ${android.os.Build.MODEL} (API ${android.os.Build.VERSION.SDK_INT})")
-        debugLogger.logSync("INFO", "App", "ABIs: ${android.os.Build.SUPPORTED_ABIS.joinToString()}")
+        DebugLogger.init(cacheDir)
+        DebugLogger.logSync("INFO", "App", "Builder application started")
+        DebugLogger.logSync("INFO", "App", "Version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+        DebugLogger.logSync("INFO", "App", "Device: ${android.os.Build.MODEL} (API ${android.os.Build.VERSION.SDK_INT})")
+        DebugLogger.logSync("INFO", "App", "ABIs: ${android.os.Build.SUPPORTED_ABIS.joinToString()}")
 
         Timber.i("Builder application started")
         Timber.d("App version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")

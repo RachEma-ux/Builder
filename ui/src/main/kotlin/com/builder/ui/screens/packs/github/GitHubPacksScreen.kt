@@ -39,7 +39,6 @@ fun GitHubPacksScreen(
     // Debug log dialog
     if (showDebugDialog) {
         DebugLogDialog(
-            debugLogger = viewModel.debugLogger,
             onDismiss = { showDebugDialog = false }
         )
     }
@@ -106,7 +105,7 @@ fun GitHubPacksScreen(
                 // Mode-specific content
                 when (uiState.selectedTab) {
                     InstallMode.DEV -> DevModeContent(uiState, viewModel)
-                    InstallMode.PROD -> ProdModeContent(uiState, viewModel, viewModel.debugLogger)
+                    InstallMode.PROD -> ProdModeContent(uiState, viewModel)
                 }
 
                 // Error/Success messages
@@ -411,7 +410,7 @@ fun DevModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel)
 }
 
 @Composable
-fun ProdModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel, debugLogger: DebugLogger? = null) {
+fun ProdModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel) {
     var tagExpanded by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
@@ -530,8 +529,7 @@ fun ProdModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel
                                 },
                                 onLoadChecksums = {
                                     viewModel.loadChecksums(release)
-                                },
-                                debugLogger = debugLogger
+                                }
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
@@ -588,8 +586,7 @@ fun AssetInstallItem(
     checksums: Map<String, String>,
     checksumsNotAvailable: Boolean,
     onInstall: (String) -> Unit,
-    onLoadChecksums: () -> Unit,
-    debugLogger: DebugLogger? = null
+    onLoadChecksums: () -> Unit
 ) {
     val context = LocalContext.current
     val checksum = checksums[asset.name]
@@ -597,9 +594,9 @@ fun AssetInstallItem(
 
     // Log UI state for debugging
     LaunchedEffect(installing, loadingChecksums, checksum, checksumsNotAvailable) {
-        debugLogger?.i("AssetUI", "Asset: ${asset.name}")
-        debugLogger?.i("AssetUI", "  installing=$installing, loadingChecksums=$loadingChecksums")
-        debugLogger?.i("AssetUI", "  checksum=${checksum?.take(16) ?: "null"}, checksumsNotAvailable=$checksumsNotAvailable")
+        DebugLogger.i("AssetUI", "Asset: ${asset.name}")
+        DebugLogger.i("AssetUI", "  installing=$installing, loadingChecksums=$loadingChecksums")
+        DebugLogger.i("AssetUI", "  checksum=${checksum?.take(16) ?: "null"}, checksumsNotAvailable=$checksumsNotAvailable")
     }
 
     Card(
@@ -646,9 +643,9 @@ fun AssetInstallItem(
                 } else if (checksum != null) {
                     Button(
                         onClick = {
-                            debugLogger?.logSync("INFO", "Button", "=== INSTALL BUTTON CLICKED ===")
-                            debugLogger?.logSync("INFO", "Button", "Asset: ${asset.name}")
-                            debugLogger?.logSync("INFO", "Button", "Checksum: ${checksum.take(32)}...")
+                            DebugLogger.logSync("INFO", "Button", "=== INSTALL BUTTON CLICKED ===")
+                            DebugLogger.logSync("INFO", "Button", "Asset: ${asset.name}")
+                            DebugLogger.logSync("INFO", "Button", "Checksum: ${checksum.take(32)}...")
                             Timber.i("Install button clicked for ${asset.name}")
                             Toast.makeText(context, "Install clicked! Check logs...", Toast.LENGTH_SHORT).show()
                             onInstall(checksum)
@@ -660,8 +657,8 @@ fun AssetInstallItem(
                     // No checksum file in release - allow install without verification
                     Button(
                         onClick = {
-                            debugLogger?.logSync("INFO", "Button", "=== INSTALL (NO VERIFY) CLICKED ===")
-                            debugLogger?.logSync("INFO", "Button", "Asset: ${asset.name}")
+                            DebugLogger.logSync("INFO", "Button", "=== INSTALL (NO VERIFY) CLICKED ===")
+                            DebugLogger.logSync("INFO", "Button", "Asset: ${asset.name}")
                             Timber.i("Install (No Verify) button clicked for ${asset.name}")
                             Toast.makeText(context, "Install clicked! Check logs...", Toast.LENGTH_SHORT).show()
                             onInstall("")
@@ -674,9 +671,9 @@ fun AssetInstallItem(
                     }
                 } else {
                     // Checksums should be available but not loaded yet
-                    debugLogger?.logSync("DEBUG", "AssetUI", "Showing Load Checksums button for ${asset.name}")
+                    DebugLogger.logSync("DEBUG", "AssetUI", "Showing Load Checksums button for ${asset.name}")
                     OutlinedButton(onClick = {
-                        debugLogger?.logSync("INFO", "Button", "Load Checksums clicked for ${asset.name}")
+                        DebugLogger.logSync("INFO", "Button", "Load Checksums clicked for ${asset.name}")
                         onLoadChecksums()
                     }) {
                         Text("Load Checksums")
@@ -708,13 +705,12 @@ fun AssetInstallItem(
  */
 @Composable
 fun DebugLogDialog(
-    debugLogger: DebugLogger,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val logs = remember { debugLogger.getLogsAsString() }
+    val logs = remember { DebugLogger.getLogsAsString() }
     var refreshTrigger by remember { mutableIntStateOf(0) }
-    val currentLogs = remember(refreshTrigger) { debugLogger.getLogsAsString() }
+    val currentLogs = remember(refreshTrigger) { DebugLogger.getLogsAsString() }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -754,7 +750,7 @@ fun DebugLogDialog(
 
                 // Log path info
                 Text(
-                    text = "Log file: ${debugLogger.getLogFilePath()}",
+                    text = "Log file: ${DebugLogger.getLogFilePath()}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
