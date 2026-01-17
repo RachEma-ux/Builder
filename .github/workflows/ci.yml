@@ -67,7 +67,7 @@ jobs:
       - name: Clone Wasmtime
         if: steps.cache-wasmtime.outputs.cache-hit != 'true' || steps.check-rebuild.outputs.rebuild == 'true'
         run: |
-          git clone --depth 1 --branch ${{ env.WASMTIME_VERSION }} \
+          git clone --branch ${{ env.WASMTIME_VERSION }} --recursive \
             https://github.com/bytecodealliance/wasmtime.git /tmp/wasmtime
 
       - name: Build Wasmtime for ARM64
