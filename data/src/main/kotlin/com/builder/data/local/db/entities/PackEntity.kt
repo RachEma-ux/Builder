@@ -1,6 +1,7 @@
 package com.builder.data.local.db.entities
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.builder.core.model.*
 import kotlinx.serialization.encodeToString
@@ -9,7 +10,14 @@ import kotlinx.serialization.json.Json
 /**
  * Room entity for installed packs.
  */
-@Entity(tableName = "packs")
+@Entity(
+    tableName = "packs",
+    indices = [
+        Index("type"),
+        Index("installMode"),
+        Index("installedAt")
+    ]
+)
 data class PackEntity(
     @PrimaryKey
     val id: String,

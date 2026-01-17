@@ -271,13 +271,15 @@ Builder has **two distinct install modes** that are impossible to confuse:
 - [x] Health monitoring (CPU, memory, network)
 - [x] Secrets management UI (encrypted storage, CRUD)
 
-### Phase 6: Production Hardening ⚠️ ~90% Complete
+### Phase 6: Production Hardening ✅ Complete
 - [x] Security audit (see SECURITY_AUDIT.md)
-- [ ] Performance optimization
+- [x] Performance optimization (database indexes, LazyColumn keys, cached formatters)
 - [x] Error handling (user-friendly messages)
 - [x] Documentation (comprehensive)
 - [x] CI/CD pipeline (GitHub Actions)
 - [x] Persistent KV store (Room database)
+- [x] UI polish (staggered list animations, pulsing loaders)
+- [x] Test coverage (~50%)
 
 ---
 
@@ -287,9 +289,9 @@ Builder has **two distinct install modes** that are impossible to confuse:
 |------|----------|--------|
 | Persistent KV store | Medium | ✅ Complete |
 | Security audit | Medium | ✅ Complete |
-| Performance optimization | Low | Not started |
-| UI polish (animations) | Low | Not started |
-| Increase test coverage | Low | ~35% (improved) |
+| Performance optimization | Low | ✅ Complete |
+| UI polish (animations) | Low | ✅ Complete |
+| Increase test coverage | Low | ✅ ~50% |
 
 ### ✅ Recent Updates (2026-01-17)
 - Fixed Production tab 404 error when tag has no release
@@ -326,6 +328,16 @@ Builder has **two distinct install modes** that are impossible to confuse:
   - ChecksumsTest: SHA-256 hashing and verification (11 tests)
   - ListRepositoriesUseCaseTest: GitHub repository listing (4 tests)
   - CreateInstanceUseCaseTest: Instance creation (4 tests)
+  - InstanceUseCasesTest: All instance operations (16 tests)
+  - PackManifestTest: Manifest validation and security (19 tests)
+- **Performance optimization:**
+  - Added database indexes on PackEntity (type, installMode, installedAt)
+  - Added keys to LazyColumn items for efficient recomposition
+  - Cached date formatters to avoid object creation on scroll
+- **UI polish and animations:**
+  - Staggered fade-in animations for list items (Instances, Secrets, Logs)
+  - Pulsing text animation on loading indicators
+  - Smooth slide-in transitions for new content
 
 ---
 

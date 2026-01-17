@@ -1,8 +1,13 @@
 package com.builder.ui.screens.secrets
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -88,12 +93,31 @@ fun SecretsScreen(
                             )
                         }
 
-                        items(uiState.secrets, key = { it.key }) { secret ->
-                            SecretCard(
-                                secret = secret,
-                                onEdit = { viewModel.showEditDialog(secret) },
-                                onDelete = { viewModel.confirmDelete(secret.key) }
-                            )
+                        itemsIndexed(
+                            items = uiState.secrets,
+                            key = { _, secret -> secret.key }
+                        ) { index, secret ->
+                            AnimatedVisibility(
+                                visible = true,
+                                enter = fadeIn(
+                                    animationSpec = tween(
+                                        durationMillis = 300,
+                                        delayMillis = index * 50
+                                    )
+                                ) + slideInVertically(
+                                    animationSpec = tween(
+                                        durationMillis = 300,
+                                        delayMillis = index * 50
+                                    ),
+                                    initialOffsetY = { it / 2 }
+                                )
+                            ) {
+                                SecretCard(
+                                    secret = secret,
+                                    onEdit = { viewModel.showEditDialog(secret) },
+                                    onDelete = { viewModel.confirmDelete(secret.key) }
+                                )
+                            }
                         }
                     }
                 }
