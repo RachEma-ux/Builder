@@ -2,6 +2,7 @@ package com.builder.ui.screens.packs.github
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,6 +15,7 @@ import com.builder.core.model.InstallMode
 import com.builder.core.model.github.Release
 import com.builder.core.model.github.ReleaseAsset
 import com.builder.core.model.github.Repository
+import timber.log.Timber
 
 /**
  * Main screen for installing packs from GitHub.
@@ -566,6 +568,7 @@ fun AssetInstallItem(
     onInstall: (String) -> Unit,
     onLoadChecksums: () -> Unit
 ) {
+    val context = LocalContext.current
     val checksum = checksums[asset.name]
     val sizeInMb = asset.size / (1024.0 * 1024.0)
 
@@ -593,7 +596,18 @@ fun AssetInstallItem(
                     )
                 }
 
-                if (loadingChecksums) {
+                if (installing) {
+                    // Show installing state on the button itself
+                    Button(onClick = {}, enabled = false) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Installing...")
+                    }
+                } else if (loadingChecksums) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
@@ -601,16 +615,22 @@ fun AssetInstallItem(
                     }
                 } else if (checksum != null) {
                     Button(
-                        onClick = { onInstall(checksum) },
-                        enabled = !installing
+                        onClick = {
+                            Timber.i("Install button clicked for ${asset.name}")
+                            Toast.makeText(context, "Starting install...", Toast.LENGTH_SHORT).show()
+                            onInstall(checksum)
+                        }
                     ) {
                         Text("Install")
                     }
                 } else if (checksumsNotAvailable) {
                     // No checksum file in release - allow install without verification
                     Button(
-                        onClick = { onInstall("") },
-                        enabled = !installing,
+                        onClick = {
+                            Timber.i("Install (No Verify) button clicked for ${asset.name}")
+                            Toast.makeText(context, "Starting install (no verify)...", Toast.LENGTH_SHORT).show()
+                            onInstall("")
+                        },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.tertiary
                         )
@@ -619,10 +639,7 @@ fun AssetInstallItem(
                     }
                 } else {
                     // Checksums should be available but not loaded yet
-                    OutlinedButton(
-                        onClick = onLoadChecksums,
-                        enabled = !installing
-                    ) {
+                    OutlinedButton(onClick = onLoadChecksums) {
                         Text("Load Checksums")
                     }
                 }
