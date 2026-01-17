@@ -1,6 +1,7 @@
 package com.builder.di
 
 import com.builder.core.repository.InstanceRepository
+import com.builder.core.repository.LogRepository
 import com.builder.data.instance.InstanceManager
 import com.builder.data.local.db.dao.InstanceDao
 import com.builder.runtime.LogCollector
@@ -35,8 +36,8 @@ object RuntimeModule {
 
     @Provides
     @Singleton
-    fun provideLogCollector(): LogCollector {
-        return LogCollector()
+    fun provideLogCollector(logRepository: LogRepository): LogCollector {
+        return LogCollector(logRepository)
     }
 
     @Provides
