@@ -5,6 +5,7 @@ import com.builder.core.model.WasmExecutionResult
 import com.builder.core.model.WasmExecutionState
 import com.builder.core.model.github.WorkflowRun
 import com.builder.core.repository.GitHubRepository
+import com.builder.core.util.DebugLogger
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -38,9 +39,12 @@ class RunWasmPackUseCase @Inject constructor(
         repo: String,
         ref: String = "main"
     ): Flow<WasmExecutionState> = flow {
+        DebugLogger.logSync("INFO", "WasmRun", "=== WASM EXECUTION STARTED ===")
+        DebugLogger.logSync("INFO", "WasmRun", "Owner: $owner, Repo: $repo, Ref: $ref")
         emit(WasmExecutionState.Triggering)
 
         // Step 1: Trigger the workflow
+        DebugLogger.logSync("INFO", "WasmRun", "Triggering workflow: $WORKFLOW_FILE")
         val triggerResult = gitHubRepository.triggerWorkflow(
             owner = owner,
             repo = repo,
@@ -49,11 +53,12 @@ class RunWasmPackUseCase @Inject constructor(
         )
 
         if (triggerResult.isFailure) {
-            emit(WasmExecutionState.Error(
-                triggerResult.exceptionOrNull()?.message ?: "Failed to trigger workflow"
-            ))
+            val errorMsg = triggerResult.exceptionOrNull()?.message ?: "Failed to trigger workflow"
+            DebugLogger.logSync("ERROR", "WasmRun", "Trigger failed: $errorMsg")
+            emit(WasmExecutionState.Error(errorMsg))
             return@flow
         }
+        DebugLogger.logSync("INFO", "WasmRun", "Workflow triggered successfully")
 
         // Step 2: Wait a bit for the workflow to be registered
         delay(3000)
@@ -71,10 +76,12 @@ class RunWasmPackUseCase @Inject constructor(
         val latestRun = runs.firstOrNull { it.isRunning() || it.isComplete() }
 
         if (latestRun == null) {
+            DebugLogger.logSync("ERROR", "WasmRun", "Could not find triggered workflow run")
             emit(WasmExecutionState.Error("Could not find the triggered workflow run"))
             return@flow
         }
 
+        DebugLogger.logSync("INFO", "WasmRun", "Workflow run found: ID=${latestRun.id}")
         emit(WasmExecutionState.Running(latestRun.id, "Workflow started..."))
 
         // Step 4: Poll for completion
@@ -98,12 +105,17 @@ class RunWasmPackUseCase @Inject constructor(
         }
 
         if (!currentRun.isComplete()) {
+            DebugLogger.logSync("ERROR", "WasmRun", "Workflow timed out")
             emit(WasmExecutionState.Error("Workflow timed out after ${MAX_POLL_ATTEMPTS * POLL_INTERVAL_MS / 1000} seconds"))
             return@flow
         }
 
+        DebugLogger.logSync("INFO", "WasmRun", "Workflow completed: status=${currentRun.status}, conclusion=${currentRun.conclusion}")
+
         // Step 5: Fetch execution results from artifacts
         val result = fetchExecutionResult(owner, repo, currentRun.id, currentRun)
+        DebugLogger.logSync("INFO", "WasmRun", "=== WASM EXECUTION COMPLETE ===")
+        DebugLogger.logSync("INFO", "WasmRun", "Result: ${result.status}, Output: ${result.output.take(100)}")
         emit(WasmExecutionState.Completed(result))
     }
 
