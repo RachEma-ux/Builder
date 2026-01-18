@@ -11,9 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.PlayCircle
-import androidx.compose.material.icons.filled.VpnKey
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -144,7 +143,7 @@ sealed class BottomNavItem(
     object GitHubPacks : BottomNavItem(Screen.GitHubPacks.route, Icons.Default.Cloud, "Browse")
     object InstalledPacks : BottomNavItem(Screen.InstalledPacks.route, Icons.Default.Download, "Installed")
     object WasmRun : BottomNavItem(Screen.WasmRun.route, Icons.Default.PlayCircle, "Run")
-    object Instances : BottomNavItem(Screen.Instances.route, Icons.Default.Inventory, "Instances")
+    object Settings : BottomNavItem(Screen.Settings.route, Icons.Default.Settings, "Settings")
 }
 
 @Composable
@@ -157,7 +156,7 @@ fun BuilderApp() {
         BottomNavItem.GitHubPacks,
         BottomNavItem.InstalledPacks,
         BottomNavItem.WasmRun,
-        BottomNavItem.Instances
+        BottomNavItem.Settings
     )
 
     Scaffold(
