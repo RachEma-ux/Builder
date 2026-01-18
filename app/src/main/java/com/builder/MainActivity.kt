@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.VpnKey
@@ -140,9 +141,9 @@ sealed class BottomNavItem(
     val icon: ImageVector,
     val label: String
 ) {
-    object GitHubPacks : BottomNavItem(Screen.GitHubPacks.route, Icons.Default.Cloud, "Packs")
+    object GitHubPacks : BottomNavItem(Screen.GitHubPacks.route, Icons.Default.Cloud, "Browse")
+    object InstalledPacks : BottomNavItem(Screen.InstalledPacks.route, Icons.Default.Download, "Installed")
     object WasmRun : BottomNavItem(Screen.WasmRun.route, Icons.Default.PlayCircle, "Run")
-    object Secrets : BottomNavItem(Screen.Secrets.route, Icons.Default.VpnKey, "Secrets")
     object Instances : BottomNavItem(Screen.Instances.route, Icons.Default.Inventory, "Instances")
 }
 
@@ -154,8 +155,8 @@ fun BuilderApp() {
 
     val bottomNavItems = listOf(
         BottomNavItem.GitHubPacks,
+        BottomNavItem.InstalledPacks,
         BottomNavItem.WasmRun,
-        BottomNavItem.Secrets,
         BottomNavItem.Instances
     )
 
