@@ -103,7 +103,7 @@ fun InstalledPacksScreen(
                                     pack = pack,
                                     isExecuting = uiState.executingPackId == pack.id,
                                     isDeleting = uiState.deletingPackId == pack.id,
-                                    executionState = if (uiState.executingPackId == pack.id)
+                                    executionState = if (uiState.lastExecutedPackId == pack.id)
                                         uiState.executionState else WasmExecutionState.Idle,
                                     onRun = { viewModel.runPack(pack) },
                                     onDelete = { viewModel.deletePack(pack) },

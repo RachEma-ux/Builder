@@ -20,6 +20,7 @@ data class InstalledPacksUiState(
     val selectedPack: Pack? = null,
     val executionState: WasmExecutionState = WasmExecutionState.Idle,
     val executingPackId: String? = null,
+    val lastExecutedPackId: String? = null,  // Persists until user clears, to show results
     val deletingPackId: String? = null,
     val error: String? = null,
     val successMessage: String? = null
@@ -67,6 +68,7 @@ class InstalledPacksViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 executingPackId = pack.id,
+                lastExecutedPackId = pack.id,
                 executionState = WasmExecutionState.Idle,
                 error = null
             )
@@ -144,7 +146,8 @@ class InstalledPacksViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 executionState = WasmExecutionState.Idle,
-                executingPackId = null
+                executingPackId = null,
+                lastExecutedPackId = null
             )
         }
     }
