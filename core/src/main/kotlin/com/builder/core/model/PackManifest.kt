@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class PackManifest(
     @SerialName("pack_version")
-    val packVersion: String,
+    val packVersion: Int,
 
     val id: String,
 

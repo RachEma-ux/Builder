@@ -1,0 +1,18 @@
+{
+  "pack_version": 1,
+  "id": "hello",
+  "name": "Hello World",
+  "version": "1.0.0",
+  "type": "wasm",
+  "entry": "hello.wasm",
+  "permissions": {},
+  "limits": {
+    "memory_mb": 16,
+    "cpu_ms_per_sec": 500
+  },
+  "build": {
+    "git_sha": "test123",
+    "built_at": "2026-01-18T00:00:00Z",
+    "target": "android-arm64"
+  }
+}
