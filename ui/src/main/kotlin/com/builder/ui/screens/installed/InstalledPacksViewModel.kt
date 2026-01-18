@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.builder.core.model.Pack
 import com.builder.core.model.WasmExecutionResult
 import com.builder.core.model.WasmExecutionState
+import com.builder.core.repository.ExecutionHistoryItem
+import com.builder.core.repository.ExecutionHistoryRepository
 import com.builder.core.repository.GitHubRepository
 import com.builder.core.repository.PackRepository
 import com.builder.core.util.DebugLogger
@@ -23,14 +25,17 @@ data class InstalledPacksUiState(
     val lastExecutedPackId: String? = null,  // Persists until user clears, to show results
     val deletingPackId: String? = null,
     val error: String? = null,
-    val successMessage: String? = null
+    val successMessage: String? = null,
+    val executionHistory: Map<String, List<ExecutionHistoryItem>> = emptyMap(),  // packId -> history
+    val showHistoryForPackId: String? = null  // Which pack's history is expanded
 )
 
 @HiltViewModel
 class InstalledPacksViewModel @Inject constructor(
     private val packRepository: PackRepository,
     private val gitHubRepository: GitHubRepository,
-    private val runWasmPackUseCase: RunWasmPackUseCase
+    private val runWasmPackUseCase: RunWasmPackUseCase,
+    private val executionHistoryRepository: ExecutionHistoryRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(InstalledPacksUiState())
@@ -87,7 +92,13 @@ class InstalledPacksViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            runWasmPackUseCase(owner, repo, pack.installSource.sourceRef)
+            runWasmPackUseCase(
+                owner = owner,
+                repo = repo,
+                ref = pack.installSource.sourceRef,
+                packId = pack.id,
+                packName = pack.name
+            )
                 .catch { e ->
                     DebugLogger.logSync("ERROR", "InstalledPacks", "Execution failed: ${e.message}")
                     _uiState.update {
@@ -158,6 +169,34 @@ class InstalledPacksViewModel @Inject constructor(
 
     fun clearSuccess() {
         _uiState.update { it.copy(successMessage = null) }
+    }
+
+    fun toggleHistory(packId: String) {
+        val currentExpanded = _uiState.value.showHistoryForPackId
+        if (currentExpanded == packId) {
+            // Collapse
+            _uiState.update { it.copy(showHistoryForPackId = null) }
+        } else {
+            // Expand and load history
+            _uiState.update { it.copy(showHistoryForPackId = packId) }
+            loadHistoryForPack(packId)
+        }
+    }
+
+    private fun loadHistoryForPack(packId: String) {
+        viewModelScope.launch {
+            executionHistoryRepository.getHistoryByPackId(packId, limit = 10)
+                .catch { e ->
+                    DebugLogger.logSync("ERROR", "InstalledPacks", "Failed to load history: ${e.message}")
+                }
+                .collect { history ->
+                    _uiState.update { current ->
+                        current.copy(
+                            executionHistory = current.executionHistory + (packId to history)
+                        )
+                    }
+                }
+        }
     }
 
     private fun extractOwnerRepo(url: String): Pair<String?, String?> {

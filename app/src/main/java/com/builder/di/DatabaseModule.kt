@@ -3,6 +3,7 @@ package com.builder.di
 import android.content.Context
 import androidx.room.Room
 import com.builder.data.local.db.BuilderDatabase
+import com.builder.data.local.db.dao.ExecutionHistoryDao
 import com.builder.data.local.db.dao.InstanceDao
 import com.builder.data.local.db.dao.KvDao
 import com.builder.data.local.db.dao.LogDao
@@ -53,5 +54,10 @@ object DatabaseModule {
     @Provides
     fun provideKvDao(database: BuilderDatabase): KvDao {
         return database.kvDao()
+    }
+
+    @Provides
+    fun provideExecutionHistoryDao(database: BuilderDatabase): ExecutionHistoryDao {
+        return database.executionHistoryDao()
     }
 }

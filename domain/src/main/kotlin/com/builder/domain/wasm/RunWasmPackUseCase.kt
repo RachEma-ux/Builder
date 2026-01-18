@@ -4,6 +4,7 @@ import com.builder.core.model.ExecutionStatus
 import com.builder.core.model.WasmExecutionResult
 import com.builder.core.model.WasmExecutionState
 import com.builder.core.model.github.WorkflowRun
+import com.builder.core.repository.ExecutionHistoryRepository
 import com.builder.core.repository.GitHubRepository
 import com.builder.core.util.DebugLogger
 import kotlinx.coroutines.delay
@@ -17,7 +18,8 @@ import javax.inject.Inject
  * This triggers the CI workflow, polls for completion, and fetches results.
  */
 class RunWasmPackUseCase @Inject constructor(
-    private val gitHubRepository: GitHubRepository
+    private val gitHubRepository: GitHubRepository,
+    private val executionHistoryRepository: ExecutionHistoryRepository
 ) {
     companion object {
         private const val POLL_INTERVAL_MS = 5000L // 5 seconds
@@ -32,12 +34,16 @@ class RunWasmPackUseCase @Inject constructor(
      * @param owner Repository owner
      * @param repo Repository name
      * @param ref Branch or tag to run against
+     * @param packId Optional pack ID for saving execution history
+     * @param packName Optional pack name for display
      * @return Flow of execution states
      */
     operator fun invoke(
         owner: String,
         repo: String,
-        ref: String = "main"
+        ref: String = "main",
+        packId: String? = null,
+        packName: String? = null
     ): Flow<WasmExecutionState> = flow {
         DebugLogger.logSync("INFO", "WasmRun", "=== WASM EXECUTION STARTED ===")
         DebugLogger.logSync("INFO", "WasmRun", "Owner: $owner, Repo: $repo, Ref: $ref")
@@ -113,9 +119,20 @@ class RunWasmPackUseCase @Inject constructor(
         DebugLogger.logSync("INFO", "WasmRun", "Workflow completed: status=${currentRun.status}, conclusion=${currentRun.conclusion}")
 
         // Step 5: Fetch execution results from artifacts
-        val result = fetchExecutionResult(owner, repo, currentRun.id, currentRun)
+        val result = fetchExecutionResult(owner, repo, currentRun.id, currentRun, packName)
         DebugLogger.logSync("INFO", "WasmRun", "=== WASM EXECUTION COMPLETE ===")
         DebugLogger.logSync("INFO", "WasmRun", "Result: ${result.status}, Output: ${result.output.take(100)}")
+
+        // Step 6: Save to execution history if packId is provided
+        if (packId != null) {
+            try {
+                executionHistoryRepository.saveExecution(packId, result, ref)
+                DebugLogger.logSync("INFO", "WasmRun", "Execution saved to history for pack: $packId")
+            } catch (e: Exception) {
+                DebugLogger.logSync("ERROR", "WasmRun", "Failed to save execution history: ${e.message}")
+            }
+        }
+
         emit(WasmExecutionState.Completed(result))
     }
 
@@ -126,15 +143,17 @@ class RunWasmPackUseCase @Inject constructor(
         owner: String,
         repo: String,
         runId: Long,
-        workflowRun: WorkflowRun
+        workflowRun: WorkflowRun,
+        packName: String? = null
     ): WasmExecutionResult {
+        val displayName = packName ?: "wasm-pack"
         // Get artifacts
         val artifactsResult = gitHubRepository.listArtifacts(owner, repo, runId)
 
         if (artifactsResult.isFailure) {
             return WasmExecutionResult(
                 runId = runId,
-                packName = "hello.wasm",
+                packName = displayName,
                 status = if (workflowRun.isSuccess()) ExecutionStatus.SUCCESS else ExecutionStatus.FAILURE,
                 output = "Failed to fetch artifacts: ${artifactsResult.exceptionOrNull()?.message}",
                 executedAt = workflowRun.updatedAt,
@@ -149,7 +168,7 @@ class RunWasmPackUseCase @Inject constructor(
         if (wasmArtifact == null) {
             return WasmExecutionResult(
                 runId = runId,
-                packName = "hello.wasm",
+                packName = displayName,
                 status = if (workflowRun.isSuccess()) ExecutionStatus.SUCCESS else ExecutionStatus.FAILURE,
                 output = "WASM artifact not found. Check workflow run for details.",
                 executedAt = workflowRun.updatedAt,
@@ -169,7 +188,7 @@ class RunWasmPackUseCase @Inject constructor(
 
         return WasmExecutionResult(
             runId = runId,
-            packName = "hello.wasm",
+            packName = displayName,
             status = status,
             output = if (status == ExecutionStatus.SUCCESS) {
                 "WASM pack executed successfully!\nDownload artifact for detailed logs."

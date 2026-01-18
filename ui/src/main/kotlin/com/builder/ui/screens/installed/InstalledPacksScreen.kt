@@ -24,6 +24,7 @@ import com.builder.core.model.ExecutionStatus
 import com.builder.core.model.Pack
 import com.builder.core.model.PackType
 import com.builder.core.model.WasmExecutionState
+import com.builder.core.repository.ExecutionHistoryItem
 import com.builder.ui.components.EmptyState
 import com.builder.ui.components.LoadingIndicator
 import java.text.SimpleDateFormat
@@ -105,9 +106,12 @@ fun InstalledPacksScreen(
                                     isDeleting = uiState.deletingPackId == pack.id,
                                     executionState = if (uiState.lastExecutedPackId == pack.id)
                                         uiState.executionState else WasmExecutionState.Idle,
+                                    executionHistory = uiState.executionHistory[pack.id] ?: emptyList(),
+                                    showHistory = uiState.showHistoryForPackId == pack.id,
                                     onRun = { viewModel.runPack(pack) },
                                     onDelete = { viewModel.deletePack(pack) },
-                                    onResetExecution = { viewModel.resetExecution() }
+                                    onResetExecution = { viewModel.resetExecution() },
+                                    onToggleHistory = { viewModel.toggleHistory(pack.id) }
                                 )
                             }
                         }
@@ -157,9 +161,12 @@ fun InstalledPackCard(
     isExecuting: Boolean,
     isDeleting: Boolean,
     executionState: WasmExecutionState,
+    executionHistory: List<ExecutionHistoryItem>,
+    showHistory: Boolean,
     onRun: () -> Unit,
     onDelete: () -> Unit,
     onResetExecution: () -> Unit,
+    onToggleHistory: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()) }
@@ -210,6 +217,30 @@ fun InstalledPackCard(
                 executionState = executionState,
                 onReset = onResetExecution
             )
+
+            // Execution History Toggle
+            if (pack.type == PackType.WASM) {
+                TextButton(
+                    onClick = onToggleHistory,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Icon(
+                        imageVector = if (showHistory) Icons.Default.ExpandLess else Icons.Default.History,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(if (showHistory) "Hide History" else "History (${executionHistory.size})")
+                }
+
+                // History List
+                if (showHistory) {
+                    ExecutionHistoryList(
+                        history = executionHistory,
+                        dateFormat = dateFormat
+                    )
+                }
+            }
 
             // Actions
             if (isDeleting) {
@@ -524,6 +555,99 @@ fun PackActions(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("Delete")
+            }
+        }
+    }
+}
+
+@Composable
+fun ExecutionHistoryList(
+    history: List<ExecutionHistoryItem>,
+    dateFormat: SimpleDateFormat
+) {
+    if (history.isEmpty()) {
+        Text(
+            text = "No execution history yet",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+    } else {
+        Column(
+            modifier = Modifier.padding(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            history.take(5).forEach { item ->
+                ExecutionHistoryItemRow(item = item, dateFormat = dateFormat)
+            }
+            if (history.size > 5) {
+                Text(
+                    text = "... and ${history.size - 5} more",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ExecutionHistoryItemRow(
+    item: ExecutionHistoryItem,
+    dateFormat: SimpleDateFormat
+) {
+    val statusColor = when (item.status) {
+        ExecutionStatus.SUCCESS -> Color(0xFF4CAF50)
+        ExecutionStatus.FAILURE -> Color(0xFFF44336)
+        ExecutionStatus.CANCELLED -> Color(0xFFFF9800)
+        ExecutionStatus.UNKNOWN -> Color(0xFF9E9E9E)
+    }
+
+    Surface(
+        color = statusColor.copy(alpha = 0.1f),
+        shape = RoundedCornerShape(6.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    imageVector = when (item.status) {
+                        ExecutionStatus.SUCCESS -> Icons.Default.CheckCircle
+                        ExecutionStatus.FAILURE -> Icons.Default.Error
+                        ExecutionStatus.CANCELLED -> Icons.Default.Cancel
+                        ExecutionStatus.UNKNOWN -> Icons.Default.Help
+                    },
+                    contentDescription = null,
+                    tint = statusColor,
+                    modifier = Modifier.size(16.dp)
+                )
+                Column {
+                    Text(
+                        text = item.status.name,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = statusColor
+                    )
+                    Text(
+                        text = dateFormat.format(Date(item.executedAt)),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            if (item.duration != null) {
+                Text(
+                    text = "${item.duration / 1000}s",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

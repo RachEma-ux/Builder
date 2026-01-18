@@ -1,11 +1,13 @@
 package com.builder.di
 
+import com.builder.core.repository.ExecutionHistoryRepository
 import com.builder.core.repository.GitHubRepository
 import com.builder.core.repository.InstanceRepository
 import com.builder.core.repository.LogRepository
 import com.builder.core.repository.PackRepository
 import com.builder.core.repository.SecretRepository
 import com.builder.data.instance.InstanceManager
+import com.builder.data.repository.ExecutionHistoryRepositoryImpl
 import com.builder.data.repository.GitHubRepositoryImpl
 import com.builder.data.repository.LogRepositoryImpl
 import com.builder.data.repository.PackRepositoryImpl
@@ -55,4 +57,10 @@ abstract class RepositoryModule {
     abstract fun bindSecretRepository(
         impl: SecretRepositoryImpl
     ): SecretRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindExecutionHistoryRepository(
+        impl: ExecutionHistoryRepositoryImpl
+    ): ExecutionHistoryRepository
 }
