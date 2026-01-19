@@ -71,6 +71,13 @@ data class DeployUiState(
     val workflowRuns: List<WorkflowRun> = emptyList(),
     val isLoadingHistory: Boolean = false,
 
+    // Setup state (per-repo)
+    val tunnelGistId: String? = null,
+    val hasBuilderWorkflow: Boolean = false,
+    val isCheckingSetup: Boolean = false,
+    val isSettingUp: Boolean = false,
+    val needsSetup: Boolean = false,
+
     // Messages
     val message: String? = null,
     val error: String? = null
@@ -92,8 +99,7 @@ class DeployViewModel @Inject constructor(
         private const val POLLING_INTERVAL_MS = 5000L
         private const val DEPLOY_INSTANCE_ID = "deploy-tab"
         private const val DEPLOY_PACK_ID = "app"
-        private const val TUNNEL_GIST_ID = "54451f4f49427f293bfdc9fc0a037b2d"
-        private const val TUNNEL_GIST_API_URL = "https://api.github.com/gists/$TUNNEL_GIST_ID"
+        private const val GIST_API_BASE = "https://api.github.com/gists/"
     }
 
     /**
@@ -177,11 +183,137 @@ class DeployViewModel @Inject constructor(
                 branches = emptyList(),
                 selectedBranch = null,
                 releases = emptyList(),
-                selectedRelease = null
+                selectedRelease = null,
+                // Reset setup state for new repo
+                tunnelGistId = null,
+                hasBuilderWorkflow = false,
+                needsSetup = false,
+                tunnelUrl = null
             )
         }
         loadBranches(repository.owner.login, repository.name)
         loadReleases(repository.owner.login, repository.name)
+        // Check if repo has Builder deployment setup
+        checkRepoSetup(repository.owner.login, repository.name)
+    }
+
+    /**
+     * Checks if the repository has Builder deployment configured.
+     * Looks for TUNNEL_GIST_ID variable and builder-deploy.yml workflow.
+     */
+    private fun checkRepoSetup(owner: String, repo: String) {
+        viewModelScope.launch {
+            Timber.d("Deploy: Checking setup for $owner/$repo")
+            _uiState.update { it.copy(isCheckingSetup = true) }
+
+            var gistId: String? = null
+            var hasWorkflow = false
+
+            // Check for TUNNEL_GIST_ID variable
+            val varResult = gitHubRepository.getVariable(owner, repo, "TUNNEL_GIST_ID")
+            varResult.fold(
+                onSuccess = { variable ->
+                    gistId = variable.value
+                    Timber.i("Deploy: Found TUNNEL_GIST_ID: $gistId")
+                    log(LogLevel.INFO, "Found TUNNEL_GIST_ID for $owner/$repo: $gistId")
+                },
+                onFailure = {
+                    Timber.d("Deploy: No TUNNEL_GIST_ID variable found for $owner/$repo")
+                }
+            )
+
+            // Check for builder-deploy.yml workflow
+            val workflowResult = gitHubRepository.hasBuilderDeployment(owner, repo)
+            workflowResult.fold(
+                onSuccess = { has ->
+                    hasWorkflow = has
+                    Timber.i("Deploy: Has builder-deploy.yml: $hasWorkflow")
+                    log(LogLevel.INFO, "Has builder-deploy.yml for $owner/$repo: $hasWorkflow")
+                },
+                onFailure = {
+                    Timber.d("Deploy: Failed to check workflow for $owner/$repo")
+                }
+            )
+
+            val needsSetup = gistId == null || !hasWorkflow
+
+            _uiState.update {
+                it.copy(
+                    isCheckingSetup = false,
+                    tunnelGistId = gistId,
+                    hasBuilderWorkflow = hasWorkflow,
+                    needsSetup = needsSetup
+                )
+            }
+
+            if (needsSetup) {
+                Timber.i("Deploy: Repository $owner/$repo needs setup (gistId=$gistId, hasWorkflow=$hasWorkflow)")
+                log(LogLevel.INFO, "Repository needs setup: $owner/$repo")
+            }
+        }
+    }
+
+    /**
+     * Sets up the repository with full Builder deployment:
+     * - Creates tunnel status Gist
+     * - Sets TUNNEL_GIST_ID variable
+     * - Creates builder-deploy.yml workflow
+     */
+    fun setupRepository() {
+        val state = _uiState.value
+        if (state.owner.isBlank() || state.repo.isBlank()) {
+            _uiState.update { it.copy(error = "No repository selected") }
+            return
+        }
+
+        viewModelScope.launch {
+            Timber.i("Deploy: Setting up repository ${state.owner}/${state.repo}")
+            log(LogLevel.INFO, "Setting up repository: ${state.owner}/${state.repo}")
+            _uiState.update { it.copy(isSettingUp = true, error = null) }
+
+            val branch = state.selectedBranch?.name ?: "main"
+
+            // Note: GIST_TOKEN secret needs to be set manually by the user
+            // as we cannot securely store/transfer their personal access token
+            val result = gitHubRepository.setupFullBuilderDeployment(
+                owner = state.owner,
+                repo = state.repo,
+                branch = branch,
+                gistToken = null // User must set this manually
+            )
+
+            result.fold(
+                onSuccess = { setupResult ->
+                    Timber.i("Deploy: Setup complete - gistId=${setupResult.gistId}, workflow=${setupResult.workflowCreated}")
+                    log(LogLevel.INFO, "Setup complete for ${state.owner}/${state.repo}: gistId=${setupResult.gistId}")
+
+                    _uiState.update {
+                        it.copy(
+                            isSettingUp = false,
+                            tunnelGistId = setupResult.gistId,
+                            hasBuilderWorkflow = setupResult.workflowCreated,
+                            needsSetup = !setupResult.workflowCreated || !setupResult.variableSet,
+                            message = buildString {
+                                append("Repository setup complete!")
+                                if (!setupResult.secretSet) {
+                                    append("\n\nNote: Please manually add GIST_TOKEN secret to your repository for tunnel URL updates.")
+                                }
+                            }
+                        )
+                    }
+                },
+                onFailure = { e ->
+                    Timber.e(e, "Deploy: Setup failed for ${state.owner}/${state.repo}")
+                    log(LogLevel.ERROR, "Setup failed: ${e.message}")
+                    _uiState.update {
+                        it.copy(
+                            isSettingUp = false,
+                            error = "Setup failed: ${e.message}"
+                        )
+                    }
+                }
+            )
+        }
     }
 
     fun loadBranches(owner: String, repo: String) {
@@ -537,11 +669,17 @@ class DeployViewModel @Inject constructor(
     }
 
     private suspend fun fetchTunnelUrlFromGist(): String? {
+        val gistId = _uiState.value.tunnelGistId
+        if (gistId.isNullOrBlank()) {
+            Timber.d("Deploy: No gist ID available for this repository")
+            return null
+        }
+
         return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val client = OkHttpClient()
                 val request = Request.Builder()
-                    .url(TUNNEL_GIST_API_URL)
+                    .url("$GIST_API_BASE$gistId")
                     .header("Accept", "application/vnd.github+json")
                     .build()
 

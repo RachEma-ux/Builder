@@ -202,4 +202,94 @@ interface GitHubRepository {
      * Looks for TUNNEL_URL_START/TUNNEL_URL_END markers or trycloudflare.com URLs.
      */
     suspend fun extractTunnelUrl(owner: String, repo: String, runId: Long): Result<String?>
+
+    // ========== Repository Variables Methods ==========
+
+    /**
+     * Lists repository variables.
+     */
+    suspend fun listVariables(owner: String, repo: String): Result<VariablesResponse>
+
+    /**
+     * Gets a repository variable by name.
+     */
+    suspend fun getVariable(owner: String, repo: String, name: String): Result<RepoVariable>
+
+    /**
+     * Creates a repository variable.
+     */
+    suspend fun createVariable(owner: String, repo: String, name: String, value: String): Result<Unit>
+
+    /**
+     * Updates a repository variable.
+     */
+    suspend fun updateVariable(owner: String, repo: String, name: String, value: String): Result<Unit>
+
+    // ========== Repository Secrets Methods ==========
+
+    /**
+     * Gets the repository public key for encrypting secrets.
+     */
+    suspend fun getRepoPublicKey(owner: String, repo: String): Result<PublicKey>
+
+    /**
+     * Creates or updates a repository secret.
+     */
+    suspend fun createOrUpdateSecret(
+        owner: String,
+        repo: String,
+        secretName: String,
+        value: String
+    ): Result<Unit>
+
+    // ========== Gist Methods ==========
+
+    /**
+     * Creates a new Gist.
+     */
+    suspend fun createGist(
+        description: String?,
+        public: Boolean,
+        files: Map<String, String>
+    ): Result<Gist>
+
+    /**
+     * Gets a Gist by ID.
+     */
+    suspend fun getGist(gistId: String): Result<Gist>
+
+    /**
+     * Updates a Gist.
+     */
+    suspend fun updateGist(
+        gistId: String,
+        description: String? = null,
+        files: Map<String, String?>
+    ): Result<Gist>
+
+    // ========== Full Deployment Setup ==========
+
+    /**
+     * Sets up a repository with full Builder deployment including:
+     * - Creates tunnel status Gist
+     * - Sets TUNNEL_GIST_ID variable
+     * - Sets GIST_TOKEN secret (if provided)
+     * - Creates builder-deploy.yml workflow
+     */
+    suspend fun setupFullBuilderDeployment(
+        owner: String,
+        repo: String,
+        branch: String = "main",
+        gistToken: String? = null
+    ): Result<SetupResult>
 }
+
+/**
+ * Result of full deployment setup.
+ */
+data class SetupResult(
+    val gistId: String,
+    val workflowCreated: Boolean,
+    val variableSet: Boolean,
+    val secretSet: Boolean
+)

@@ -257,4 +257,104 @@ interface GitHubApiService {
         @Path("repo") repo: String,
         @Path("run_id") runId: Long
     ): Response<ResponseBody>
+
+    // ========== Repository Variables ==========
+
+    /**
+     * List repository variables.
+     * GET /repos/{owner}/{repo}/actions/variables
+     */
+    @GET("repos/{owner}/{repo}/actions/variables")
+    suspend fun listVariables(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String
+    ): Response<VariablesResponse>
+
+    /**
+     * Get a repository variable.
+     * GET /repos/{owner}/{repo}/actions/variables/{name}
+     */
+    @GET("repos/{owner}/{repo}/actions/variables/{name}")
+    suspend fun getVariable(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("name") name: String
+    ): Response<RepoVariable>
+
+    /**
+     * Create a repository variable.
+     * POST /repos/{owner}/{repo}/actions/variables
+     */
+    @POST("repos/{owner}/{repo}/actions/variables")
+    suspend fun createVariable(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Body request: CreateVariableRequest
+    ): Response<Unit>
+
+    /**
+     * Update a repository variable.
+     * PATCH /repos/{owner}/{repo}/actions/variables/{name}
+     */
+    @PATCH("repos/{owner}/{repo}/actions/variables/{name}")
+    suspend fun updateVariable(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("name") name: String,
+        @Body request: UpdateVariableRequest
+    ): Response<Unit>
+
+    // ========== Repository Secrets ==========
+
+    /**
+     * Get repository public key for encrypting secrets.
+     * GET /repos/{owner}/{repo}/actions/secrets/public-key
+     */
+    @GET("repos/{owner}/{repo}/actions/secrets/public-key")
+    suspend fun getRepoPublicKey(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String
+    ): Response<PublicKey>
+
+    /**
+     * Create or update a repository secret.
+     * PUT /repos/{owner}/{repo}/actions/secrets/{secret_name}
+     */
+    @PUT("repos/{owner}/{repo}/actions/secrets/{secret_name}")
+    suspend fun createOrUpdateSecret(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("secret_name") secretName: String,
+        @Body request: CreateSecretRequest
+    ): Response<Unit>
+
+    // ========== Gists ==========
+
+    /**
+     * Create a gist.
+     * POST /gists
+     */
+    @POST("gists")
+    suspend fun createGist(
+        @Body request: CreateGistRequest
+    ): Response<Gist>
+
+    /**
+     * Get a gist.
+     * GET /gists/{gist_id}
+     */
+    @GET("gists/{gist_id}")
+    suspend fun getGist(
+        @Path("gist_id") gistId: String
+    ): Response<Gist>
+
+    /**
+     * Update a gist.
+     * PATCH /gists/{gist_id}
+     */
+    @PATCH("gists/{gist_id}")
+    suspend fun updateGist(
+        @Path("gist_id") gistId: String,
+        @Body request: UpdateGistRequest
+    ): Response<Gist>
 }

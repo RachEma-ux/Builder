@@ -121,7 +121,8 @@ fun DeployScreen(
                     onBranchSelected = viewModel::selectBranch,
                     onReleaseSelected = viewModel::selectRelease,
                     onRefreshRepositories = viewModel::loadRepositories,
-                    onTriggerDeploy = viewModel::triggerDeploy
+                    onTriggerDeploy = viewModel::triggerDeploy,
+                    onSetupRepository = viewModel::setupRepository
                 )
                 DeployTab.STATUS -> StatusTabContent(
                     uiState = uiState,
@@ -153,7 +154,8 @@ fun DeployTabContent(
     onBranchSelected: (Branch) -> Unit,
     onReleaseSelected: (Release) -> Unit,
     onRefreshRepositories: () -> Unit,
-    onTriggerDeploy: () -> Unit
+    onTriggerDeploy: () -> Unit,
+    onSetupRepository: () -> Unit
 ) {
     var durationExpanded by remember { mutableStateOf(false) }
     var repoExpanded by remember { mutableStateOf(false) }
@@ -240,6 +242,81 @@ fun DeployTabContent(
                                         repoExpanded = false
                                     }
                                 )
+                            }
+                        }
+                    }
+                }
+
+                // Setup Status (shown when checking or needs setup)
+                if (uiState.selectedRepository != null && (uiState.isCheckingSetup || uiState.needsSetup || uiState.isSettingUp)) {
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Surface(
+                        color = if (uiState.needsSetup)
+                            MaterialTheme.colorScheme.tertiaryContainer
+                        else
+                            MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            when {
+                                uiState.isCheckingSetup -> {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                    Text(
+                                        "Checking deployment setup...",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                                uiState.isSettingUp -> {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                    Text(
+                                        "Setting up repository...",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                                uiState.needsSetup -> {
+                                    Icon(
+                                        Icons.Default.Warning,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            "Setup Required",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        Text(
+                                            if (uiState.tunnelGistId == null)
+                                                "No tunnel status Gist configured"
+                                            else if (!uiState.hasBuilderWorkflow)
+                                                "Missing builder-deploy.yml workflow"
+                                            else
+                                                "Repository needs configuration",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Button(
+                                        onClick = onSetupRepository,
+                                        modifier = Modifier.height(32.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("Setup", style = MaterialTheme.typography.labelMedium)
+                                    }
+                                }
                             }
                         }
                     }

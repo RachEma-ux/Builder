@@ -3,12 +3,15 @@ package com.builder.data.repository
 import android.util.Base64
 import com.builder.core.repository.GitHubRepository
 import com.builder.core.repository.ProjectType
+import com.builder.core.repository.SetupResult
 import com.builder.core.model.github.DeviceFlowState
 import com.builder.data.remote.github.GitHubApiService
 import com.builder.data.remote.github.GitHubOAuthManager
 import com.builder.core.model.github.*
 import com.builder.data.di.GitHubClient
 import com.builder.data.workflow.WorkflowGenerator
+import com.goterl.lazysodium.LazySodiumAndroid
+import com.goterl.lazysodium.SodiumAndroid
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -614,5 +617,311 @@ class GitHubRepositoryImpl @Inject constructor(
             Timber.e(e, "Error reading artifact zip file")
         }
         return null
+    }
+
+    // ========== Repository Variables Methods ==========
+
+    override suspend fun listVariables(owner: String, repo: String): Result<VariablesResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.listVariables(owner, repo)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Failed to list variables: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to list variables")
+                Result.failure(e)
+            }
+        }
+    }
+
+    override suspend fun getVariable(owner: String, repo: String, name: String): Result<RepoVariable> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getVariable(owner, repo, name)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Failed to get variable: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to get variable")
+                Result.failure(e)
+            }
+        }
+    }
+
+    override suspend fun createVariable(owner: String, repo: String, name: String, value: String): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = CreateVariableRequest(name = name, value = value)
+                val response = apiService.createVariable(owner, repo, request)
+                if (response.isSuccessful) {
+                    Timber.i("Variable $name created successfully")
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception("Failed to create variable: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to create variable")
+                Result.failure(e)
+            }
+        }
+    }
+
+    override suspend fun updateVariable(owner: String, repo: String, name: String, value: String): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = UpdateVariableRequest(value = value)
+                val response = apiService.updateVariable(owner, repo, name, request)
+                if (response.isSuccessful) {
+                    Timber.i("Variable $name updated successfully")
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception("Failed to update variable: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to update variable")
+                Result.failure(e)
+            }
+        }
+    }
+
+    // ========== Repository Secrets Methods ==========
+
+    override suspend fun getRepoPublicKey(owner: String, repo: String): Result<PublicKey> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getRepoPublicKey(owner, repo)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Failed to get public key: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to get public key")
+                Result.failure(e)
+            }
+        }
+    }
+
+    override suspend fun createOrUpdateSecret(
+        owner: String,
+        repo: String,
+        secretName: String,
+        value: String
+    ): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Get the repository's public key
+                val publicKeyResult = getRepoPublicKey(owner, repo)
+                if (publicKeyResult.isFailure) {
+                    return@withContext Result.failure(
+                        publicKeyResult.exceptionOrNull() ?: Exception("Failed to get public key")
+                    )
+                }
+                val publicKey = publicKeyResult.getOrThrow()
+
+                // Encrypt the secret value using libsodium sealed box
+                val encryptedValue = encryptSecretValue(value, publicKey.key)
+
+                val request = CreateSecretRequest(
+                    encryptedValue = encryptedValue,
+                    keyId = publicKey.keyId
+                )
+                val response = apiService.createOrUpdateSecret(owner, repo, secretName, request)
+                if (response.isSuccessful) {
+                    Timber.i("Secret $secretName created/updated successfully")
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception("Failed to create/update secret: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to create/update secret")
+                Result.failure(e)
+            }
+        }
+    }
+
+    /**
+     * Encrypts a secret value using libsodium sealed box.
+     */
+    private fun encryptSecretValue(value: String, publicKeyBase64: String): String {
+        val sodium = LazySodiumAndroid(SodiumAndroid())
+
+        // Decode the public key from base64
+        val publicKey = Base64.decode(publicKeyBase64, Base64.DEFAULT)
+
+        // Encrypt using sealed box
+        val messageBytes = value.toByteArray(Charsets.UTF_8)
+        val cipherBytes = ByteArray(messageBytes.size + 48) // sealed box adds 48 bytes overhead
+
+        val success = sodium.cryptoBoxSeal(cipherBytes, messageBytes, messageBytes.size.toLong(), publicKey)
+        if (!success) {
+            throw Exception("Failed to encrypt secret value")
+        }
+
+        // Return as base64
+        return Base64.encodeToString(cipherBytes, Base64.NO_WRAP)
+    }
+
+    // ========== Gist Methods ==========
+
+    override suspend fun createGist(
+        description: String?,
+        public: Boolean,
+        files: Map<String, String>
+    ): Result<Gist> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val gistFiles = files.mapValues { GistFileContent(content = it.value) }
+                val request = CreateGistRequest(
+                    description = description,
+                    public = public,
+                    files = gistFiles
+                )
+                val response = apiService.createGist(request)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Timber.i("Gist created: ${body.id}")
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Failed to create gist: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to create gist")
+                Result.failure(e)
+            }
+        }
+    }
+
+    override suspend fun getGist(gistId: String): Result<Gist> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getGist(gistId)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Failed to get gist: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to get gist")
+                Result.failure(e)
+            }
+        }
+    }
+
+    override suspend fun updateGist(
+        gistId: String,
+        description: String?,
+        files: Map<String, String?>
+    ): Result<Gist> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val gistFiles = files.mapValues { entry ->
+                    entry.value?.let { GistFileContent(content = it) }
+                }
+                val request = UpdateGistRequest(
+                    description = description,
+                    files = gistFiles
+                )
+                val response = apiService.updateGist(gistId, request)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Timber.i("Gist updated: ${body.id}")
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Failed to update gist: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to update gist")
+                Result.failure(e)
+            }
+        }
+    }
+
+    // ========== Full Deployment Setup ==========
+
+    override suspend fun setupFullBuilderDeployment(
+        owner: String,
+        repo: String,
+        branch: String,
+        gistToken: String?
+    ): Result<SetupResult> {
+        return withContext(Dispatchers.IO) {
+            try {
+                Timber.i("Setting up full Builder deployment for $owner/$repo")
+
+                var gistId: String
+                var variableSet = false
+                var secretSet = false
+                var workflowCreated = false
+
+                // Step 1: Check if TUNNEL_GIST_ID variable already exists
+                val existingVariable = getVariable(owner, repo, "TUNNEL_GIST_ID")
+                if (existingVariable.isSuccess) {
+                    gistId = existingVariable.getOrThrow().value
+                    Timber.i("Using existing TUNNEL_GIST_ID: $gistId")
+                    variableSet = true
+                } else {
+                    // Step 2: Create a new Gist for tunnel status
+                    val initialContent = """{"tunnel_url": null, "status": "pending", "repository": "$owner/$repo"}"""
+                    val gistResult = createGist(
+                        description = "Builder tunnel status for $owner/$repo",
+                        public = false,
+                        files = mapOf("tunnel-status.json" to initialContent)
+                    )
+                    if (gistResult.isFailure) {
+                        return@withContext Result.failure(
+                            gistResult.exceptionOrNull() ?: Exception("Failed to create gist")
+                        )
+                    }
+                    gistId = gistResult.getOrThrow().id
+                    Timber.i("Created new Gist: $gistId")
+
+                    // Step 3: Create TUNNEL_GIST_ID variable
+                    val createVarResult = createVariable(owner, repo, "TUNNEL_GIST_ID", gistId)
+                    variableSet = createVarResult.isSuccess
+                    if (!variableSet) {
+                        Timber.w("Failed to create TUNNEL_GIST_ID variable")
+                    }
+                }
+
+                // Step 4: Set GIST_TOKEN secret if provided
+                if (gistToken != null && gistToken.isNotBlank()) {
+                    val secretResult = createOrUpdateSecret(owner, repo, "GIST_TOKEN", gistToken)
+                    secretSet = secretResult.isSuccess
+                    if (!secretSet) {
+                        Timber.w("Failed to set GIST_TOKEN secret")
+                    }
+                }
+
+                // Step 5: Create/update builder-deploy.yml workflow
+                val workflowResult = setupBuilderDeployment(owner, repo, branch)
+                workflowCreated = workflowResult.isSuccess
+                if (!workflowCreated) {
+                    Timber.w("Failed to create workflow file")
+                }
+
+                Timber.i("Full setup complete: gistId=$gistId, variable=$variableSet, secret=$secretSet, workflow=$workflowCreated")
+                Result.success(
+                    SetupResult(
+                        gistId = gistId,
+                        workflowCreated = workflowCreated,
+                        variableSet = variableSet,
+                        secretSet = secretSet
+                    )
+                )
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to setup full Builder deployment")
+                Result.failure(e)
+            }
+        }
     }
 }
