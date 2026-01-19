@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.builder.core.model.github.Branch
 import com.builder.core.model.github.Release
 import com.builder.core.model.github.Repository
 import com.builder.core.model.github.WorkflowRun
@@ -117,6 +118,7 @@ fun DeployScreen(
                     onDurationChange = viewModel::updateDuration,
                     onRunAppChange = viewModel::updateRunApp,
                     onRepositorySelected = viewModel::selectRepository,
+                    onBranchSelected = viewModel::selectBranch,
                     onReleaseSelected = viewModel::selectRelease,
                     onRefreshRepositories = viewModel::loadRepositories,
                     onTriggerDeploy = viewModel::triggerDeploy
@@ -148,12 +150,14 @@ fun DeployTabContent(
     onDurationChange: (String) -> Unit,
     onRunAppChange: (Boolean) -> Unit,
     onRepositorySelected: (Repository) -> Unit,
+    onBranchSelected: (Branch) -> Unit,
     onReleaseSelected: (Release) -> Unit,
     onRefreshRepositories: () -> Unit,
     onTriggerDeploy: () -> Unit
 ) {
     var durationExpanded by remember { mutableStateOf(false) }
     var repoExpanded by remember { mutableStateOf(false) }
+    var branchExpanded by remember { mutableStateOf(false) }
     var releaseExpanded by remember { mutableStateOf(false) }
     val durations = listOf("5", "10", "15", "30")
 
@@ -236,6 +240,82 @@ fun DeployTabContent(
                                         repoExpanded = false
                                     }
                                 )
+                            }
+                        }
+                    }
+                }
+
+                // Branch Dropdown (shown after repository is selected)
+                if (uiState.selectedRepository != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Branch",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Medium
+                        )
+                        if (uiState.isLoadingBranches) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    ExposedDropdownMenuBox(
+                        expanded = branchExpanded,
+                        onExpandedChange = { branchExpanded = it }
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.selectedBranch?.name ?: "Select branch",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Branch") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = branchExpanded) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            enabled = !uiState.isLoadingBranches && uiState.branches.isNotEmpty()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = branchExpanded,
+                            onDismissRequest = { branchExpanded = false }
+                        ) {
+                            if (uiState.branches.isEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text("No branches found") },
+                                    onClick = { branchExpanded = false },
+                                    enabled = false
+                                )
+                            } else {
+                                uiState.branches.forEach { branch ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.AccountTree,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp),
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                Text(branch.name, fontWeight = FontWeight.Medium)
+                                            }
+                                        },
+                                        onClick = {
+                                            onBranchSelected(branch)
+                                            branchExpanded = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -433,8 +513,9 @@ fun DeployTabContent(
 
         // Info text
         if (uiState.selectedRepository != null) {
+            val branchInfo = uiState.selectedBranch?.name?.let { " on branch '$it'" } ?: ""
             Text(
-                "This will trigger builder-deploy.yml on ${uiState.selectedRepository.fullName}",
+                "This will trigger builder-deploy.yml on ${uiState.selectedRepository.fullName}$branchInfo",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

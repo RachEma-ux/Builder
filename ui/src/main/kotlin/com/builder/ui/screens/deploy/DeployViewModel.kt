@@ -2,6 +2,7 @@ package com.builder.ui.screens.deploy
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.builder.core.model.github.Branch
 import com.builder.core.model.github.Release
 import com.builder.core.model.github.Repository
 import com.builder.core.model.github.WorkflowRun
@@ -37,6 +38,11 @@ data class DeployUiState(
     val repositories: List<Repository> = emptyList(),
     val selectedRepository: Repository? = null,
     val isLoadingRepositories: Boolean = false,
+
+    // Branch selection
+    val branches: List<Branch> = emptyList(),
+    val selectedBranch: Branch? = null,
+    val isLoadingBranches: Boolean = false,
 
     // Release selection
     val releases: List<Release> = emptyList(),
@@ -162,12 +168,59 @@ class DeployViewModel @Inject constructor(
                 selectedRepository = repository,
                 owner = repository.owner.login,
                 repo = repository.name,
-                // Clear releases when repo changes
+                // Clear branches and releases when repo changes
+                branches = emptyList(),
+                selectedBranch = null,
                 releases = emptyList(),
                 selectedRelease = null
             )
         }
+        loadBranches(repository.owner.login, repository.name)
         loadReleases(repository.owner.login, repository.name)
+    }
+
+    fun loadBranches(owner: String, repo: String) {
+        viewModelScope.launch {
+            Timber.d("Deploy: Loading branches for $owner/$repo...")
+            log(LogLevel.INFO, "Loading branches for $owner/$repo")
+            _uiState.update { it.copy(isLoadingBranches = true) }
+
+            val result = gitHubRepository.listBranches(owner, repo)
+
+            result.fold(
+                onSuccess = { branches ->
+                    Timber.i("Deploy: Loaded ${branches.size} branches for $owner/$repo")
+                    log(LogLevel.INFO, "Loaded ${branches.size} branches for $owner/$repo")
+                    _uiState.update {
+                        it.copy(
+                            branches = branches,
+                            isLoadingBranches = false
+                        )
+                    }
+                    // Auto-select default branch (main or master) if available
+                    val defaultBranch = branches.find { it.name == "main" }
+                        ?: branches.find { it.name == "master" }
+                        ?: branches.firstOrNull()
+                    defaultBranch?.let { selectBranch(it) }
+                },
+                onFailure = { e ->
+                    Timber.e(e, "Deploy: Failed to load branches for $owner/$repo")
+                    log(LogLevel.ERROR, "Failed to load branches for $owner/$repo: ${e.message}")
+                    _uiState.update {
+                        it.copy(
+                            isLoadingBranches = false,
+                            error = "Failed to load branches: ${e.message}"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    fun selectBranch(branch: Branch) {
+        Timber.i("Deploy: Selected branch ${branch.name}")
+        log(LogLevel.INFO, "Selected branch: ${branch.name}")
+        _uiState.update { it.copy(selectedBranch = branch) }
     }
 
     fun loadReleases(owner: String, repo: String) {
@@ -280,11 +333,15 @@ class DeployViewModel @Inject constructor(
                 "runApp" to state.runApp.toString()
             ))
 
+            val branchRef = state.selectedBranch?.name ?: "main"
+            Timber.d("Deploy: Using branch ref: $branchRef")
+            DebugLogger.logSync("INFO", "Deploy", "Using branch: $branchRef")
+
             val result = gitHubRepository.triggerWorkflowWithInputs(
                 owner = state.owner,
                 repo = state.repo,
                 workflowId = WORKFLOW_FILE,
-                ref = "main",
+                ref = branchRef,
                 inputs = inputs
             )
 
