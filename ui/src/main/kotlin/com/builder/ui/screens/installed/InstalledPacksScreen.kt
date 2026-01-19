@@ -356,10 +356,10 @@ fun InstalledPackCard(
                                 color = MaterialTheme.colorScheme.tertiary
                             )
                         }
-                        if (!availableUpdate.releaseNotes.isNullOrBlank()) {
+                        availableUpdate.releaseNotes?.takeIf { it.isNotBlank() }?.let { notes ->
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = availableUpdate.releaseNotes,
+                                text = notes,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 2,
@@ -848,9 +848,9 @@ fun ExecutionHistoryItemRow(
                     )
                 }
             }
-            if (item.duration != null) {
+            item.duration?.let { duration ->
                 Text(
-                    text = "${item.duration / 1000}s",
+                    text = "${duration / 1000}s",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

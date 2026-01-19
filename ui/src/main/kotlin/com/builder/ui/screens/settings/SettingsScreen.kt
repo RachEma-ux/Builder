@@ -276,7 +276,7 @@ fun DataManagementCard(
                 }
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+            Divider(modifier = Modifier.padding(vertical = 12.dp))
 
             // Clear Execution History
             Row(

@@ -304,6 +304,8 @@ fun PermissionsCard(pack: Pack) {
             Spacer(modifier = Modifier.height(12.dp))
 
             val permissions = pack.manifest.permissions
+            val network = permissions.network
+            val filesystem = permissions.filesystem
 
             // Network
             Text(
@@ -311,8 +313,8 @@ fun PermissionsCard(pack: Pack) {
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary
             )
-            if (permissions.network.connect.isNotEmpty()) {
-                permissions.network.connect.forEach { url ->
+            if (network != null && network.connect.isNotEmpty()) {
+                network.connect.forEach { url ->
                     Text(
                         text = "  • Connect: $url",
                         style = MaterialTheme.typography.bodySmall
@@ -320,7 +322,7 @@ fun PermissionsCard(pack: Pack) {
                 }
             }
             Text(
-                text = "  • Listen localhost: ${if (permissions.network.listenLocalhost) "Yes" else "No"}",
+                text = "  • Listen localhost: ${if (network?.listenLocalhost == true) "Yes" else "No"}",
                 style = MaterialTheme.typography.bodySmall
             )
 
@@ -332,15 +334,15 @@ fun PermissionsCard(pack: Pack) {
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary
             )
-            if (permissions.filesystem.read.isNotEmpty()) {
+            if (filesystem != null && filesystem.read.isNotEmpty()) {
                 Text(
-                    text = "  • Read: ${permissions.filesystem.read.joinToString(", ")}",
+                    text = "  • Read: ${filesystem.read.joinToString(", ")}",
                     style = MaterialTheme.typography.bodySmall
                 )
             }
-            if (permissions.filesystem.write.isNotEmpty()) {
+            if (filesystem != null && filesystem.write.isNotEmpty()) {
                 Text(
-                    text = "  • Write: ${permissions.filesystem.write.joinToString(", ")}",
+                    text = "  • Write: ${filesystem.write.joinToString(", ")}",
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -457,10 +459,10 @@ fun ExecutionHistoryCard(item: ExecutionHistoryItem, dateFormat: SimpleDateForma
                     )
                 }
             }
-            if (item.duration != null) {
+            item.duration?.let { duration ->
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "${item.duration / 1000}s",
+                        text = "${duration / 1000}s",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
