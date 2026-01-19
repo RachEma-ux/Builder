@@ -88,7 +88,13 @@ enum class LogSource {
     KV_STORE,
 
     /** Permission check */
-    PERMISSION;
+    PERMISSION,
+
+    /** Deploy tab activities */
+    DEPLOY,
+
+    /** App-level system logs */
+    APP;
 
     companion object {
         fun fromString(value: String): LogSource {

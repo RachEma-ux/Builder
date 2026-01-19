@@ -12,7 +12,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import com.builder.core.util.DebugLogger
+import com.builder.core.model.Log
+import com.builder.core.model.LogLevel
+import com.builder.core.model.LogSource
+import com.builder.core.repository.LogRepository
 import javax.inject.Inject
 
 /**
@@ -63,7 +66,8 @@ data class DeployUiState(
 
 @HiltViewModel
 class DeployViewModel @Inject constructor(
-    private val gitHubRepository: GitHubRepository
+    private val gitHubRepository: GitHubRepository,
+    private val logRepository: LogRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DeployUiState())
@@ -74,15 +78,30 @@ class DeployViewModel @Inject constructor(
     companion object {
         private const val WORKFLOW_FILE = "builder-deploy.yml"
         private const val POLLING_INTERVAL_MS = 5000L
+        private const val DEPLOY_INSTANCE_ID = "deploy-tab"
+        private const val DEPLOY_PACK_ID = "app"
+    }
 
-        // Default repository for MyNewAp1Claude
-        private const val DEFAULT_OWNER = "ntninjadev"
-        private const val DEFAULT_REPO = "MyNewAp1Claude"
+    /**
+     * Log a Deploy tab activity to the LogRepository
+     */
+    private fun log(level: LogLevel, message: String, metadata: Map<String, String> = emptyMap()) {
+        viewModelScope.launch {
+            val logEntry = Log.create(
+                instanceId = DEPLOY_INSTANCE_ID,
+                packId = DEPLOY_PACK_ID,
+                level = level,
+                message = message,
+                source = LogSource.DEPLOY,
+                metadata = metadata
+            )
+            logRepository.insert(logEntry)
+        }
     }
 
     init {
         Timber.d("DeployViewModel initialized")
-        DebugLogger.logSync("INFO", "Deploy", "DeployViewModel initialized")
+        log(LogLevel.INFO, "DeployViewModel initialized")
         checkAuth()
         loadRepositories()
     }
@@ -90,14 +109,14 @@ class DeployViewModel @Inject constructor(
     private fun checkAuth() {
         val isAuth = gitHubRepository.isAuthenticated()
         Timber.d("Deploy: Auth check - isAuthenticated=$isAuth")
-        DebugLogger.logSync("INFO", "Deploy", "Auth check - isAuthenticated=$isAuth")
+        log(LogLevel.INFO, "Auth check - isAuthenticated=$isAuth")
         _uiState.update { it.copy(isAuthenticated = isAuth) }
     }
 
     fun loadRepositories() {
         viewModelScope.launch {
             Timber.d("Deploy: Loading repositories...")
-            DebugLogger.i("Deploy", "Loading repositories...")
+            log(LogLevel.INFO, "Loading repositories...")
             _uiState.update { it.copy(isLoadingRepositories = true) }
 
             val result = gitHubRepository.listRepositories()
@@ -105,7 +124,7 @@ class DeployViewModel @Inject constructor(
             result.fold(
                 onSuccess = { repos ->
                     Timber.i("Deploy: Loaded ${repos.size} repositories")
-                    DebugLogger.i("Deploy", "Loaded ${repos.size} repositories")
+                    log(LogLevel.INFO, "Loaded ${repos.size} repositories")
                     _uiState.update {
                         it.copy(
                             repositories = repos,
@@ -119,7 +138,7 @@ class DeployViewModel @Inject constructor(
                 },
                 onFailure = { e ->
                     Timber.e(e, "Deploy: Failed to load repositories")
-                    DebugLogger.e("Deploy", "Failed to load repositories", e)
+                    log(LogLevel.ERROR, "Failed to load repositories: ${e.message}")
                     _uiState.update {
                         it.copy(
                             isLoadingRepositories = false,
@@ -133,7 +152,7 @@ class DeployViewModel @Inject constructor(
 
     fun selectRepository(repository: Repository) {
         Timber.i("Deploy: Selected repository ${repository.fullName}")
-        DebugLogger.logSync("INFO", "Deploy", "Selected repository: ${repository.fullName}")
+        log(LogLevel.INFO, "Selected repository: ${repository.fullName}")
         _uiState.update {
             it.copy(
                 selectedRepository = repository,
@@ -150,7 +169,7 @@ class DeployViewModel @Inject constructor(
     fun loadReleases(owner: String, repo: String) {
         viewModelScope.launch {
             Timber.d("Deploy: Loading releases for $owner/$repo...")
-            DebugLogger.i("Deploy", "Loading releases for $owner/$repo...")
+            log(LogLevel.INFO, "Loading releases for $owner/$repo")
             _uiState.update { it.copy(isLoadingReleases = true) }
 
             val result = gitHubRepository.listReleases(owner, repo)
@@ -158,7 +177,7 @@ class DeployViewModel @Inject constructor(
             result.fold(
                 onSuccess = { releases ->
                     Timber.i("Deploy: Loaded ${releases.size} releases for $owner/$repo")
-                    DebugLogger.i("Deploy", "Loaded ${releases.size} releases for $owner/$repo")
+                    log(LogLevel.INFO, "Loaded ${releases.size} releases for $owner/$repo")
                     _uiState.update {
                         it.copy(
                             releases = releases,
@@ -172,7 +191,7 @@ class DeployViewModel @Inject constructor(
                 },
                 onFailure = { e ->
                     Timber.e(e, "Deploy: Failed to load releases for $owner/$repo")
-                    DebugLogger.e("Deploy", "Failed to load releases for $owner/$repo", e)
+                    log(LogLevel.ERROR, "Failed to load releases for $owner/$repo: ${e.message}")
                     _uiState.update {
                         it.copy(
                             isLoadingReleases = false,
@@ -186,7 +205,7 @@ class DeployViewModel @Inject constructor(
 
     fun selectRelease(release: Release) {
         Timber.i("Deploy: Selected release ${release.tagName}")
-        DebugLogger.logSync("INFO", "Deploy", "Selected release: ${release.tagName}")
+        log(LogLevel.INFO, "Selected release: ${release.tagName}")
         _uiState.update {
             it.copy(
                 selectedRelease = release,
@@ -233,7 +252,7 @@ class DeployViewModel @Inject constructor(
         val state = _uiState.value
         if (state.owner.isBlank() || state.repo.isBlank()) {
             Timber.w("Deploy: Cannot trigger - owner or repo is blank")
-            DebugLogger.logSync("WARN", "Deploy", "Cannot trigger - owner or repo is blank")
+            log(LogLevel.WARN, "Cannot trigger - owner or repo is blank")
             _uiState.update { it.copy(error = "Owner and repository are required") }
             return
         }
@@ -248,9 +267,11 @@ class DeployViewModel @Inject constructor(
             )
 
             Timber.i("Deploy: Triggering deployment for ${state.owner}/${state.repo}")
-            Timber.d("Deploy: Inputs - version=${state.version}, duration=${state.duration}, runApp=${state.runApp}")
-            DebugLogger.i("Deploy", "Triggering deployment for ${state.owner}/${state.repo}")
-            DebugLogger.i("Deploy", "Inputs - version=${state.version}, duration=${state.duration}, runApp=${state.runApp}")
+            log(LogLevel.INFO, "Triggering deployment for ${state.owner}/${state.repo}", mapOf(
+                "version" to state.version,
+                "duration" to state.duration,
+                "runApp" to state.runApp.toString()
+            ))
 
             val result = gitHubRepository.triggerWorkflowWithInputs(
                 owner = state.owner,
@@ -263,7 +284,7 @@ class DeployViewModel @Inject constructor(
             result.fold(
                 onSuccess = {
                     Timber.i("Deploy: Deployment triggered successfully for ${state.owner}/${state.repo} v${state.version}")
-                    DebugLogger.i("Deploy", "SUCCESS: Deployment triggered for ${state.owner}/${state.repo} v${state.version}")
+                    log(LogLevel.INFO, "SUCCESS: Deployment triggered for ${state.owner}/${state.repo} v${state.version}")
                     _uiState.update {
                         it.copy(
                             isTriggering = false,
@@ -277,7 +298,7 @@ class DeployViewModel @Inject constructor(
                 },
                 onFailure = { e ->
                     Timber.e(e, "Deploy: Failed to trigger deployment for ${state.owner}/${state.repo}")
-                    DebugLogger.e("Deploy", "FAILED: Deployment trigger failed for ${state.owner}/${state.repo}", e)
+                    log(LogLevel.ERROR, "FAILED: Deployment trigger failed for ${state.owner}/${state.repo}: ${e.message}")
                     _uiState.update {
                         it.copy(
                             isTriggering = false,
@@ -293,7 +314,7 @@ class DeployViewModel @Inject constructor(
         viewModelScope.launch {
             val state = _uiState.value
             Timber.d("Deploy: Finding latest run for ${state.owner}/${state.repo}")
-            DebugLogger.i("Deploy", "Finding latest run for ${state.owner}/${state.repo}")
+            log(LogLevel.INFO, "Finding latest run for ${state.owner}/${state.repo}")
             val result = gitHubRepository.listWorkflowRuns(state.owner, state.repo)
 
             result.fold(
@@ -301,7 +322,7 @@ class DeployViewModel @Inject constructor(
                     val latestRun = runs.firstOrNull()
                     if (latestRun != null) {
                         Timber.i("Deploy: Found latest run #${latestRun.runNumber} (ID: ${latestRun.id}) - status: ${latestRun.status}")
-                        DebugLogger.i("Deploy", "Found run #${latestRun.runNumber} - status: ${latestRun.status}")
+                        log(LogLevel.INFO, "Found run #${latestRun.runNumber} - status: ${latestRun.status}")
                         _uiState.update {
                             it.copy(
                                 activeRunId = latestRun.id,
@@ -311,12 +332,12 @@ class DeployViewModel @Inject constructor(
                         startPolling(latestRun.id)
                     } else {
                         Timber.w("Deploy: No workflow runs found for ${state.owner}/${state.repo}")
-                        DebugLogger.w("Deploy", "No workflow runs found for ${state.owner}/${state.repo}")
+                        log(LogLevel.WARN, "No workflow runs found for ${state.owner}/${state.repo}")
                     }
                 },
                 onFailure = { e ->
                     Timber.e(e, "Deploy: Failed to find latest run for ${state.owner}/${state.repo}")
-                    DebugLogger.e("Deploy", "Failed to find latest run", e)
+                    log(LogLevel.ERROR, "Failed to find latest run: ${e.message}")
                 }
             )
         }
@@ -338,7 +359,7 @@ class DeployViewModel @Inject constructor(
 
     private fun startPolling(runId: Long) {
         Timber.d("Deploy: Starting polling for run ID $runId")
-        DebugLogger.logSync("INFO", "Deploy", "Starting polling for run ID $runId")
+        log(LogLevel.INFO, "Starting polling for run ID $runId")
         pollingJob?.cancel()
         pollingJob = viewModelScope.launch {
             _uiState.update { it.copy(isPolling = true) }
@@ -355,13 +376,13 @@ class DeployViewModel @Inject constructor(
                     onSuccess = { run ->
                         Timber.d("Deploy: Run $runId status: ${run.status}, conclusion: ${run.conclusion}")
                         if (pollCount % 6 == 1) { // Log to file every 30 seconds (6 polls * 5 sec)
-                            DebugLogger.i("Deploy", "Polling run $runId - status: ${run.status}")
+                            log(LogLevel.DEBUG, "Polling run $runId - status: ${run.status}")
                         }
                         _uiState.update { it.copy(activeRun = run) }
 
                         if (run.isComplete()) {
                             Timber.i("Deploy: Run $runId completed with conclusion: ${run.conclusion}")
-                            DebugLogger.i("Deploy", "Run $runId COMPLETED - conclusion: ${run.conclusion}")
+                            log(LogLevel.INFO, "Run $runId COMPLETED - conclusion: ${run.conclusion}")
                             _uiState.update {
                                 it.copy(
                                     isPolling = false,
@@ -376,7 +397,7 @@ class DeployViewModel @Inject constructor(
                     },
                     onFailure = { e ->
                         Timber.e(e, "Deploy: Failed to poll workflow run $runId")
-                        DebugLogger.e("Deploy", "Failed to poll run $runId", e)
+                        log(LogLevel.ERROR, "Failed to poll run $runId: ${e.message}")
                         _uiState.update { it.copy(isPolling = false) }
                         shouldContinue = false
                     }
@@ -403,7 +424,7 @@ class DeployViewModel @Inject constructor(
             }
 
             Timber.d("Deploy: Loading history for ${state.owner}/${state.repo}")
-            DebugLogger.i("Deploy", "Loading history for ${state.owner}/${state.repo}")
+            log(LogLevel.INFO, "Loading history for ${state.owner}/${state.repo}")
             _uiState.update { it.copy(isLoadingHistory = true) }
 
             val result = gitHubRepository.listWorkflowRuns(state.owner, state.repo)
@@ -411,7 +432,7 @@ class DeployViewModel @Inject constructor(
             result.fold(
                 onSuccess = { runs ->
                     Timber.i("Deploy: Loaded ${runs.size} workflow runs for history")
-                    DebugLogger.i("Deploy", "Loaded ${runs.size} runs for history")
+                    log(LogLevel.INFO, "Loaded ${runs.size} runs for history")
                     _uiState.update {
                         it.copy(
                             workflowRuns = runs,
@@ -421,7 +442,7 @@ class DeployViewModel @Inject constructor(
                 },
                 onFailure = { e ->
                     Timber.e(e, "Deploy: Failed to load history for ${state.owner}/${state.repo}")
-                    DebugLogger.e("Deploy", "Failed to load history", e)
+                    log(LogLevel.ERROR, "Failed to load history: ${e.message}")
                     _uiState.update {
                         it.copy(
                             isLoadingHistory = false,
