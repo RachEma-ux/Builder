@@ -2,6 +2,8 @@ package com.builder.ui.screens.deploy
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.builder.core.model.github.Release
+import com.builder.core.model.github.Repository
 import com.builder.core.model.github.WorkflowRun
 import com.builder.core.repository.GitHubRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,6 +27,16 @@ enum class DeployTab {
 data class DeployUiState(
     val selectedTab: DeployTab = DeployTab.DEPLOY,
     val isAuthenticated: Boolean = false,
+
+    // Repository selection
+    val repositories: List<Repository> = emptyList(),
+    val selectedRepository: Repository? = null,
+    val isLoadingRepositories: Boolean = false,
+
+    // Release selection
+    val releases: List<Release> = emptyList(),
+    val selectedRelease: Release? = null,
+    val isLoadingReleases: Boolean = false,
 
     // Deploy form state
     val version: String = "2.0.0",
@@ -68,24 +80,112 @@ class DeployViewModel @Inject constructor(
     }
 
     init {
+        Timber.d("DeployViewModel initialized")
         checkAuth()
-        setDefaultRepo()
+        loadRepositories()
     }
 
     private fun checkAuth() {
-        _uiState.update { it.copy(isAuthenticated = gitHubRepository.isAuthenticated()) }
+        val isAuth = gitHubRepository.isAuthenticated()
+        Timber.d("Deploy: Auth check - isAuthenticated=$isAuth")
+        _uiState.update { it.copy(isAuthenticated = isAuth) }
     }
 
-    private fun setDefaultRepo() {
+    fun loadRepositories() {
+        viewModelScope.launch {
+            Timber.d("Deploy: Loading repositories...")
+            _uiState.update { it.copy(isLoadingRepositories = true) }
+
+            val result = gitHubRepository.listRepositories()
+
+            result.fold(
+                onSuccess = { repos ->
+                    Timber.i("Deploy: Loaded ${repos.size} repositories")
+                    _uiState.update {
+                        it.copy(
+                            repositories = repos,
+                            isLoadingRepositories = false
+                        )
+                    }
+                    // Auto-select first repo if available
+                    if (repos.isNotEmpty()) {
+                        selectRepository(repos.first())
+                    }
+                },
+                onFailure = { e ->
+                    Timber.e(e, "Deploy: Failed to load repositories")
+                    _uiState.update {
+                        it.copy(
+                            isLoadingRepositories = false,
+                            error = "Failed to load repositories: ${e.message}"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    fun selectRepository(repository: Repository) {
+        Timber.i("Deploy: Selected repository ${repository.fullName}")
         _uiState.update {
             it.copy(
-                owner = DEFAULT_OWNER,
-                repo = DEFAULT_REPO
+                selectedRepository = repository,
+                owner = repository.owner.login,
+                repo = repository.name,
+                // Clear releases when repo changes
+                releases = emptyList(),
+                selectedRelease = null
+            )
+        }
+        loadReleases(repository.owner.login, repository.name)
+    }
+
+    fun loadReleases(owner: String, repo: String) {
+        viewModelScope.launch {
+            Timber.d("Deploy: Loading releases for $owner/$repo...")
+            _uiState.update { it.copy(isLoadingReleases = true) }
+
+            val result = gitHubRepository.listReleases(owner, repo)
+
+            result.fold(
+                onSuccess = { releases ->
+                    Timber.i("Deploy: Loaded ${releases.size} releases for $owner/$repo")
+                    _uiState.update {
+                        it.copy(
+                            releases = releases,
+                            isLoadingReleases = false
+                        )
+                    }
+                    // Auto-select latest release if available
+                    if (releases.isNotEmpty()) {
+                        selectRelease(releases.first())
+                    }
+                },
+                onFailure = { e ->
+                    Timber.e(e, "Deploy: Failed to load releases for $owner/$repo")
+                    _uiState.update {
+                        it.copy(
+                            isLoadingReleases = false,
+                            error = "Failed to load releases: ${e.message}"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    fun selectRelease(release: Release) {
+        Timber.i("Deploy: Selected release ${release.tagName}")
+        _uiState.update {
+            it.copy(
+                selectedRelease = release,
+                version = release.tagName.removePrefix("v")
             )
         }
     }
 
     fun selectTab(tab: DeployTab) {
+        Timber.d("Deploy: Tab selected - $tab")
         _uiState.update { it.copy(selectedTab = tab) }
 
         when (tab) {
@@ -121,6 +221,7 @@ class DeployViewModel @Inject constructor(
     fun triggerDeploy() {
         val state = _uiState.value
         if (state.owner.isBlank() || state.repo.isBlank()) {
+            Timber.w("Deploy: Cannot trigger - owner or repo is blank")
             _uiState.update { it.copy(error = "Owner and repository are required") }
             return
         }
@@ -134,6 +235,9 @@ class DeployViewModel @Inject constructor(
                 "run_app" to if (state.runApp) "yes" else "no"
             )
 
+            Timber.i("Deploy: Triggering deployment for ${state.owner}/${state.repo}")
+            Timber.d("Deploy: Inputs - version=${state.version}, duration=${state.duration}, runApp=${state.runApp}")
+
             val result = gitHubRepository.triggerWorkflowWithInputs(
                 owner = state.owner,
                 repo = state.repo,
@@ -144,7 +248,7 @@ class DeployViewModel @Inject constructor(
 
             result.fold(
                 onSuccess = {
-                    Timber.i("Deployment triggered successfully")
+                    Timber.i("Deploy: Deployment triggered successfully for ${state.owner}/${state.repo} v${state.version}")
                     _uiState.update {
                         it.copy(
                             isTriggering = false,
@@ -157,7 +261,7 @@ class DeployViewModel @Inject constructor(
                     findLatestRun()
                 },
                 onFailure = { e ->
-                    Timber.e(e, "Failed to trigger deployment")
+                    Timber.e(e, "Deploy: Failed to trigger deployment for ${state.owner}/${state.repo}")
                     _uiState.update {
                         it.copy(
                             isTriggering = false,
@@ -172,12 +276,14 @@ class DeployViewModel @Inject constructor(
     private fun findLatestRun() {
         viewModelScope.launch {
             val state = _uiState.value
+            Timber.d("Deploy: Finding latest run for ${state.owner}/${state.repo}")
             val result = gitHubRepository.listWorkflowRuns(state.owner, state.repo)
 
             result.fold(
                 onSuccess = { runs ->
                     val latestRun = runs.firstOrNull()
                     if (latestRun != null) {
+                        Timber.i("Deploy: Found latest run #${latestRun.runNumber} (ID: ${latestRun.id}) - status: ${latestRun.status}")
                         _uiState.update {
                             it.copy(
                                 activeRunId = latestRun.id,
@@ -185,16 +291,19 @@ class DeployViewModel @Inject constructor(
                             )
                         }
                         startPolling(latestRun.id)
+                    } else {
+                        Timber.w("Deploy: No workflow runs found for ${state.owner}/${state.repo}")
                     }
                 },
                 onFailure = { e ->
-                    Timber.e(e, "Failed to find latest run")
+                    Timber.e(e, "Deploy: Failed to find latest run for ${state.owner}/${state.repo}")
                 }
             )
         }
     }
 
     fun viewRun(run: WorkflowRun) {
+        Timber.i("Deploy: Viewing run #${run.runNumber} (ID: ${run.id})")
         _uiState.update {
             it.copy(
                 activeRunId = run.id,
@@ -208,20 +317,26 @@ class DeployViewModel @Inject constructor(
     }
 
     private fun startPolling(runId: Long) {
+        Timber.d("Deploy: Starting polling for run ID $runId")
         pollingJob?.cancel()
         pollingJob = viewModelScope.launch {
             _uiState.update { it.copy(isPolling = true) }
 
             var shouldContinue = true
+            var pollCount = 0
             while (shouldContinue) {
+                pollCount++
                 val state = _uiState.value
+                Timber.d("Deploy: Polling run $runId (poll #$pollCount)")
                 val result = gitHubRepository.getWorkflowRun(state.owner, state.repo, runId)
 
                 result.fold(
                     onSuccess = { run ->
+                        Timber.d("Deploy: Run $runId status: ${run.status}, conclusion: ${run.conclusion}")
                         _uiState.update { it.copy(activeRun = run) }
 
                         if (run.isComplete()) {
+                            Timber.i("Deploy: Run $runId completed with conclusion: ${run.conclusion}")
                             _uiState.update {
                                 it.copy(
                                     isPolling = false,
@@ -235,7 +350,7 @@ class DeployViewModel @Inject constructor(
                         }
                     },
                     onFailure = { e ->
-                        Timber.e(e, "Failed to poll workflow run")
+                        Timber.e(e, "Deploy: Failed to poll workflow run $runId")
                         _uiState.update { it.copy(isPolling = false) }
                         shouldContinue = false
                     }
@@ -256,14 +371,19 @@ class DeployViewModel @Inject constructor(
     fun loadHistory() {
         viewModelScope.launch {
             val state = _uiState.value
-            if (state.owner.isBlank() || state.repo.isBlank()) return@launch
+            if (state.owner.isBlank() || state.repo.isBlank()) {
+                Timber.w("Deploy: Cannot load history - owner or repo is blank")
+                return@launch
+            }
 
+            Timber.d("Deploy: Loading history for ${state.owner}/${state.repo}")
             _uiState.update { it.copy(isLoadingHistory = true) }
 
             val result = gitHubRepository.listWorkflowRuns(state.owner, state.repo)
 
             result.fold(
                 onSuccess = { runs ->
+                    Timber.i("Deploy: Loaded ${runs.size} workflow runs for history")
                     _uiState.update {
                         it.copy(
                             workflowRuns = runs,
@@ -272,7 +392,7 @@ class DeployViewModel @Inject constructor(
                     }
                 },
                 onFailure = { e ->
-                    Timber.e(e, "Failed to load history")
+                    Timber.e(e, "Deploy: Failed to load history for ${state.owner}/${state.repo}")
                     _uiState.update {
                         it.copy(
                             isLoadingHistory = false,

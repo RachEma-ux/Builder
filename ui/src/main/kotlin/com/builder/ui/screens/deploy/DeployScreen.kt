@@ -18,6 +18,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.builder.core.model.github.Release
+import com.builder.core.model.github.Repository
 import com.builder.core.model.github.WorkflowRun
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -111,8 +113,9 @@ fun DeployScreen(
                     onVersionChange = viewModel::updateVersion,
                     onDurationChange = viewModel::updateDuration,
                     onRunAppChange = viewModel::updateRunApp,
-                    onOwnerChange = viewModel::updateOwner,
-                    onRepoChange = viewModel::updateRepo,
+                    onRepositorySelected = viewModel::selectRepository,
+                    onReleaseSelected = viewModel::selectRelease,
+                    onRefreshRepositories = viewModel::loadRepositories,
                     onTriggerDeploy = viewModel::triggerDeploy
                 )
                 DeployTab.STATUS -> StatusTabContent(
@@ -140,11 +143,14 @@ fun DeployTabContent(
     onVersionChange: (String) -> Unit,
     onDurationChange: (String) -> Unit,
     onRunAppChange: (Boolean) -> Unit,
-    onOwnerChange: (String) -> Unit,
-    onRepoChange: (String) -> Unit,
+    onRepositorySelected: (Repository) -> Unit,
+    onReleaseSelected: (Release) -> Unit,
+    onRefreshRepositories: () -> Unit,
     onTriggerDeploy: () -> Unit
 ) {
     var durationExpanded by remember { mutableStateOf(false) }
+    var repoExpanded by remember { mutableStateOf(false) }
+    var releaseExpanded by remember { mutableStateOf(false) }
     val durations = listOf("5", "10", "15", "30")
 
     Column(
@@ -157,30 +163,168 @@ fun DeployTabContent(
         // Repository Card
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    "Repository",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Repository",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (uiState.isLoadingRepositories) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        IconButton(onClick = onRefreshRepositories) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(12.dp))
 
-                OutlinedTextField(
-                    value = uiState.owner,
-                    onValueChange = onOwnerChange,
-                    label = { Text("Owner") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
+                // Repository Dropdown
+                ExposedDropdownMenuBox(
+                    expanded = repoExpanded,
+                    onExpandedChange = { repoExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = uiState.selectedRepository?.fullName ?: "Select repository",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Repository") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = repoExpanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        enabled = !uiState.isLoadingRepositories && uiState.repositories.isNotEmpty()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = repoExpanded,
+                        onDismissRequest = { repoExpanded = false }
+                    ) {
+                        if (uiState.repositories.isEmpty()) {
+                            DropdownMenuItem(
+                                text = { Text("No repositories found") },
+                                onClick = { repoExpanded = false },
+                                enabled = false
+                            )
+                        } else {
+                            uiState.repositories.forEach { repo ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Column {
+                                            Text(repo.fullName, fontWeight = FontWeight.Medium)
+                                            repo.description?.let {
+                                                Text(
+                                                    it.take(50) + if (it.length > 50) "..." else "",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                    },
+                                    onClick = {
+                                        onRepositorySelected(repo)
+                                        repoExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = uiState.repo,
-                    onValueChange = onRepoChange,
-                    label = { Text("Repository") },
+        // Release Card
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Release",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (uiState.isLoadingReleases) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Release Dropdown
+                ExposedDropdownMenuBox(
+                    expanded = releaseExpanded,
+                    onExpandedChange = { releaseExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = uiState.selectedRelease?.let { "${it.tagName} - ${it.name ?: "Release"}" }
+                            ?: if (uiState.releases.isEmpty()) "No releases available" else "Select release",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Release") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = releaseExpanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        enabled = !uiState.isLoadingReleases && uiState.releases.isNotEmpty()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = releaseExpanded,
+                        onDismissRequest = { releaseExpanded = false }
+                    ) {
+                        if (uiState.releases.isEmpty()) {
+                            DropdownMenuItem(
+                                text = { Text("No releases found") },
+                                onClick = { releaseExpanded = false },
+                                enabled = false
+                            )
+                        } else {
+                            uiState.releases.forEach { release ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Column {
+                                            Text(release.tagName, fontWeight = FontWeight.Medium)
+                                            Text(
+                                                release.name ?: "Release",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                release.publishedAt?.replace("T", " ")?.replace("Z", "") ?: "",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        onReleaseSelected(release)
+                                        releaseExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Show selected release info
+                uiState.selectedRelease?.let { release ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Assets: ${release.assets.size}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
 
@@ -266,7 +410,7 @@ fun DeployTabContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            enabled = !uiState.isTriggering && uiState.owner.isNotBlank() && uiState.repo.isNotBlank()
+            enabled = !uiState.isTriggering && uiState.selectedRepository != null
         ) {
             if (uiState.isTriggering) {
                 CircularProgressIndicator(
@@ -284,11 +428,19 @@ fun DeployTabContent(
         }
 
         // Info text
-        Text(
-            "This will trigger the builder-deploy.yml workflow on GitHub Actions.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        if (uiState.selectedRepository != null) {
+            Text(
+                "This will trigger builder-deploy.yml on ${uiState.selectedRepository.fullName}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            Text(
+                "Select a repository to deploy",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
