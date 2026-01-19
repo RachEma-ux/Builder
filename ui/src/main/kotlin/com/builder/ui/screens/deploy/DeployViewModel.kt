@@ -670,7 +670,6 @@ class DeployViewModel @Inject constructor(
 
     private suspend fun fetchTunnelUrlFromGist(): String? {
         val gistId = _uiState.value.tunnelGistId
-        val activeRunId = _uiState.value.activeRunId
         if (gistId.isNullOrBlank()) {
             Timber.d("Deploy: No gist ID available for this repository")
             return null
@@ -694,19 +693,11 @@ class DeployViewModel @Inject constructor(
                         val statusJson = JSONObject(content)
                         val tunnelUrl = statusJson.optString("tunnel_url", null)
                         val status = statusJson.optString("status", null)
-                        val gistRunId = statusJson.optString("run_id", null)
 
-                        // Only return URL if:
-                        // 1. Status is "running"
-                        // 2. URL is valid
-                        // 3. run_id matches current active run (if we have one)
+                        // Only return URL if status is "running" and URL is valid
+                        // The workflow resets the Gist to "pending" at start, so stale URLs are cleared
                         if (tunnelUrl != null && tunnelUrl.isNotEmpty() && tunnelUrl != "null" && status == "running") {
-                            // Check if run_id matches current active run
-                            if (activeRunId != null && gistRunId != null && gistRunId != activeRunId.toString()) {
-                                Timber.d("Deploy: Gist run_id ($gistRunId) doesn't match active run ($activeRunId), ignoring stale URL")
-                                return@withContext null
-                            }
-                            Timber.d("Deploy: Gist tunnel status - url=$tunnelUrl, status=$status, run_id=$gistRunId")
+                            Timber.d("Deploy: Gist tunnel status - url=$tunnelUrl, status=$status")
                             return@withContext tunnelUrl
                         }
                     }
