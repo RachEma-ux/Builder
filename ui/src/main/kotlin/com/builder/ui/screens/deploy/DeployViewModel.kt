@@ -16,6 +16,7 @@ import com.builder.core.model.Log
 import com.builder.core.model.LogLevel
 import com.builder.core.model.LogSource
 import com.builder.core.repository.LogRepository
+import com.builder.core.util.DebugLogger
 import javax.inject.Inject
 
 /**
@@ -101,6 +102,7 @@ class DeployViewModel @Inject constructor(
 
     init {
         Timber.d("DeployViewModel initialized")
+        DebugLogger.log("INFO", "Deploy", "DeployViewModel initialized")
         log(LogLevel.INFO, "DeployViewModel initialized")
         checkAuth()
         loadRepositories()
@@ -250,8 +252,10 @@ class DeployViewModel @Inject constructor(
 
     fun triggerDeploy() {
         val state = _uiState.value
+        DebugLogger.log("INFO", "Deploy", "triggerDeploy called - owner=${state.owner}, repo=${state.repo}")
         if (state.owner.isBlank() || state.repo.isBlank()) {
             Timber.w("Deploy: Cannot trigger - owner or repo is blank")
+            DebugLogger.log("WARN", "Deploy", "Cannot trigger - owner or repo is blank")
             log(LogLevel.WARN, "Cannot trigger - owner or repo is blank")
             _uiState.update { it.copy(error = "Owner and repository are required") }
             return
@@ -267,6 +271,7 @@ class DeployViewModel @Inject constructor(
             )
 
             Timber.i("Deploy: Triggering deployment for ${state.owner}/${state.repo}")
+            DebugLogger.log("INFO", "Deploy", "Triggering workflow for ${state.owner}/${state.repo}")
             log(LogLevel.INFO, "Triggering deployment for ${state.owner}/${state.repo}", mapOf(
                 "version" to state.version,
                 "duration" to state.duration,
@@ -284,6 +289,7 @@ class DeployViewModel @Inject constructor(
             result.fold(
                 onSuccess = {
                     Timber.i("Deploy: Deployment triggered successfully for ${state.owner}/${state.repo} v${state.version}")
+                    DebugLogger.log("INFO", "Deploy", "SUCCESS: Deployment triggered, switching to Status tab")
                     log(LogLevel.INFO, "SUCCESS: Deployment triggered for ${state.owner}/${state.repo} v${state.version}")
                     _uiState.update {
                         it.copy(
@@ -298,6 +304,7 @@ class DeployViewModel @Inject constructor(
                 },
                 onFailure = { e ->
                     Timber.e(e, "Deploy: Failed to trigger deployment for ${state.owner}/${state.repo}")
+                    DebugLogger.log("ERROR", "Deploy", "FAILED: ${e.message}")
                     log(LogLevel.ERROR, "FAILED: Deployment trigger failed for ${state.owner}/${state.repo}: ${e.message}")
                     _uiState.update {
                         it.copy(
@@ -314,6 +321,7 @@ class DeployViewModel @Inject constructor(
         viewModelScope.launch {
             val state = _uiState.value
             Timber.d("Deploy: Finding latest run for ${state.owner}/${state.repo}")
+            DebugLogger.log("INFO", "Deploy", "Finding latest run for ${state.owner}/${state.repo}")
             log(LogLevel.INFO, "Finding latest run for ${state.owner}/${state.repo}")
             val result = gitHubRepository.listWorkflowRuns(state.owner, state.repo)
 
@@ -322,6 +330,7 @@ class DeployViewModel @Inject constructor(
                     val latestRun = runs.firstOrNull()
                     if (latestRun != null) {
                         Timber.i("Deploy: Found latest run #${latestRun.runNumber} (ID: ${latestRun.id}) - status: ${latestRun.status}")
+                        DebugLogger.log("INFO", "Deploy", "Found run #${latestRun.runNumber} - status: ${latestRun.status}, isRunning: ${latestRun.isRunning()}")
                         log(LogLevel.INFO, "Found run #${latestRun.runNumber} - status: ${latestRun.status}")
                         _uiState.update {
                             it.copy(
@@ -329,14 +338,17 @@ class DeployViewModel @Inject constructor(
                                 activeRun = latestRun
                             )
                         }
+                        DebugLogger.log("INFO", "Deploy", "activeRun set, starting polling")
                         startPolling(latestRun.id)
                     } else {
                         Timber.w("Deploy: No workflow runs found for ${state.owner}/${state.repo}")
+                        DebugLogger.log("WARN", "Deploy", "No workflow runs found")
                         log(LogLevel.WARN, "No workflow runs found for ${state.owner}/${state.repo}")
                     }
                 },
                 onFailure = { e ->
                     Timber.e(e, "Deploy: Failed to find latest run for ${state.owner}/${state.repo}")
+                    DebugLogger.log("ERROR", "Deploy", "Failed to find latest run: ${e.message}")
                     log(LogLevel.ERROR, "Failed to find latest run: ${e.message}")
                 }
             )
