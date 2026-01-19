@@ -1,11 +1,14 @@
 package com.builder.data.repository
 
+import android.util.Base64
 import com.builder.core.repository.GitHubRepository
+import com.builder.core.repository.ProjectType
 import com.builder.core.model.github.DeviceFlowState
 import com.builder.data.remote.github.GitHubApiService
 import com.builder.data.remote.github.GitHubOAuthManager
 import com.builder.core.model.github.*
 import com.builder.data.di.GitHubClient
+import com.builder.data.workflow.WorkflowGenerator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +28,8 @@ import javax.inject.Singleton
 class GitHubRepositoryImpl @Inject constructor(
     private val apiService: GitHubApiService,
     private val oauthManager: GitHubOAuthManager,
-    @GitHubClient private val httpClient: OkHttpClient
+    @GitHubClient private val httpClient: OkHttpClient,
+    private val workflowGenerator: WorkflowGenerator
 ) : GitHubRepository {
 
     override val authState: StateFlow<DeviceFlowState?>
@@ -272,6 +276,224 @@ class GitHubRepositoryImpl @Inject constructor(
             } catch (e: Exception) {
                 Timber.e(e, "File content download failed")
                 Result.failure(e)
+            }
+        }
+    }
+
+    // ========== Workflow Generation Methods ==========
+
+    override suspend fun listWorkflows(owner: String, repo: String): Result<List<GitHubWorkflow>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.listWorkflows(owner, repo)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Result.success(body.workflows)
+                } else {
+                    Result.failure(Exception("Failed to list workflows: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to list workflows")
+                Result.failure(e)
+            }
+        }
+    }
+
+    override suspend fun getFileContents(
+        owner: String,
+        repo: String,
+        path: String,
+        ref: String?
+    ): Result<FileContent> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getFileContents(owner, repo, path, ref)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Failed to get file contents: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to get file contents")
+                Result.failure(e)
+            }
+        }
+    }
+
+    override suspend fun createOrUpdateFile(
+        owner: String,
+        repo: String,
+        path: String,
+        message: String,
+        content: String,
+        sha: String?,
+        branch: String?
+    ): Result<FileUpdateResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val encodedContent = Base64.encodeToString(
+                    content.toByteArray(),
+                    Base64.NO_WRAP
+                )
+                val request = FileUpdateRequest(
+                    message = message,
+                    content = encodedContent,
+                    sha = sha,
+                    branch = branch
+                )
+                val response = apiService.createOrUpdateFile(owner, repo, path, request)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Timber.i("File created/updated: $path")
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Failed to create/update file: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to create/update file")
+                Result.failure(e)
+            }
+        }
+    }
+
+    override suspend fun getLanguages(owner: String, repo: String): Result<Map<String, Long>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getLanguages(owner, repo)
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Failed to get languages: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to get languages")
+                Result.failure(e)
+            }
+        }
+    }
+
+    override suspend fun detectProjectType(owner: String, repo: String): Result<ProjectType> {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Check for common project files
+                val checks = listOf(
+                    "package.json" to ProjectType.NODEJS,
+                    "requirements.txt" to ProjectType.PYTHON,
+                    "setup.py" to ProjectType.PYTHON,
+                    "Cargo.toml" to ProjectType.RUST,
+                    "go.mod" to ProjectType.GO,
+                    "build.gradle.kts" to ProjectType.KOTLIN_JVM,
+                    "build.gradle" to ProjectType.JAVA,
+                    "pom.xml" to ProjectType.JAVA
+                )
+
+                for ((file, type) in checks) {
+                    val result = getFileContents(owner, repo, file)
+                    if (result.isSuccess) {
+                        Timber.i("Detected project type: $type (found $file)")
+                        return@withContext Result.success(type)
+                    }
+                }
+
+                // Check languages as fallback
+                val languagesResult = getLanguages(owner, repo)
+                if (languagesResult.isSuccess) {
+                    val languages = languagesResult.getOrNull() ?: emptyMap()
+                    val primaryLanguage = languages.maxByOrNull { it.value }?.key
+
+                    val type = when (primaryLanguage?.lowercase()) {
+                        "typescript", "javascript" -> ProjectType.NODEJS
+                        "python" -> ProjectType.PYTHON
+                        "rust" -> ProjectType.RUST
+                        "go" -> ProjectType.GO
+                        "kotlin" -> ProjectType.KOTLIN_JVM
+                        "java" -> ProjectType.JAVA
+                        "html", "css" -> ProjectType.STATIC
+                        "webassembly" -> ProjectType.WASM
+                        else -> ProjectType.UNKNOWN
+                    }
+                    Timber.i("Detected project type from language: $type ($primaryLanguage)")
+                    return@withContext Result.success(type)
+                }
+
+                Result.success(ProjectType.UNKNOWN)
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to detect project type")
+                Result.failure(e)
+            }
+        }
+    }
+
+    override suspend fun generateDeployWorkflow(
+        owner: String,
+        repo: String,
+        projectType: ProjectType?
+    ): Result<String> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val type = projectType ?: detectProjectType(owner, repo).getOrNull() ?: ProjectType.UNKNOWN
+                val packName = repo.lowercase().replace(Regex("[^a-z0-9]"), "")
+                val workflow = workflowGenerator.generate(type, packName)
+                Timber.i("Generated deploy workflow for $owner/$repo (type: $type)")
+                Result.success(workflow)
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to generate deploy workflow")
+                Result.failure(e)
+            }
+        }
+    }
+
+    override suspend fun setupBuilderDeployment(
+        owner: String,
+        repo: String,
+        branch: String
+    ): Result<FileUpdateResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Generate workflow
+                val workflowResult = generateDeployWorkflow(owner, repo)
+                if (workflowResult.isFailure) {
+                    return@withContext Result.failure(
+                        workflowResult.exceptionOrNull() ?: Exception("Failed to generate workflow")
+                    )
+                }
+                val workflowContent = workflowResult.getOrThrow()
+
+                // Check if file already exists to get SHA for update
+                val existingFile = getFileContents(owner, repo, ".github/workflows/builder-deploy.yml")
+                val sha = existingFile.getOrNull()?.sha
+
+                // Create or update the workflow file
+                val result = createOrUpdateFile(
+                    owner = owner,
+                    repo = repo,
+                    path = ".github/workflows/builder-deploy.yml",
+                    message = "Add Builder deployment workflow\n\nAutomatically generated by Builder app",
+                    content = workflowContent,
+                    sha = sha,
+                    branch = branch
+                )
+
+                if (result.isSuccess) {
+                    Timber.i("Builder deployment setup complete for $owner/$repo")
+                }
+                result
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to setup Builder deployment")
+                Result.failure(e)
+            }
+        }
+    }
+
+    override suspend fun hasBuilderDeployment(owner: String, repo: String): Result<Boolean> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val result = getFileContents(owner, repo, ".github/workflows/builder-deploy.yml")
+                Result.success(result.isSuccess)
+            } catch (e: Exception) {
+                Result.success(false)
             }
         }
     }

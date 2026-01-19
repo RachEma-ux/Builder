@@ -5,6 +5,21 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
+ * Detected project type for workflow generation.
+ */
+enum class ProjectType {
+    NODEJS,        // package.json present
+    PYTHON,        // requirements.txt or setup.py present
+    RUST,          // Cargo.toml present
+    GO,            // go.mod present
+    KOTLIN_JVM,    // build.gradle.kts with Kotlin
+    JAVA,          // build.gradle or pom.xml
+    WASM,          // .wasm files or wat files
+    STATIC,        // HTML/CSS/JS only
+    UNKNOWN        // Cannot determine
+}
+
+/**
  * Repository interface for GitHub operations.
  */
 interface GitHubRepository {
@@ -100,4 +115,69 @@ interface GitHubRepository {
      * Useful for small text files like checksums.sha256.
      */
     suspend fun downloadFile(url: String): Result<String>
+
+    // ========== Workflow Generation Methods ==========
+
+    /**
+     * Lists GitHub Actions workflows for a repository.
+     */
+    suspend fun listWorkflows(owner: String, repo: String): Result<List<GitHubWorkflow>>
+
+    /**
+     * Gets file contents from a repository.
+     */
+    suspend fun getFileContents(
+        owner: String,
+        repo: String,
+        path: String,
+        ref: String? = null
+    ): Result<FileContent>
+
+    /**
+     * Creates or updates a file in a repository.
+     */
+    suspend fun createOrUpdateFile(
+        owner: String,
+        repo: String,
+        path: String,
+        message: String,
+        content: String,
+        sha: String? = null,
+        branch: String? = null
+    ): Result<FileUpdateResponse>
+
+    /**
+     * Gets repository languages to help detect project type.
+     */
+    suspend fun getLanguages(owner: String, repo: String): Result<Map<String, Long>>
+
+    /**
+     * Detects the project type by analyzing repository contents.
+     */
+    suspend fun detectProjectType(owner: String, repo: String): Result<ProjectType>
+
+    /**
+     * Generates a Builder-compatible deploy workflow for a repository.
+     * Returns the YAML content.
+     */
+    suspend fun generateDeployWorkflow(
+        owner: String,
+        repo: String,
+        projectType: ProjectType? = null
+    ): Result<String>
+
+    /**
+     * Sets up a repository for Builder deployment.
+     * Creates the .github/workflows/builder-deploy.yml file.
+     */
+    suspend fun setupBuilderDeployment(
+        owner: String,
+        repo: String,
+        branch: String = "main"
+    ): Result<FileUpdateResponse>
+
+    /**
+     * Checks if a repository already has Builder deployment configured.
+     */
+    suspend fun hasBuilderDeployment(owner: String, repo: String): Result<Boolean>
 }

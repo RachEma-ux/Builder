@@ -184,4 +184,51 @@ interface GitHubApiService {
     suspend fun downloadFile(
         @Url url: String
     ): Response<ResponseBody>
+
+    // ========== File Operations (for workflow generation) ==========
+
+    /**
+     * Get file contents from a repository.
+     * GET /repos/{owner}/{repo}/contents/{path}
+     */
+    @GET("repos/{owner}/{repo}/contents/{path}")
+    suspend fun getFileContents(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("path", encoded = true) path: String,
+        @Query("ref") ref: String? = null
+    ): Response<FileContent>
+
+    /**
+     * Create or update a file in a repository.
+     * PUT /repos/{owner}/{repo}/contents/{path}
+     */
+    @PUT("repos/{owner}/{repo}/contents/{path}")
+    suspend fun createOrUpdateFile(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("path", encoded = true) path: String,
+        @Body request: FileUpdateRequest
+    ): Response<FileUpdateResponse>
+
+    /**
+     * List workflows for a repository.
+     * GET /repos/{owner}/{repo}/actions/workflows
+     */
+    @GET("repos/{owner}/{repo}/actions/workflows")
+    suspend fun listWorkflows(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Query("per_page") perPage: Int = 100
+    ): Response<WorkflowsResponse>
+
+    /**
+     * Get repository languages.
+     * GET /repos/{owner}/{repo}/languages
+     */
+    @GET("repos/{owner}/{repo}/languages")
+    suspend fun getLanguages(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String
+    ): Response<Map<String, Long>>
 }

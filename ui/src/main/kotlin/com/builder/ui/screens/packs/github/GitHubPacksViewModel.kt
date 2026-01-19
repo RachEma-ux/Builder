@@ -228,11 +228,15 @@ class GitHubPacksViewModel @Inject constructor(
      * Selects a repository.
      */
     fun selectRepository(repo: Repository) {
-        _uiState.update { it.copy(selectedRepo = repo) }
+        _uiState.update { it.copy(selectedRepo = repo, hasBuilderDeployment = false, detectedProjectType = null) }
 
         // Load branches and tags
         loadBranches(repo.owner.login, repo.name)
         loadTags(repo.owner.login, repo.name)
+
+        // Check for Builder deployment and detect project type
+        checkBuilderDeployment()
+        detectProjectType()
     }
 
     /**
@@ -548,6 +552,125 @@ class GitHubPacksViewModel @Inject constructor(
     fun clearError() {
         _uiState.update { it.copy(error = null, installSuccess = null) }
     }
+
+    // ========== Workflow Generation Methods ==========
+
+    /**
+     * Checks if the selected repository has Builder deployment configured.
+     */
+    fun checkBuilderDeployment() {
+        val repo = _uiState.value.selectedRepo ?: return
+
+        viewModelScope.launch {
+            gitHubRepository.hasBuilderDeployment(repo.owner.login, repo.name).fold(
+                onSuccess = { hasDeployment ->
+                    _uiState.update { it.copy(hasBuilderDeployment = hasDeployment) }
+                    Timber.i("Repository ${repo.name} has Builder deployment: $hasDeployment")
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Failed to check Builder deployment")
+                    _uiState.update { it.copy(hasBuilderDeployment = false) }
+                }
+            )
+        }
+    }
+
+    /**
+     * Sets up Builder deployment for the selected repository.
+     * Creates the .github/workflows/builder-deploy.yml file.
+     */
+    fun setupBuilderDeployment() {
+        val repo = _uiState.value.selectedRepo ?: return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(settingUpDeployment = true) }
+
+            gitHubRepository.setupBuilderDeployment(
+                owner = repo.owner.login,
+                repo = repo.name,
+                branch = repo.defaultBranch ?: "main"
+            ).fold(
+                onSuccess = { response ->
+                    Timber.i("Builder deployment setup complete: ${response.commit.htmlUrl}")
+                    _uiState.update {
+                        it.copy(
+                            settingUpDeployment = false,
+                            hasBuilderDeployment = true,
+                            installSuccess = "Builder deployment configured! Workflow created."
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Failed to setup Builder deployment")
+                    _uiState.update {
+                        it.copy(
+                            settingUpDeployment = false,
+                            error = "Failed to setup deployment: ${error.message}"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    /**
+     * Triggers the Builder Deploy workflow for the selected repository.
+     */
+    fun triggerBuilderDeployment(version: String, runApp: Boolean = true, duration: Int = 15) {
+        val repo = _uiState.value.selectedRepo ?: return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(triggeringWorkflow = true) }
+
+            // First, trigger the workflow
+            gitHubRepository.triggerWorkflow(
+                owner = repo.owner.login,
+                repo = repo.name,
+                workflowId = "builder-deploy.yml",
+                ref = repo.defaultBranch ?: "main"
+            ).fold(
+                onSuccess = {
+                    Timber.i("Builder Deploy workflow triggered for ${repo.name}")
+                    _uiState.update {
+                        it.copy(
+                            triggeringWorkflow = false,
+                            installSuccess = "Deployment started! Check GitHub Actions for progress."
+                        )
+                    }
+                    // Reload workflow runs to show the new run
+                    loadWorkflowRuns(repo.owner.login, repo.name, repo.defaultBranch ?: "main")
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Failed to trigger Builder Deploy workflow")
+                    _uiState.update {
+                        it.copy(
+                            triggeringWorkflow = false,
+                            error = "Failed to trigger deployment: ${error.message}"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    /**
+     * Detects the project type of the selected repository.
+     */
+    fun detectProjectType() {
+        val repo = _uiState.value.selectedRepo ?: return
+
+        viewModelScope.launch {
+            gitHubRepository.detectProjectType(repo.owner.login, repo.name).fold(
+                onSuccess = { type ->
+                    _uiState.update { it.copy(detectedProjectType = type) }
+                    Timber.i("Detected project type for ${repo.name}: $type")
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Failed to detect project type")
+                }
+            )
+        }
+    }
 }
 
 /**
@@ -572,7 +695,12 @@ data class GitHubPacksUiState(
     val loadingChecksums: Boolean = false,
     val installing: Boolean = false,
     val installSuccess: String? = null,
-    val error: String? = null
+    val error: String? = null,
+    // Workflow generation state
+    val hasBuilderDeployment: Boolean = false,
+    val settingUpDeployment: Boolean = false,
+    val triggeringWorkflow: Boolean = false,
+    val detectedProjectType: com.builder.core.repository.ProjectType? = null
 )
 
 /**
