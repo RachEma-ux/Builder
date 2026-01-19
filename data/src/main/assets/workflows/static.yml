@@ -1,0 +1,87 @@
+name: Builder Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version'
+        required: true
+        default: '{{DEFAULT_VERSION}}'
+      run_app:
+        description: 'Serve with public URL?'
+        required: true
+        default: 'yes'
+        type: choice
+        options: ['yes', 'no']
+      duration:
+        description: 'Runtime (minutes)'
+        required: true
+        default: '15'
+        type: choice
+        options: ['5', '10', '15', '30']
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Reset Gist status
+        if: ${{ vars.TUNNEL_GIST_ID != '' && secrets.GIST_TOKEN != '' }}
+        run: |
+          GIST_ID="${{ vars.TUNNEL_GIST_ID }}"
+          GIST_TOKEN="${{ secrets.GIST_TOKEN }}"
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          GIST_JSON=$(jq -n --arg rid "${{ github.run_id }}" --arg repo "${{ github.repository }}" --arg ts "$TIMESTAMP" \
+            '{tunnel_url: null, status: "pending", run_id: $rid, repository: $repo, started_at: $ts}')
+          PAYLOAD=$(jq -n --arg content "$GIST_JSON" '{files: {"tunnel-status.json": {content: $content}}}')
+          curl -s -X PATCH "https://api.github.com/gists/$GIST_ID" \
+            -H "Authorization: Bearer $GIST_TOKEN" -H "Accept: application/vnd.github+json" -d "$PAYLOAD" > /dev/null
+
+      - uses: actions/checkout@v4
+
+      - name: Create pack
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          mkdir -p pack-output
+          cp -r *.html *.css *.js assets/ static/ public/ pack-output/ 2>/dev/null || true
+          cat > pack-output/pack.json << EOF
+          {"pack_version":1,"id":"{{PACK_NAME}}","version":"$VERSION","type":"static","entry":"index.html"}
+          EOF
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          cd pack-output && zip -r "../pack-{{PACK_NAME}}-android-arm64-v${VERSION}.zip" .
+          cd .. && sha256sum "pack-{{PACK_NAME}}-android-arm64-v${VERSION}.zip" > checksums.sha256
+          gh release delete "v${VERSION}" --yes 2>/dev/null || true
+          gh release create "v${VERSION}" "pack-{{PACK_NAME}}-android-arm64-v${VERSION}.zip" checksums.sha256
+
+      - name: Serve
+        if: ${{ github.event.inputs.run_app == 'yes' }}
+        run: |
+          npm install -g serve
+          curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared && chmod +x cloudflared
+          serve -s pack-output -l 3000 &
+          ./cloudflared tunnel --url http://localhost:3000 2>&1 | tee tunnel.log &
+          sleep 15
+          TUNNEL_URL=$(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' tunnel.log | head -1)
+          echo "$TUNNEL_URL"
+
+          # Update Gist with tunnel URL
+          GIST_ID="${{ vars.TUNNEL_GIST_ID }}"
+          GIST_TOKEN="${{ secrets.GIST_TOKEN }}"
+          if [ -n "$GIST_TOKEN" ] && [ -n "$GIST_ID" ]; then
+            TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            GIST_JSON=$(jq -n --arg url "$TUNNEL_URL" --arg rid "${{ github.run_id }}" --arg repo "${{ github.repository }}" --arg ts "$TIMESTAMP" --arg dur "${{ github.event.inputs.duration }}" \
+              '{tunnel_url: $url, status: "running", run_id: $rid, repository: $repo, started_at: $ts, duration_minutes: ($dur|tonumber)}')
+            PAYLOAD=$(jq -n --arg content "$GIST_JSON" '{files: {"tunnel-status.json": {content: $content}}}')
+            curl -s -X PATCH "https://api.github.com/gists/$GIST_ID" \
+              -H "Authorization: Bearer $GIST_TOKEN" -H "Accept: application/vnd.github+json" -d "$PAYLOAD" > /dev/null
+          fi
+
+          sleep $(( ${{ github.event.inputs.duration }} * 60 ))

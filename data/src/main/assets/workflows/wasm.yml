@@ -1,0 +1,53 @@
+name: Builder Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version'
+        required: true
+        default: '{{DEFAULT_VERSION}}'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Reset Gist status
+        if: ${{ vars.TUNNEL_GIST_ID != '' && secrets.GIST_TOKEN != '' }}
+        run: |
+          GIST_ID="${{ vars.TUNNEL_GIST_ID }}"
+          GIST_TOKEN="${{ secrets.GIST_TOKEN }}"
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          GIST_JSON=$(jq -n --arg rid "${{ github.run_id }}" --arg repo "${{ github.repository }}" --arg ts "$TIMESTAMP" \
+            '{tunnel_url: null, status: "pending", run_id: $rid, repository: $repo, started_at: $ts}')
+          PAYLOAD=$(jq -n --arg content "$GIST_JSON" '{files: {"tunnel-status.json": {content: $content}}}')
+          curl -s -X PATCH "https://api.github.com/gists/$GIST_ID" \
+            -H "Authorization: Bearer $GIST_TOKEN" -H "Accept: application/vnd.github+json" -d "$PAYLOAD" > /dev/null
+
+      - uses: actions/checkout@v4
+
+      - name: Create pack
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          mkdir -p pack-output
+          cp *.wasm pack-output/ 2>/dev/null || find . -name "*.wasm" -exec cp {} pack-output/ \;
+          cp *.wat pack-output/ 2>/dev/null || true
+          WASM_FILE=$(ls pack-output/*.wasm | head -1 | xargs basename)
+          cat > pack-output/pack.json << EOF
+          {"pack_version":1,"id":"{{PACK_NAME}}","version":"$VERSION","type":"wasm","entry":"$WASM_FILE"}
+          EOF
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          cd pack-output && find . -type f ! -name "checksums.sha256" -exec sha256sum {} \; > checksums.sha256
+          zip -r "../pack-{{PACK_NAME}}-android-arm64-v${VERSION}.zip" .
+          cd .. && sha256sum "pack-{{PACK_NAME}}-android-arm64-v${VERSION}.zip" > release-checksums.sha256
+          gh release delete "v${VERSION}" --yes 2>/dev/null || true
+          gh release create "v${VERSION}" "pack-{{PACK_NAME}}-android-arm64-v${VERSION}.zip" release-checksums.sha256

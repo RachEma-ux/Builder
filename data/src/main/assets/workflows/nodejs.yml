@@ -1,0 +1,174 @@
+name: Builder Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (e.g., {{DEFAULT_VERSION}})'
+        required: true
+        default: '{{DEFAULT_VERSION}}'
+      run_app:
+        description: 'Start app with public URL after deploy?'
+        required: true
+        default: 'yes'
+        type: choice
+        options:
+          - 'yes'
+          - 'no'
+      duration:
+        description: 'How long to keep app running (minutes)'
+        required: true
+        default: '15'
+        type: choice
+        options:
+          - '5'
+          - '10'
+          - '15'
+          - '30'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Reset Gist status
+        if: ${{ vars.TUNNEL_GIST_ID != '' && secrets.GIST_TOKEN != '' }}
+        run: |
+          GIST_ID="${{ vars.TUNNEL_GIST_ID }}"
+          GIST_TOKEN="${{ secrets.GIST_TOKEN }}"
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          GIST_JSON=$(jq -n --arg rid "${{ github.run_id }}" --arg repo "${{ github.repository }}" --arg ts "$TIMESTAMP" \
+            '{tunnel_url: null, status: "pending", run_id: $rid, repository: $repo, started_at: $ts}')
+          PAYLOAD=$(jq -n --arg content "$GIST_JSON" '{files: {"tunnel-status.json": {content: $content}}}')
+          curl -s -X PATCH "https://api.github.com/gists/$GIST_ID" \
+            -H "Authorization: Bearer $GIST_TOKEN" -H "Accept: application/vnd.github+json" -d "$PAYLOAD" > /dev/null
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm install --legacy-peer-deps || npm install
+
+      - name: Build application
+        run: |
+          npm run build || echo "No build script found"
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
+
+      - name: Create pack structure
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          PACK_NAME="{{PACK_NAME}}"
+          PACK_DIR="pack-output"
+
+          mkdir -p "$PACK_DIR"
+
+          # Copy build output
+          cp -r dist "$PACK_DIR/" 2>/dev/null || true
+          cp -r build "$PACK_DIR/" 2>/dev/null || true
+          cp package.json "$PACK_DIR/" 2>/dev/null || true
+
+          # Create pack manifest
+          BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          cat > "$PACK_DIR/pack.json" << EOF
+          {
+            "pack_version": 1,
+            "id": "$PACK_NAME",
+            "name": "$PACK_NAME",
+            "version": "$VERSION",
+            "type": "nodejs",
+            "entry": "dist/index.js",
+            "build": {
+              "git_sha": "${{ github.sha }}",
+              "built_at": "$BUILD_TIME",
+              "node_version": "20"
+            }
+          }
+          EOF
+
+      - name: Generate checksums
+        run: |
+          cd pack-output
+          find . -type f ! -name "checksums.sha256" -exec sha256sum {} \; > checksums.sha256
+
+      - name: Create pack archive
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          ARCHIVE_NAME="pack-{{PACK_NAME}}-android-arm64-v${VERSION}.zip"
+          cd pack-output && zip -r "../$ARCHIVE_NAME" .
+          echo "ARCHIVE_NAME=$ARCHIVE_NAME" >> $GITHUB_ENV
+
+      - name: Delete existing release
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          gh release delete "v${VERSION}" --yes 2>/dev/null || true
+          git push origin --delete "v${VERSION}" 2>/dev/null || true
+
+      - name: Generate release checksum
+        run: sha256sum "${{ env.ARCHIVE_NAME }}" > checksums.sha256
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          gh release create "v${VERSION}" \
+            --title "{{PACK_NAME}} v${VERSION}" \
+            --notes "Automated deployment from Builder" \
+            "${{ env.ARCHIVE_NAME }}" \
+            "checksums.sha256"
+
+      - name: Install cloudflared
+        if: ${{ github.event.inputs.run_app == 'yes' }}
+        run: |
+          curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
+          chmod +x cloudflared
+
+      - name: Start application with tunnel
+        if: ${{ github.event.inputs.run_app == 'yes' }}
+        run: |
+          PORT=3000 NODE_ENV=production node dist/index.js &
+          sleep 10
+          ./cloudflared tunnel --url http://localhost:3000 2>&1 | tee tunnel.log &
+          sleep 15
+          TUNNEL_URL=$(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' tunnel.log | head -1)
+          echo "URL: $TUNNEL_URL"
+          echo "$TUNNEL_URL" > app_url.txt
+
+          # Update Gist with tunnel URL
+          GIST_ID="${{ vars.TUNNEL_GIST_ID }}"
+          GIST_TOKEN="${{ secrets.GIST_TOKEN }}"
+          if [ -n "$GIST_TOKEN" ] && [ -n "$GIST_ID" ]; then
+            TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            GIST_JSON=$(jq -n --arg url "$TUNNEL_URL" --arg rid "${{ github.run_id }}" --arg repo "${{ github.repository }}" --arg ts "$TIMESTAMP" --arg dur "${{ github.event.inputs.duration }}" \
+              '{tunnel_url: $url, status: "running", run_id: $rid, repository: $repo, started_at: $ts, duration_minutes: ($dur|tonumber)}')
+            PAYLOAD=$(jq -n --arg content "$GIST_JSON" '{files: {"tunnel-status.json": {content: $content}}}')
+            curl -s -X PATCH "https://api.github.com/gists/$GIST_ID" \
+              -H "Authorization: Bearer $GIST_TOKEN" -H "Accept: application/vnd.github+json" -d "$PAYLOAD" > /dev/null
+          fi
+
+          sleep $(( ${{ github.event.inputs.duration }} * 60 ))
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: deployment-v${{ github.event.inputs.version }}
+          path: |
+            app_url.txt
+            pack-output/pack.json
+          retention-days: 7
