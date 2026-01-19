@@ -242,4 +242,19 @@ interface GitHubApiService {
         @Path("owner") owner: String,
         @Path("repo") repo: String
     ): Response<Map<String, Long>>
+
+    // ========== Workflow Logs ==========
+
+    /**
+     * Download workflow run logs.
+     * GET /repos/{owner}/{repo}/actions/runs/{run_id}/logs
+     * Returns a redirect to a zip file containing logs.
+     */
+    @Streaming
+    @GET("repos/{owner}/{repo}/actions/runs/{run_id}/logs")
+    suspend fun downloadWorkflowLogs(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("run_id") runId: Long
+    ): Response<ResponseBody>
 }

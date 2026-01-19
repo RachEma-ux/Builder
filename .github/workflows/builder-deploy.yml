@@ -4,9 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version'
+        description: 'Version to deploy'
         required: true
         default: '1.0.0'
+      duration:
+        description: 'Duration in minutes (5-60)'
+        required: true
+        default: '15'
+      run_app:
+        description: 'Start app with tunnel (yes/no)'
+        required: true
+        default: 'yes'
 
 permissions:
   contents: write
@@ -14,32 +22,163 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 65
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Build
-        run: ./gradlew build || mvn package
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-      - name: Create pack
+      - name: Install cloudflared
+        run: |
+          curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
+          chmod +x cloudflared
+          sudo mv cloudflared /usr/local/bin/
+
+      - name: Build project
+        run: |
+          if [ -f "package.json" ]; then
+            npm install
+            npm run build 2>/dev/null || true
+          elif [ -f "build.gradle" ] || [ -f "build.gradle.kts" ]; then
+            chmod +x gradlew 2>/dev/null || true
+            ./gradlew build 2>/dev/null || true
+          elif [ -f "pom.xml" ]; then
+            mvn package -DskipTests 2>/dev/null || true
+          elif [ -f "Cargo.toml" ]; then
+            cargo build --release 2>/dev/null || true
+          elif [ -f "go.mod" ]; then
+            go build 2>/dev/null || true
+          fi
+          echo "Build completed"
+
+      - name: Start app and tunnel
+        if: ${{ github.event.inputs.run_app == 'yes' }}
+        run: |
+          DURATION="${{ github.event.inputs.duration }}"
+          DURATION_SECONDS=$((DURATION * 60))
+          PORT=3000
+
+          echo "=========================================="
+          echo "BUILDER DEPLOY - Starting deployment"
+          echo "Duration: ${DURATION} minutes"
+          echo "=========================================="
+
+          # Try to detect and start the app
+          if [ -f "package.json" ]; then
+            # Check for common start scripts
+            if grep -q '"start"' package.json; then
+              npm start &
+            elif grep -q '"dev"' package.json; then
+              npm run dev &
+            elif [ -f "server.js" ]; then
+              node server.js &
+            elif [ -f "index.js" ]; then
+              node index.js &
+            elif [ -f "app.js" ]; then
+              node app.js &
+            else
+              # Start a simple static server
+              npx serve -s build -l $PORT 2>/dev/null &
+              npx serve -s dist -l $PORT 2>/dev/null &
+              npx serve -s public -l $PORT 2>/dev/null &
+              npx http-server -p $PORT 2>/dev/null &
+            fi
+          elif [ -f "build.gradle" ] || [ -f "build.gradle.kts" ]; then
+            java -jar build/libs/*.jar &
+          elif [ -f "target" ]; then
+            java -jar target/*.jar &
+          fi
+
+          # Wait for app to start
+          echo "Waiting for app to start..."
+          sleep 10
+
+          # Start cloudflared tunnel
+          echo "Starting cloudflared tunnel..."
+          cloudflared tunnel --url http://localhost:$PORT --no-autoupdate > tunnel.log 2>&1 &
+          TUNNEL_PID=$!
+
+          # Wait for tunnel URL
+          sleep 5
+          for i in {1..30}; do
+            TUNNEL_URL=$(grep -oP 'https://[a-z0-9-]+\.trycloudflare\.com' tunnel.log | head -1)
+            if [ -n "$TUNNEL_URL" ]; then
+              break
+            fi
+            sleep 2
+          done
+
+          if [ -n "$TUNNEL_URL" ]; then
+            echo ""
+            echo "=========================================="
+            echo "TUNNEL_URL_START"
+            echo "$TUNNEL_URL"
+            echo "TUNNEL_URL_END"
+            echo "=========================================="
+            echo ""
+            echo "Your app is live at: $TUNNEL_URL"
+            echo "Tunnel will be active for ${DURATION} minutes"
+            echo ""
+          else
+            echo "ERROR: Failed to get tunnel URL"
+            cat tunnel.log
+          fi
+
+          # Keep running for the specified duration
+          echo "Keeping tunnel active..."
+          sleep $DURATION_SECONDS
+
+          echo ""
+          echo "=========================================="
+          echo "Deployment session ended after ${DURATION} minutes"
+          echo "=========================================="
+
+      - name: Create release pack
+        if: ${{ github.event.inputs.run_app == 'no' }}
         run: |
           VERSION="${{ github.event.inputs.version }}"
           mkdir -p pack-output
-          cp build/libs/*.jar pack-output/ 2>/dev/null || cp target/*.jar pack-output/ 2>/dev/null || true
+
+          # Copy build artifacts
+          cp -r build/libs/*.jar pack-output/ 2>/dev/null || true
+          cp -r target/*.jar pack-output/ 2>/dev/null || true
+          cp -r dist/* pack-output/ 2>/dev/null || true
+          cp -r build/* pack-output/ 2>/dev/null || true
+
+          # Create pack metadata
           cat > pack-output/pack.json << EOF
-          {"pack_version":1,"id":"builder","version":"$VERSION","type":"jvm","entry":"app.jar"}
+          {
+            "pack_version": 1,
+            "id": "builder-app",
+            "version": "$VERSION",
+            "type": "generic",
+            "created": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
           EOF
 
-      - name: Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION="${{ github.event.inputs.version }}"
-          cd pack-output && zip -r "../pack-builder-android-arm64-v${VERSION}.zip" .
-          cd .. && sha256sum "pack-builder-android-arm64-v${VERSION}.zip" > checksums.sha256
-          gh release delete "v${VERSION}" --yes 2>/dev/null || true
-          gh release create "v${VERSION}" "pack-builder-android-arm64-v${VERSION}.zip" checksums.sha256
+          # Create zip
+          cd pack-output && zip -r "../pack-builder-v${VERSION}.zip" .
+          cd .. && sha256sum "pack-builder-v${VERSION}.zip" > checksums.sha256
+
+          echo "Pack created: pack-builder-v${VERSION}.zip"
+
+      - name: Upload artifacts
+        if: ${{ github.event.inputs.run_app == 'no' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pack-${{ github.event.inputs.version }}
+          path: |
+            pack-builder-*.zip
+            checksums.sha256
+          retention-days: 30

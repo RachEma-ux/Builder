@@ -542,4 +542,68 @@ class GitHubRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    override suspend fun extractTunnelUrl(owner: String, repo: String, runId: Long): Result<String?> {
+        return withContext(Dispatchers.IO) {
+            try {
+                Timber.d("Extracting tunnel URL from logs for run $runId")
+                val response = apiService.downloadWorkflowLogs(owner, repo, runId)
+
+                if (!response.isSuccessful) {
+                    Timber.w("Failed to download logs: ${response.code()}")
+                    return@withContext Result.success(null)
+                }
+
+                val body = response.body() ?: return@withContext Result.success(null)
+
+                // The response is a zip file containing log files
+                // We need to read through it to find the tunnel URL
+                val tempFile = File.createTempFile("workflow_logs_", ".zip")
+                try {
+                    tempFile.outputStream().use { output ->
+                        body.byteStream().copyTo(output)
+                    }
+
+                    // Read the zip and search for tunnel URL
+                    val tunnelUrl = extractUrlFromZip(tempFile)
+                    Timber.i("Extracted tunnel URL: $tunnelUrl")
+                    Result.success(tunnelUrl)
+                } finally {
+                    tempFile.delete()
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to extract tunnel URL")
+                Result.failure(e)
+            }
+        }
+    }
+
+    private fun extractUrlFromZip(zipFile: File): String? {
+        try {
+            java.util.zip.ZipInputStream(zipFile.inputStream()).use { zis ->
+                var entry = zis.nextEntry
+                while (entry != null) {
+                    if (!entry.isDirectory) {
+                        val content = zis.bufferedReader().readText()
+
+                        // Look for TUNNEL_URL_START/TUNNEL_URL_END markers first
+                        val markerRegex = Regex("TUNNEL_URL_START\\s*\\n\\s*(https://[a-z0-9-]+\\.trycloudflare\\.com)\\s*\\n\\s*TUNNEL_URL_END")
+                        markerRegex.find(content)?.let { match ->
+                            return match.groupValues[1]
+                        }
+
+                        // Fallback: look for any trycloudflare.com URL
+                        val urlRegex = Regex("https://[a-z0-9-]+\\.trycloudflare\\.com")
+                        urlRegex.find(content)?.let { match ->
+                            return match.value
+                        }
+                    }
+                    entry = zis.nextEntry
+                }
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Error reading zip file")
+        }
+        return null
+    }
 }

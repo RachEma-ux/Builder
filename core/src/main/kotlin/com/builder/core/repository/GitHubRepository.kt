@@ -196,4 +196,10 @@ interface GitHubRepository {
      * Checks if a repository already has Builder deployment configured.
      */
     suspend fun hasBuilderDeployment(owner: String, repo: String): Result<Boolean>
+
+    /**
+     * Extracts the tunnel URL from workflow run logs.
+     * Looks for TUNNEL_URL_START/TUNNEL_URL_END markers or trycloudflare.com URLs.
+     */
+    suspend fun extractTunnelUrl(owner: String, repo: String, runId: Long): Result<String?>
 }

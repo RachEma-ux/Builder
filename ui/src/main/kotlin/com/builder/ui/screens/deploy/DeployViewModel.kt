@@ -55,6 +55,8 @@ data class DeployUiState(
     val activeRunId: Long? = null,
     val activeRun: WorkflowRun? = null,
     val isPolling: Boolean = false,
+    val tunnelUrl: String? = null,
+    val isFetchingUrl: Boolean = false,
 
     // History state
     val workflowRuns: List<WorkflowRun> = emptyList(),
@@ -374,7 +376,7 @@ class DeployViewModel @Inject constructor(
         log(LogLevel.INFO, "Starting polling for run ID $runId")
         pollingJob?.cancel()
         pollingJob = viewModelScope.launch {
-            _uiState.update { it.copy(isPolling = true) }
+            _uiState.update { it.copy(isPolling = true, tunnelUrl = null) }
 
             var shouldContinue = true
             var pollCount = 0
@@ -391,6 +393,14 @@ class DeployViewModel @Inject constructor(
                             log(LogLevel.DEBUG, "Polling run $runId - status: ${run.status}")
                         }
                         _uiState.update { it.copy(activeRun = run) }
+
+                        // Try to fetch tunnel URL if not already found and run is in progress
+                        if (state.tunnelUrl == null && run.status == "in_progress" && pollCount >= 3) {
+                            // Start fetching URL after a few polls (give tunnel time to start)
+                            if (pollCount % 4 == 3) { // Every 20 seconds
+                                fetchTunnelUrl(runId)
+                            }
+                        }
 
                         if (run.isComplete()) {
                             Timber.i("Deploy: Run $runId completed with conclusion: ${run.conclusion}")
@@ -419,6 +429,37 @@ class DeployViewModel @Inject constructor(
                     delay(POLLING_INTERVAL_MS)
                 }
             }
+        }
+    }
+
+    fun fetchTunnelUrl(runId: Long? = null) {
+        val id = runId ?: _uiState.value.activeRunId ?: return
+        val state = _uiState.value
+
+        viewModelScope.launch {
+            if (state.isFetchingUrl) return@launch
+
+            _uiState.update { it.copy(isFetchingUrl = true) }
+            Timber.d("Deploy: Fetching tunnel URL for run $id")
+
+            val result = gitHubRepository.extractTunnelUrl(state.owner, state.repo, id)
+
+            result.fold(
+                onSuccess = { url ->
+                    if (url != null) {
+                        Timber.i("Deploy: Found tunnel URL: $url")
+                        log(LogLevel.INFO, "Tunnel URL found: $url")
+                        _uiState.update { it.copy(tunnelUrl = url, isFetchingUrl = false) }
+                    } else {
+                        Timber.d("Deploy: No tunnel URL found yet")
+                        _uiState.update { it.copy(isFetchingUrl = false) }
+                    }
+                },
+                onFailure = { e ->
+                    Timber.e(e, "Deploy: Failed to fetch tunnel URL")
+                    _uiState.update { it.copy(isFetchingUrl = false) }
+                }
+            )
         }
     }
 
