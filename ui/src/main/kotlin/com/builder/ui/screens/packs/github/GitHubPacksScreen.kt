@@ -880,7 +880,7 @@ fun WorkflowGenerationCard(uiState: GitHubPacksUiState, viewModel: GitHubPacksVi
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(
-                        text = if (uiState.hasBuilderDeployment) "Configured ✓" else "Not configured",
+                        text = if (uiState.hasBuilderDeployment) "Configured" else "Not configured",
                         style = MaterialTheme.typography.bodyLarge,
                         color = if (uiState.hasBuilderDeployment)
                             MaterialTheme.colorScheme.primary
