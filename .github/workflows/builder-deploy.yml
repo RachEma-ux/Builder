@@ -18,6 +18,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   build-and-deploy:
@@ -62,24 +63,23 @@ jobs:
           fi
           echo "Build completed"
 
-      - name: Start app and tunnel
+      - name: Start tunnel and save URL
         if: ${{ github.event.inputs.run_app == 'yes' }}
+        id: tunnel
         run: |
-          DURATION="${{ github.event.inputs.duration }}"
-          DURATION_SECONDS=$((DURATION * 60))
           PORT=3000
 
           echo "=========================================="
           echo "BUILDER DEPLOY - Starting deployment"
-          echo "Duration: ${DURATION} minutes"
           echo "=========================================="
 
           # Try to detect and start the app
           if [ -f "package.json" ]; then
-            # Check for common start scripts
             if grep -q '"start"' package.json; then
+              PORT=3000
               npm start &
             elif grep -q '"dev"' package.json; then
+              PORT=3000
               npm run dev &
             elif [ -f "server.js" ]; then
               node server.js &
@@ -88,7 +88,6 @@ jobs:
             elif [ -f "app.js" ]; then
               node app.js &
             else
-              # Start a simple static server
               npx serve -s build -l $PORT 2>/dev/null &
               npx serve -s dist -l $PORT 2>/dev/null &
               npx serve -s public -l $PORT 2>/dev/null &
@@ -109,8 +108,8 @@ jobs:
           cloudflared tunnel --url http://localhost:$PORT --no-autoupdate > tunnel.log 2>&1 &
           TUNNEL_PID=$!
 
-          # Wait for tunnel URL
-          sleep 5
+          # Wait for tunnel URL (up to 60 seconds)
+          TUNNEL_URL=""
           for i in {1..30}; do
             TUNNEL_URL=$(grep -oP 'https://[a-z0-9-]+\.trycloudflare\.com' tunnel.log | head -1)
             if [ -n "$TUNNEL_URL" ]; then
@@ -122,21 +121,49 @@ jobs:
           if [ -n "$TUNNEL_URL" ]; then
             echo ""
             echo "=========================================="
-            echo "TUNNEL_URL_START"
-            echo "$TUNNEL_URL"
-            echo "TUNNEL_URL_END"
+            echo "TUNNEL URL: $TUNNEL_URL"
             echo "=========================================="
             echo ""
-            echo "Your app is live at: $TUNNEL_URL"
-            echo "Tunnel will be active for ${DURATION} minutes"
-            echo ""
+
+            # Save URL to file for artifact
+            echo "$TUNNEL_URL" > tunnel_url.txt
+
+            # Set output for next steps
+            echo "tunnel_url=$TUNNEL_URL" >> $GITHUB_OUTPUT
+            echo "has_url=true" >> $GITHUB_OUTPUT
           else
             echo "ERROR: Failed to get tunnel URL"
             cat tunnel.log
+            echo "has_url=false" >> $GITHUB_OUTPUT
+            echo "" > tunnel_url.txt
+          fi
+
+      - name: Upload tunnel URL
+        if: ${{ github.event.inputs.run_app == 'yes' && steps.tunnel.outputs.has_url == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: tunnel-url
+          path: tunnel_url.txt
+          retention-days: 1
+
+      - name: Keep tunnel running
+        if: ${{ github.event.inputs.run_app == 'yes' }}
+        run: |
+          DURATION="${{ github.event.inputs.duration }}"
+          DURATION_SECONDS=$((DURATION * 60))
+          TUNNEL_URL="${{ steps.tunnel.outputs.tunnel_url }}"
+
+          if [ -n "$TUNNEL_URL" ]; then
+            echo ""
+            echo "=========================================="
+            echo "Your app is live at: $TUNNEL_URL"
+            echo "Tunnel will be active for ${DURATION} minutes"
+            echo "=========================================="
+            echo ""
           fi
 
           # Keep running for the specified duration
-          echo "Keeping tunnel active..."
+          echo "Keeping tunnel active for ${DURATION} minutes..."
           sleep $DURATION_SECONDS
 
           echo ""
@@ -173,7 +200,7 @@ jobs:
 
           echo "Pack created: pack-builder-v${VERSION}.zip"
 
-      - name: Upload artifacts
+      - name: Upload pack artifacts
         if: ${{ github.event.inputs.run_app == 'no' }}
         uses: actions/upload-artifact@v4
         with:
