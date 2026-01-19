@@ -62,9 +62,7 @@ dependencies {
     // Logging
     implementation("com.jakewharton.timber:timber:5.0.1")
 
-    // Crypto for GitHub secrets encryption
-    implementation("com.goterl:lazysodium-android:5.1.0@aar")
-    implementation("net.java.dev.jna:jna:5.14.0")
+    // Note: Secret encryption (lazysodium) removed - secrets should be set manually in GitHub
 
     // Testing
     testImplementation("junit:junit:4.13.2")

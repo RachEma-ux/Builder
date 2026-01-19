@@ -10,8 +10,6 @@ import com.builder.data.remote.github.GitHubOAuthManager
 import com.builder.core.model.github.*
 import com.builder.data.di.GitHubClient
 import com.builder.data.workflow.WorkflowGenerator
-import com.goterl.lazysodium.LazySodiumAndroid
-import com.goterl.lazysodium.SodiumAndroid
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -716,58 +714,10 @@ class GitHubRepositoryImpl @Inject constructor(
         secretName: String,
         value: String
     ): Result<Unit> {
-        return withContext(Dispatchers.IO) {
-            try {
-                // Get the repository's public key
-                val publicKeyResult = getRepoPublicKey(owner, repo)
-                if (publicKeyResult.isFailure) {
-                    return@withContext Result.failure(
-                        publicKeyResult.exceptionOrNull() ?: Exception("Failed to get public key")
-                    )
-                }
-                val publicKey = publicKeyResult.getOrThrow()
-
-                // Encrypt the secret value using libsodium sealed box
-                val encryptedValue = encryptSecretValue(value, publicKey.key)
-
-                val request = CreateSecretRequest(
-                    encryptedValue = encryptedValue,
-                    keyId = publicKey.keyId
-                )
-                val response = apiService.createOrUpdateSecret(owner, repo, secretName, request)
-                if (response.isSuccessful) {
-                    Timber.i("Secret $secretName created/updated successfully")
-                    Result.success(Unit)
-                } else {
-                    Result.failure(Exception("Failed to create/update secret: ${response.code()}"))
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to create/update secret")
-                Result.failure(e)
-            }
-        }
-    }
-
-    /**
-     * Encrypts a secret value using libsodium sealed box.
-     */
-    private fun encryptSecretValue(value: String, publicKeyBase64: String): String {
-        val sodium = LazySodiumAndroid(SodiumAndroid())
-
-        // Decode the public key from base64
-        val publicKey = Base64.decode(publicKeyBase64, Base64.DEFAULT)
-
-        // Encrypt using sealed box
-        val messageBytes = value.toByteArray(Charsets.UTF_8)
-        val cipherBytes = ByteArray(messageBytes.size + 48) // sealed box adds 48 bytes overhead
-
-        val success = sodium.cryptoBoxSeal(cipherBytes, messageBytes, messageBytes.size.toLong(), publicKey)
-        if (!success) {
-            throw Exception("Failed to encrypt secret value")
-        }
-
-        // Return as base64
-        return Base64.encodeToString(cipherBytes, Base64.NO_WRAP)
+        // Note: Secret encryption requires libsodium which is complex on Android.
+        // Users should set secrets (like GIST_TOKEN) manually via GitHub web UI.
+        Timber.w("createOrUpdateSecret: Secrets must be set manually via GitHub web UI")
+        return Result.failure(Exception("Secrets must be set manually via GitHub Settings > Secrets"))
     }
 
     // ========== Gist Methods ==========
