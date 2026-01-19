@@ -8,6 +8,7 @@ import com.builder.core.model.github.DeviceFlowState
 import com.builder.data.remote.github.GitHubApiService
 import com.builder.data.remote.github.GitHubOAuthManager
 import com.builder.core.model.github.*
+import com.builder.data.crypto.GitHubSecretEncryptor
 import com.builder.data.di.GitHubClient
 import com.builder.data.workflow.WorkflowGenerator
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +31,8 @@ class GitHubRepositoryImpl @Inject constructor(
     private val apiService: GitHubApiService,
     private val oauthManager: GitHubOAuthManager,
     @GitHubClient private val httpClient: OkHttpClient,
-    private val workflowGenerator: WorkflowGenerator
+    private val workflowGenerator: WorkflowGenerator,
+    private val secretEncryptor: GitHubSecretEncryptor
 ) : GitHubRepository {
 
     override val authState: StateFlow<DeviceFlowState?>
@@ -714,10 +716,40 @@ class GitHubRepositoryImpl @Inject constructor(
         secretName: String,
         value: String
     ): Result<Unit> {
-        // Note: Secret encryption requires libsodium which is complex on Android.
-        // Users should set secrets (like GIST_TOKEN) manually via GitHub web UI.
-        Timber.w("createOrUpdateSecret: Secrets must be set manually via GitHub web UI")
-        return Result.failure(Exception("Secrets must be set manually via GitHub Settings > Secrets"))
+        return withContext(Dispatchers.IO) {
+            try {
+                // Step 1: Get repository's public key for encryption
+                val publicKeyResult = getRepoPublicKey(owner, repo)
+                if (publicKeyResult.isFailure) {
+                    return@withContext Result.failure(
+                        publicKeyResult.exceptionOrNull() ?: Exception("Failed to get public key")
+                    )
+                }
+                val publicKey = publicKeyResult.getOrThrow()
+
+                // Step 2: Encrypt the secret using sealed box
+                val encryptedValue = secretEncryptor.encryptSecret(publicKey.key, value)
+
+                // Step 3: Upload the encrypted secret
+                val request = CreateSecretRequest(
+                    encryptedValue = encryptedValue,
+                    keyId = publicKey.keyId
+                )
+                val response = apiService.createOrUpdateSecret(owner, repo, secretName, request)
+
+                if (response.isSuccessful) {
+                    Timber.i("Secret $secretName created/updated successfully for $owner/$repo")
+                    Result.success(Unit)
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Timber.e("Failed to create secret: ${response.code()} - $errorBody")
+                    Result.failure(Exception("Failed to create secret: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to create/update secret $secretName")
+                Result.failure(e)
+            }
+        }
     }
 
     // ========== Gist Methods ==========

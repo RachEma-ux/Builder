@@ -52,6 +52,9 @@ dependencies {
     // Kotlinx Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
 
+    // Bouncy Castle for GitHub secret encryption (sealed box)
+    implementation("org.bouncycastle:bcprov-jdk18on:1.77")
+
     // Hilt
     implementation("com.google.dagger:hilt-android:2.50")
     kapt("com.google.dagger:hilt-android-compiler:2.50")
