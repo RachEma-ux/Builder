@@ -813,6 +813,14 @@ fun DebugLogDialog(
  */
 @Composable
 fun WorkflowGenerationCard(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel) {
+    // Log that the card is being rendered
+    LaunchedEffect(Unit) {
+        DebugLogger.i("WorkflowCard", "Workflow Generation Card rendered")
+        DebugLogger.i("WorkflowCard", "Selected repo: ${uiState.selectedRepo?.name}")
+        DebugLogger.i("WorkflowCard", "Detected type: ${uiState.detectedProjectType}")
+        DebugLogger.i("WorkflowCard", "Has deployment: ${uiState.hasBuilderDeployment}")
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -848,7 +856,10 @@ fun WorkflowGenerationCard(uiState: GitHubPacksUiState, viewModel: GitHubPacksVi
                 }
 
                 OutlinedButton(
-                    onClick = { viewModel.detectProjectType() },
+                    onClick = {
+                        DebugLogger.i("WorkflowCard", "Detect button clicked")
+                        viewModel.detectProjectType()
+                    },
                     enabled = uiState.selectedRepo != null
                 ) {
                     Text("Detect")
@@ -882,7 +893,10 @@ fun WorkflowGenerationCard(uiState: GitHubPacksUiState, viewModel: GitHubPacksVi
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 } else if (!uiState.hasBuilderDeployment) {
                     Button(
-                        onClick = { viewModel.setupBuilderDeployment() },
+                        onClick = {
+                            DebugLogger.i("WorkflowCard", "Setup Workflow button clicked")
+                            viewModel.setupBuilderDeployment()
+                        },
                         enabled = uiState.selectedRepo != null && uiState.detectedProjectType != null
                     ) {
                         Text("Setup Workflow")
