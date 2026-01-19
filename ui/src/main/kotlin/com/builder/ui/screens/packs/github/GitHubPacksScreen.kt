@@ -102,6 +102,11 @@ fun GitHubPacksScreen(
                     onRefresh = { viewModel.loadRepositories() }
                 )
 
+                // Workflow Generation Section (when repo is selected)
+                if (uiState.selectedRepo != null) {
+                    WorkflowGenerationCard(uiState, viewModel)
+                }
+
                 // Mode-specific content
                 when (uiState.selectedTab) {
                     InstallMode.DEV -> DevModeContent(uiState, viewModel)
@@ -783,4 +788,104 @@ fun DebugLogDialog(
             }
         }
     )
+}
+
+/**
+ * Card for workflow generation functionality.
+ * Allows users to detect project type and set up Builder deployment workflows.
+ */
+@Composable
+fun WorkflowGenerationCard(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Workflow Generation",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Project type detection
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Detected Type:",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = uiState.detectedProjectType?.name ?: "Not detected",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (uiState.detectedProjectType != null)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = { viewModel.detectProjectType() },
+                    enabled = uiState.selectedRepo != null
+                ) {
+                    Text("Detect")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Deployment status
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Builder Deployment:",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = if (uiState.hasBuilderDeployment) "Configured ✓" else "Not configured",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (uiState.hasBuilderDeployment)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (uiState.settingUpDeployment) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                } else if (!uiState.hasBuilderDeployment) {
+                    Button(
+                        onClick = { viewModel.setupBuilderDeployment() },
+                        enabled = uiState.selectedRepo != null && uiState.detectedProjectType != null
+                    ) {
+                        Text("Setup Workflow")
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = { viewModel.checkBuilderDeployment() }
+                    ) {
+                        Text("Refresh")
+                    }
+                }
+            }
+
+            // Help text
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Creates a builder-deploy.yml workflow in the repository for automated builds and deployments.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
