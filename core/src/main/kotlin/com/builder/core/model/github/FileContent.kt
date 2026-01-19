@@ -1,6 +1,7 @@
 package com.builder.core.model.github
 
 import com.google.gson.annotations.SerializedName
+import java.util.Base64
 
 /**
  * GitHub file content response model.
@@ -24,7 +25,7 @@ data class FileContent(
     fun decodeContent(): String? {
         return content?.let {
             try {
-                String(android.util.Base64.decode(it.replace("\n", ""), android.util.Base64.DEFAULT))
+                String(Base64.getDecoder().decode(it.replace("\n", "")))
             } catch (e: Exception) {
                 null
             }
@@ -51,10 +52,7 @@ data class FileUpdateRequest(
             sha: String? = null,
             branch: String? = null
         ): FileUpdateRequest {
-            val encoded = android.util.Base64.encodeToString(
-                rawContent.toByteArray(),
-                android.util.Base64.NO_WRAP
-            )
+            val encoded = Base64.getEncoder().encodeToString(rawContent.toByteArray())
             return FileUpdateRequest(message, encoded, sha, branch)
         }
     }

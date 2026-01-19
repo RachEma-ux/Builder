@@ -25,6 +25,7 @@ import com.builder.core.model.Pack
 import com.builder.core.model.PackType
 import com.builder.core.model.WasmExecutionState
 import com.builder.core.repository.ExecutionHistoryItem
+import com.builder.domain.pack.PackUpdate
 import com.builder.ui.components.EmptyState
 import com.builder.ui.components.LoadingIndicator
 import java.text.SimpleDateFormat
@@ -45,6 +46,38 @@ fun InstalledPacksScreen(
             TopAppBar(
                 title = { Text("Installed Packs") },
                 actions = {
+                    // Update count badge
+                    if (uiState.availableUpdates.isNotEmpty()) {
+                        Badge(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                        ) {
+                            Text(
+                                text = "${uiState.availableUpdates.size} updates",
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+
+                    // Refresh button for checking updates
+                    IconButton(
+                        onClick = { viewModel.checkForUpdates() },
+                        enabled = !uiState.checkingUpdates
+                    ) {
+                        if (uiState.checkingUpdates) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Check for updates"
+                            )
+                        }
+                    }
+
+                    // Pack count badge
                     Badge(
                         containerColor = MaterialTheme.colorScheme.primaryContainer
                     ) {
@@ -108,7 +141,9 @@ fun InstalledPacksScreen(
                                         uiState.executionState else WasmExecutionState.Idle,
                                     executionHistory = uiState.executionHistory[pack.id] ?: emptyList(),
                                     showHistory = uiState.showHistoryForPackId == pack.id,
-                                    onRun = { viewModel.runPack(pack) },
+                                    availableUpdate = uiState.availableUpdates[pack.id],
+                                    missingSecrets = uiState.missingSecrets[pack.id] ?: emptyList(),
+                                    onRun = { viewModel.runPackWithWarning(pack) },
                                     onDelete = { viewModel.deletePack(pack) },
                                     onResetExecution = { viewModel.resetExecution() },
                                     onToggleHistory = { viewModel.toggleHistory(pack.id) }
@@ -153,6 +188,67 @@ fun InstalledPacksScreen(
             }
         }
     }
+
+    // Missing Secrets Warning Dialog
+    uiState.showSecretsWarning?.let { packId ->
+        val pack = uiState.packs.find { it.id == packId }
+        val missingSecrets = uiState.missingSecrets[packId] ?: emptyList()
+        if (pack != null && missingSecrets.isNotEmpty()) {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissSecretsWarning() },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                },
+                title = { Text("Missing Secrets") },
+                text = {
+                    Column {
+                        Text("This pack requires the following secrets that are not configured:")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        missingSecrets.forEach { key ->
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Key,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                                Text(
+                                    text = key,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "You can configure secrets in Settings > Secrets.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { viewModel.confirmRunWithMissingSecrets(pack) }
+                    ) {
+                        Text("Run Anyway")
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(onClick = { viewModel.dismissSecretsWarning() }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+    }
 }
 
 @Composable
@@ -163,6 +259,8 @@ fun InstalledPackCard(
     executionState: WasmExecutionState,
     executionHistory: List<ExecutionHistoryItem>,
     showHistory: Boolean,
+    availableUpdate: PackUpdate?,
+    missingSecrets: List<String>,
     onRun: () -> Unit,
     onDelete: () -> Unit,
     onResetExecution: () -> Unit,
@@ -191,15 +289,123 @@ fun InstalledPackCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(
-                        text = "v${pack.version}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "v${pack.version}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        // Update available badge
+                        if (availableUpdate != null) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.tertiaryContainer,
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowUpward,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(12.dp),
+                                        tint = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                    Text(
+                                        text = "v${availableUpdate.latestVersion}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // Type Badge
                 PackTypeBadge(type = pack.type)
+            }
+
+            // Update available info banner
+            if (availableUpdate != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SystemUpdate,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.tertiary
+                            )
+                            Text(
+                                text = "Update available: ${availableUpdate.currentVersion} → ${availableUpdate.latestVersion}",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.tertiary
+                            )
+                        }
+                        if (!availableUpdate.releaseNotes.isNullOrBlank()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = availableUpdate.releaseNotes,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Missing secrets warning banner
+            if (missingSecrets.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Key,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Column {
+                            Text(
+                                text = "Missing ${missingSecrets.size} secret${if (missingSecrets.size > 1) "s" else ""}",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Text(
+                                text = missingSecrets.joinToString(", "),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))

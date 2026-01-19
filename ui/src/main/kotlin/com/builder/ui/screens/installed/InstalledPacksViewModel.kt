@@ -9,7 +9,10 @@ import com.builder.core.repository.ExecutionHistoryItem
 import com.builder.core.repository.ExecutionHistoryRepository
 import com.builder.core.repository.GitHubRepository
 import com.builder.core.repository.PackRepository
+import com.builder.core.repository.SecretRepository
 import com.builder.core.util.DebugLogger
+import com.builder.domain.pack.CheckPackUpdatesUseCase
+import com.builder.domain.pack.PackUpdate
 import com.builder.domain.wasm.RunWasmPackUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -27,7 +30,11 @@ data class InstalledPacksUiState(
     val error: String? = null,
     val successMessage: String? = null,
     val executionHistory: Map<String, List<ExecutionHistoryItem>> = emptyMap(),  // packId -> history
-    val showHistoryForPackId: String? = null  // Which pack's history is expanded
+    val showHistoryForPackId: String? = null,  // Which pack's history is expanded
+    val availableUpdates: Map<String, PackUpdate> = emptyMap(),  // packId -> update info
+    val checkingUpdates: Boolean = false,
+    val missingSecrets: Map<String, List<String>> = emptyMap(),  // packId -> list of missing secret keys
+    val showSecretsWarning: String? = null  // packId to show secrets warning for
 )
 
 @HiltViewModel
@@ -35,7 +42,9 @@ class InstalledPacksViewModel @Inject constructor(
     private val packRepository: PackRepository,
     private val gitHubRepository: GitHubRepository,
     private val runWasmPackUseCase: RunWasmPackUseCase,
-    private val executionHistoryRepository: ExecutionHistoryRepository
+    private val executionHistoryRepository: ExecutionHistoryRepository,
+    private val checkPackUpdatesUseCase: CheckPackUpdatesUseCase,
+    private val secretRepository: SecretRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(InstalledPacksUiState())
@@ -43,6 +52,8 @@ class InstalledPacksViewModel @Inject constructor(
 
     init {
         loadInstalledPacks()
+        checkForUpdates()
+        checkMissingSecretsForAllPacks()
     }
 
     private fun loadInstalledPacks() {
@@ -57,6 +68,60 @@ class InstalledPacksViewModel @Inject constructor(
                     _uiState.update { it.copy(packs = packs, loading = false) }
                 }
         }
+    }
+
+    fun checkForUpdates() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(checkingUpdates = true) }
+            try {
+                val updates = checkPackUpdatesUseCase()
+                val updateMap = updates.associateBy { it.pack.id }
+                _uiState.update { it.copy(availableUpdates = updateMap, checkingUpdates = false) }
+                if (updates.isNotEmpty()) {
+                    DebugLogger.logSync("INFO", "InstalledPacks", "Found ${updates.size} available updates")
+                }
+            } catch (e: Exception) {
+                DebugLogger.logSync("ERROR", "InstalledPacks", "Failed to check updates: ${e.message}")
+                _uiState.update { it.copy(checkingUpdates = false) }
+            }
+        }
+    }
+
+    private fun checkMissingSecretsForAllPacks() {
+        viewModelScope.launch {
+            packRepository.getAllPacksFlow()
+                .collect { packs ->
+                    val missingSecretsMap = mutableMapOf<String, List<String>>()
+                    for (pack in packs) {
+                        if (pack.requiresSecrets()) {
+                            val missing = secretRepository.getMissingSecrets(pack.requiredSecrets())
+                            if (missing.isNotEmpty()) {
+                                missingSecretsMap[pack.id] = missing
+                            }
+                        }
+                    }
+                    _uiState.update { it.copy(missingSecrets = missingSecretsMap) }
+                }
+        }
+    }
+
+    fun dismissSecretsWarning() {
+        _uiState.update { it.copy(showSecretsWarning = null) }
+    }
+
+    fun runPackWithWarning(pack: Pack) {
+        // Check if secrets are missing and show warning
+        val missing = _uiState.value.missingSecrets[pack.id]
+        if (!missing.isNullOrEmpty()) {
+            _uiState.update { it.copy(showSecretsWarning = pack.id) }
+        } else {
+            runPack(pack)
+        }
+    }
+
+    fun confirmRunWithMissingSecrets(pack: Pack) {
+        _uiState.update { it.copy(showSecretsWarning = null) }
+        runPack(pack)
     }
 
     fun selectPack(pack: Pack?) {
