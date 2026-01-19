@@ -1,0 +1,45 @@
+name: Builder Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version'
+        required: true
+        default: '1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build
+        run: ./gradlew build || mvn package
+
+      - name: Create pack
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          mkdir -p pack-output
+          cp build/libs/*.jar pack-output/ 2>/dev/null || cp target/*.jar pack-output/ 2>/dev/null || true
+          cat > pack-output/pack.json << EOF
+          {"pack_version":1,"id":"builder","version":"$VERSION","type":"jvm","entry":"app.jar"}
+          EOF
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          cd pack-output && zip -r "../pack-builder-android-arm64-v${VERSION}.zip" .
+          cd .. && sha256sum "pack-builder-android-arm64-v${VERSION}.zip" > checksums.sha256
+          gh release delete "v${VERSION}" --yes 2>/dev/null || true
+          gh release create "v${VERSION}" "pack-builder-android-arm64-v${VERSION}.zip" checksums.sha256
