@@ -19,6 +19,9 @@ import com.builder.core.model.LogSource
 import com.builder.core.repository.LogRepository
 import com.builder.core.util.DebugLogger
 import javax.inject.Inject
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONObject
 
 /**
  * Tab selection for the deploy screen.
@@ -89,6 +92,8 @@ class DeployViewModel @Inject constructor(
         private const val POLLING_INTERVAL_MS = 5000L
         private const val DEPLOY_INSTANCE_ID = "deploy-tab"
         private const val DEPLOY_PACK_ID = "app"
+        private const val TUNNEL_GIST_ID = "54451f4f49427f293bfdc9fc0a037b2d"
+        private const val TUNNEL_GIST_API_URL = "https://api.github.com/gists/$TUNNEL_GIST_ID"
     }
 
     /**
@@ -452,11 +457,9 @@ class DeployViewModel @Inject constructor(
                         _uiState.update { it.copy(activeRun = run) }
 
                         // Try to fetch tunnel URL if not already found and run is in progress
-                        if (state.tunnelUrl == null && run.status == "in_progress" && pollCount >= 3) {
-                            // Start fetching URL after a few polls (give tunnel time to start)
-                            if (pollCount % 4 == 3) { // Every 20 seconds
-                                fetchTunnelUrl(runId)
-                            }
+                        if (state.tunnelUrl == null && run.status == "in_progress") {
+                            // Fetch from Gist every poll (5 seconds) - Gist is updated when tunnel starts
+                            fetchTunnelUrl(runId)
                         }
 
                         if (run.isComplete()) {
@@ -497,26 +500,74 @@ class DeployViewModel @Inject constructor(
             if (state.isFetchingUrl) return@launch
 
             _uiState.update { it.copy(isFetchingUrl = true) }
-            Timber.d("Deploy: Fetching tunnel URL for run $id")
+            Timber.d("Deploy: Fetching tunnel URL from Gist for run $id")
 
-            val result = gitHubRepository.extractTunnelUrl(state.owner, state.repo, id)
-
-            result.fold(
-                onSuccess = { url ->
-                    if (url != null) {
-                        Timber.i("Deploy: Found tunnel URL: $url")
-                        log(LogLevel.INFO, "Tunnel URL found: $url")
-                        _uiState.update { it.copy(tunnelUrl = url, isFetchingUrl = false) }
-                    } else {
-                        Timber.d("Deploy: No tunnel URL found yet")
-                        _uiState.update { it.copy(isFetchingUrl = false) }
-                    }
-                },
-                onFailure = { e ->
-                    Timber.e(e, "Deploy: Failed to fetch tunnel URL")
-                    _uiState.update { it.copy(isFetchingUrl = false) }
+            try {
+                val url = fetchTunnelUrlFromGist()
+                if (url != null) {
+                    Timber.i("Deploy: Found tunnel URL from Gist: $url")
+                    log(LogLevel.INFO, "Tunnel URL found from Gist: $url")
+                    _uiState.update { it.copy(tunnelUrl = url, isFetchingUrl = false) }
+                } else {
+                    Timber.d("Deploy: No tunnel URL in Gist yet, trying GitHub logs...")
+                    // Fallback to GitHub logs extraction
+                    val result = gitHubRepository.extractTunnelUrl(state.owner, state.repo, id)
+                    result.fold(
+                        onSuccess = { logUrl ->
+                            if (logUrl != null) {
+                                Timber.i("Deploy: Found tunnel URL from logs: $logUrl")
+                                log(LogLevel.INFO, "Tunnel URL found from logs: $logUrl")
+                                _uiState.update { it.copy(tunnelUrl = logUrl, isFetchingUrl = false) }
+                            } else {
+                                Timber.d("Deploy: No tunnel URL found yet")
+                                _uiState.update { it.copy(isFetchingUrl = false) }
+                            }
+                        },
+                        onFailure = { e ->
+                            Timber.e(e, "Deploy: Failed to fetch tunnel URL from logs")
+                            _uiState.update { it.copy(isFetchingUrl = false) }
+                        }
+                    )
                 }
-            )
+            } catch (e: Exception) {
+                Timber.e(e, "Deploy: Failed to fetch tunnel URL from Gist")
+                _uiState.update { it.copy(isFetchingUrl = false) }
+            }
+        }
+    }
+
+    private suspend fun fetchTunnelUrlFromGist(): String? {
+        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val client = OkHttpClient()
+                val request = Request.Builder()
+                    .url(TUNNEL_GIST_API_URL)
+                    .header("Accept", "application/vnd.github+json")
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        val json = JSONObject(response.body?.string() ?: "{}")
+                        val files = json.optJSONObject("files") ?: return@withContext null
+                        val tunnelFile = files.optJSONObject("tunnel-status.json") ?: return@withContext null
+                        val content = tunnelFile.optString("content", null) ?: return@withContext null
+
+                        val statusJson = JSONObject(content)
+                        val tunnelUrl = statusJson.optString("tunnel_url", null)
+                        val status = statusJson.optString("status", null)
+
+                        // Only return URL if status is "running"
+                        if (tunnelUrl != null && tunnelUrl.isNotEmpty() && tunnelUrl != "null" && status == "running") {
+                            Timber.d("Deploy: Gist tunnel status - url=$tunnelUrl, status=$status")
+                            return@withContext tunnelUrl
+                        }
+                    }
+                    null
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Deploy: Error fetching Gist")
+                null
+            }
         }
     }
 
