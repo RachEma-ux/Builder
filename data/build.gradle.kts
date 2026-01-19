@@ -64,7 +64,7 @@ dependencies {
 
     // Crypto for GitHub secrets encryption
     implementation("com.goterl:lazysodium-android:5.1.0@aar")
-    implementation("net.java.dev.jna:jna:5.14.0@aar")
+    implementation("net.java.dev.jna:jna:5.14.0")
 
     // Testing
     testImplementation("junit:junit:4.13.2")
