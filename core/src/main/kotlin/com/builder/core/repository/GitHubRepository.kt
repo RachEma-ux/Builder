@@ -101,6 +101,17 @@ interface GitHubRepository {
     ): Result<Unit>
 
     /**
+     * Triggers a workflow dispatch with inputs.
+     */
+    suspend fun triggerWorkflowWithInputs(
+        owner: String,
+        repo: String,
+        workflowId: String,
+        ref: String,
+        inputs: Map<String, String>
+    ): Result<Unit>
+
+    /**
      * Lists artifacts for a workflow run.
      */
     suspend fun listArtifacts(owner: String, repo: String, runId: Long): Result<List<Artifact>>

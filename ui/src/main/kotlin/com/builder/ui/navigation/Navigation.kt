@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.builder.ui.screens.deploy.DeployScreen
 import com.builder.ui.screens.installed.InstalledPacksScreen
 import com.builder.ui.screens.instances.InstancesScreen
 import com.builder.ui.screens.packdetails.PackDetailsScreen
@@ -26,6 +27,7 @@ sealed class Screen(val route: String) {
     object WasmRun : Screen("wasm_run")
     object Secrets : Screen("secrets")
     object Settings : Screen("settings")
+    object Deploy : Screen("deploy")
     object PackDetails : Screen("pack_details/{packId}") {
         fun createRoute(packId: String) = "pack_details/$packId"
     }
@@ -69,6 +71,10 @@ fun BuilderNavHost(
 
         composable(Screen.Settings.route) {
             SettingsScreen()
+        }
+
+        composable(Screen.Deploy.route) {
+            DeployScreen()
         }
 
         composable(

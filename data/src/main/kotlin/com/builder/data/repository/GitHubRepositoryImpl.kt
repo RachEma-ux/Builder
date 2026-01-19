@@ -205,6 +205,30 @@ class GitHubRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun triggerWorkflowWithInputs(
+        owner: String,
+        repo: String,
+        workflowId: String,
+        ref: String,
+        inputs: Map<String, String>
+    ): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = WorkflowDispatchRequest(ref = ref, inputs = inputs)
+                val response = apiService.triggerWorkflow(owner, repo, workflowId, request)
+                if (response.isSuccessful) {
+                    Timber.i("Workflow triggered successfully with inputs: $inputs")
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception("Failed to trigger workflow: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to trigger workflow with inputs")
+                Result.failure(e)
+            }
+        }
+    }
+
     override suspend fun listArtifacts(
         owner: String,
         repo: String,
