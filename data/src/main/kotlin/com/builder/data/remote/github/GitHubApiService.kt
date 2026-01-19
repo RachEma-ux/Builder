@@ -135,6 +135,17 @@ interface GitHubApiService {
     ): Response<WorkflowRun>
 
     /**
+     * Cancel a workflow run.
+     * POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel
+     */
+    @POST("repos/{owner}/{repo}/actions/runs/{run_id}/cancel")
+    suspend fun cancelWorkflowRun(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("run_id") runId: Long
+    ): Response<Unit>
+
+    /**
      * Trigger a workflow dispatch event.
      * POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches
      */

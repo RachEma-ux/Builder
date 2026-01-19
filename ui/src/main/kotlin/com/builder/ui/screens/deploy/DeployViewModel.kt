@@ -415,6 +415,38 @@ class DeployViewModel @Inject constructor(
         _uiState.update { it.copy(isPolling = false) }
     }
 
+    fun cancelRun() {
+        val runId = _uiState.value.activeRunId ?: return
+        val state = _uiState.value
+
+        viewModelScope.launch {
+            Timber.i("Deploy: Cancelling workflow run $runId")
+            log(LogLevel.INFO, "Cancelling workflow run $runId")
+
+            val result = gitHubRepository.cancelWorkflowRun(state.owner, state.repo, runId)
+
+            result.fold(
+                onSuccess = {
+                    Timber.i("Deploy: Workflow run $runId cancelled successfully")
+                    log(LogLevel.INFO, "Workflow run $runId cancelled")
+                    stopPolling()
+                    _uiState.update {
+                        it.copy(message = "Deployment cancelled")
+                    }
+                    // Refresh to get updated status
+                    refreshStatus()
+                },
+                onFailure = { e ->
+                    Timber.e(e, "Deploy: Failed to cancel workflow run $runId")
+                    log(LogLevel.ERROR, "Failed to cancel run $runId: ${e.message}")
+                    _uiState.update {
+                        it.copy(error = "Failed to cancel: ${e.message}")
+                    }
+                }
+            )
+        }
+    }
+
     fun loadHistory() {
         viewModelScope.launch {
             val state = _uiState.value

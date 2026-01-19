@@ -21,6 +21,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.builder.core.model.github.Release
 import com.builder.core.model.github.Repository
 import com.builder.core.model.github.WorkflowRun
+import kotlinx.coroutines.delay
+import java.time.Instant
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -121,6 +124,7 @@ fun DeployScreen(
                 DeployTab.STATUS -> StatusTabContent(
                     uiState = uiState,
                     onRefresh = viewModel::refreshStatus,
+                    onCancel = viewModel::cancelRun,
                     onOpenInBrowser = { url ->
                         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                     }
@@ -448,6 +452,7 @@ fun DeployTabContent(
 fun StatusTabContent(
     uiState: DeployUiState,
     onRefresh: () -> Unit,
+    onCancel: () -> Unit,
     onOpenInBrowser: (String) -> Unit
 ) {
     if (uiState.activeRun == null) {
@@ -477,6 +482,31 @@ fun StatusTabContent(
         }
     } else {
         val run = uiState.activeRun
+        val isRunning = run.isRunning()
+
+        // Elapsed time state
+        var elapsedSeconds by remember { mutableStateOf(0L) }
+
+        // Calculate start time once
+        val startTime = remember(run.id) {
+            try {
+                Instant.parse(run.createdAt).toEpochMilli()
+            } catch (e: Exception) {
+                System.currentTimeMillis()
+            }
+        }
+
+        // Update elapsed time - runs every second while the run is in progress
+        LaunchedEffect(run.id, isRunning) {
+            // Initial calculation
+            elapsedSeconds = (System.currentTimeMillis() - startTime) / 1000
+
+            // Keep updating while running
+            while (isRunning) {
+                delay(1000)
+                elapsedSeconds = (System.currentTimeMillis() - startTime) / 1000
+            }
+        }
 
         Column(
             modifier = Modifier
@@ -506,6 +536,54 @@ fun StatusTabContent(
                             )
                         }
                         StatusBadge(run)
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Elapsed Timer Card
+                    Surface(
+                        color = if (isRunning)
+                            MaterialTheme.colorScheme.tertiaryContainer
+                        else
+                            MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                if (isRunning) Icons.Default.Timer else Icons.Default.Schedule,
+                                contentDescription = null,
+                                modifier = Modifier.size(32.dp),
+                                tint = if (isRunning)
+                                    MaterialTheme.colorScheme.onTertiaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    if (isRunning) "Elapsed Time" else "Total Duration",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (isRunning)
+                                        MaterialTheme.colorScheme.onTertiaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    formatElapsedTime(elapsedSeconds),
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isRunning)
+                                        MaterialTheme.colorScheme.onTertiaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -544,13 +622,27 @@ fun StatusTabContent(
                     Text("Refresh")
                 }
 
-                Button(
-                    onClick = { onOpenInBrowser(run.htmlUrl) },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.OpenInNew, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("View on GitHub")
+                if (isRunning) {
+                    Button(
+                        onClick = onCancel,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(Icons.Default.Stop, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Stop")
+                    }
+                } else {
+                    Button(
+                        onClick = { onOpenInBrowser(run.htmlUrl) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.OpenInNew, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("View on GitHub")
+                    }
                 }
             }
 
@@ -760,5 +852,21 @@ fun DetailRow(label: String, value: String) {
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium
         )
+    }
+}
+
+/**
+ * Formats elapsed seconds into a human-readable duration string.
+ * Examples: "0:45", "2:30", "1:05:23"
+ */
+fun formatElapsedTime(totalSeconds: Long): String {
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+
+    return if (hours > 0) {
+        String.format("%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format("%d:%02d", minutes, seconds)
     }
 }

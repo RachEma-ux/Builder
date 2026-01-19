@@ -91,6 +91,11 @@ interface GitHubRepository {
     suspend fun getWorkflowRun(owner: String, repo: String, runId: Long): Result<WorkflowRun>
 
     /**
+     * Cancels a workflow run.
+     */
+    suspend fun cancelWorkflowRun(owner: String, repo: String, runId: Long): Result<Unit>
+
+    /**
      * Triggers a workflow dispatch.
      */
     suspend fun triggerWorkflow(

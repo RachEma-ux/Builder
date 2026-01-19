@@ -182,6 +182,27 @@ class GitHubRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun cancelWorkflowRun(
+        owner: String,
+        repo: String,
+        runId: Long
+    ): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.cancelWorkflowRun(owner, repo, runId)
+                if (response.isSuccessful) {
+                    Timber.i("Workflow run $runId cancelled successfully")
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception("Failed to cancel workflow run: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to cancel workflow run")
+                Result.failure(e)
+            }
+        }
+    }
+
     override suspend fun triggerWorkflow(
         owner: String,
         repo: String,
