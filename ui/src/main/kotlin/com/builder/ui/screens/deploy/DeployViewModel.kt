@@ -212,7 +212,8 @@ class DeployViewModel @Inject constructor(
         pollingJob = viewModelScope.launch {
             _uiState.update { it.copy(isPolling = true) }
 
-            while (true) {
+            var shouldContinue = true
+            while (shouldContinue) {
                 val state = _uiState.value
                 val result = gitHubRepository.getWorkflowRun(state.owner, state.repo, runId)
 
@@ -230,17 +231,19 @@ class DeployViewModel @Inject constructor(
                                         "Deployment finished with status: ${run.conclusion}"
                                 )
                             }
-                            break
+                            shouldContinue = false
                         }
                     },
                     onFailure = { e ->
                         Timber.e(e, "Failed to poll workflow run")
                         _uiState.update { it.copy(isPolling = false) }
-                        break
+                        shouldContinue = false
                     }
                 )
 
-                delay(POLLING_INTERVAL_MS)
+                if (shouldContinue) {
+                    delay(POLLING_INTERVAL_MS)
+                }
             }
         }
     }
