@@ -69,6 +69,18 @@ jobs:
     timeout-minutes: 45
 
     steps:
+      - name: Reset Gist status
+        if: ${'$'}{{ vars.TUNNEL_GIST_ID != '' && secrets.GIST_TOKEN != '' }}
+        run: |
+          GIST_ID="${'$'}{{ vars.TUNNEL_GIST_ID }}"
+          GIST_TOKEN="${'$'}{{ secrets.GIST_TOKEN }}"
+          TIMESTAMP=${'$'}(date -u +%Y-%m-%dT%H:%M:%SZ)
+          GIST_JSON=${'$'}(jq -n --arg rid "${'$'}{{ github.run_id }}" --arg repo "${'$'}{{ github.repository }}" --arg ts "${'$'}TIMESTAMP" \
+            '{tunnel_url: null, status: "pending", run_id: ${'$'}rid, repository: ${'$'}repo, started_at: ${'$'}ts}')
+          PAYLOAD=${'$'}(jq -n --arg content "${'$'}GIST_JSON" '{files: {"tunnel-status.json": {content: ${'$'}content}}}')
+          curl -s -X PATCH "https://api.github.com/gists/${'$'}GIST_ID" \
+            -H "Authorization: Bearer ${'$'}GIST_TOKEN" -H "Accept: application/vnd.github+json" -d "${'$'}PAYLOAD" > /dev/null
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -170,6 +182,19 @@ jobs:
           TUNNEL_URL=${'$'}(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' tunnel.log | head -1)
           echo "URL: ${'$'}TUNNEL_URL"
           echo "${'$'}TUNNEL_URL" > app_url.txt
+
+          # Update Gist with tunnel URL
+          GIST_ID="${'$'}{{ vars.TUNNEL_GIST_ID }}"
+          GIST_TOKEN="${'$'}{{ secrets.GIST_TOKEN }}"
+          if [ -n "${'$'}GIST_TOKEN" ] && [ -n "${'$'}GIST_ID" ]; then
+            TIMESTAMP=${'$'}(date -u +%Y-%m-%dT%H:%M:%SZ)
+            GIST_JSON=${'$'}(jq -n --arg url "${'$'}TUNNEL_URL" --arg rid "${'$'}{{ github.run_id }}" --arg repo "${'$'}{{ github.repository }}" --arg ts "${'$'}TIMESTAMP" --arg dur "${'$'}{{ github.event.inputs.duration }}" \
+              '{tunnel_url: ${'$'}url, status: "running", run_id: ${'$'}rid, repository: ${'$'}repo, started_at: ${'$'}ts, duration_minutes: (${'$'}dur|tonumber)}')
+            PAYLOAD=${'$'}(jq -n --arg content "${'$'}GIST_JSON" '{files: {"tunnel-status.json": {content: ${'$'}content}}}')
+            curl -s -X PATCH "https://api.github.com/gists/${'$'}GIST_ID" \
+              -H "Authorization: Bearer ${'$'}GIST_TOKEN" -H "Accept: application/vnd.github+json" -d "${'$'}PAYLOAD" > /dev/null
+          fi
+
           sleep ${'$'}(( ${'$'}{{ github.event.inputs.duration }} * 60 ))
 
       - name: Upload artifacts
