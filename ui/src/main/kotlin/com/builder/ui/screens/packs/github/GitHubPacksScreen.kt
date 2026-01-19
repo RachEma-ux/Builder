@@ -102,11 +102,6 @@ fun GitHubPacksScreen(
                     onRefresh = { viewModel.loadRepositories() }
                 )
 
-                // Workflow Generation Section (when repo is selected)
-                if (uiState.selectedRepo != null) {
-                    WorkflowGenerationCard(uiState, viewModel)
-                }
-
                 // Mode-specific content
                 when (uiState.selectedTab) {
                     InstallMode.DEV -> DevModeContent(uiState, viewModel)
@@ -364,7 +359,18 @@ fun RepositorySelector(
 fun DevModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel) {
     var branchExpanded by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
+        // Workflow Generation Card (when repo is selected)
+        if (uiState.selectedRepo != null) {
+            WorkflowGenerationCard(uiState, viewModel)
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         // Branch selector
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -418,7 +424,18 @@ fun DevModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel)
 fun ProdModeContent(uiState: GitHubPacksUiState, viewModel: GitHubPacksViewModel) {
     var tagExpanded by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
+        // Workflow Generation Card (when repo is selected)
+        if (uiState.selectedRepo != null) {
+            WorkflowGenerationCard(uiState, viewModel)
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         // Error display
         uiState.error?.let { error ->
             Card(
