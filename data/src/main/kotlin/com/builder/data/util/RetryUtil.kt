@@ -110,7 +110,7 @@ suspend fun <T> retryOnFailure(
             return lastResult
         }
 
-        val exception = lastResult.exceptionOrNull()
+        val exception = lastResult.exceptionOrNull() as? Exception
         if (exception != null && !config.retryOn(exception)) {
             Timber.d("Exception not retryable: ${exception.message}")
             return lastResult
