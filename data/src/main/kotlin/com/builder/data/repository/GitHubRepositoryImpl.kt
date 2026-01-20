@@ -1,6 +1,8 @@
 package com.builder.data.repository
 
 import android.util.Base64
+import com.builder.core.model.SetupProgress
+import com.builder.core.model.SetupStep
 import com.builder.core.repository.GitHubRepository
 import com.builder.core.repository.ProjectType
 import com.builder.core.repository.SetupResult
@@ -10,10 +12,13 @@ import com.builder.data.remote.github.GitHubOAuthManager
 import com.builder.core.model.github.*
 import com.builder.data.crypto.GitHubSecretEncryptor
 import com.builder.data.di.GitHubClient
+import com.builder.data.util.RetryConfig
+import com.builder.data.util.retryOnFailure
 import com.builder.data.workflow.WorkflowGenerator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -904,6 +909,129 @@ class GitHubRepositoryImpl @Inject constructor(
                 Timber.e(e, "Failed to setup full Builder deployment")
                 Result.failure(e)
             }
+        }
+    }
+
+    override fun setupFullBuilderDeploymentWithProgress(
+        owner: String,
+        repo: String,
+        branch: String,
+        gistToken: String?
+    ): Flow<SetupProgress> = flow {
+        val completedSteps = mutableListOf<SetupStep>()
+        val retryConfig = RetryConfig(maxAttempts = 3)
+
+        try {
+            // Step 1: Check existing configuration
+            emit(SetupProgress(SetupStep.CHECKING_EXISTING, completedSteps.toList()))
+
+            val existingVariable = retryOnFailure(retryConfig) {
+                getVariable(owner, repo, "TUNNEL_GIST_ID")
+            }
+
+            var gistId: String
+            var variableSet = false
+            var secretSet = false
+            var workflowCreated = false
+
+            completedSteps.add(SetupStep.CHECKING_EXISTING)
+
+            if (existingVariable.isSuccess) {
+                gistId = existingVariable.getOrThrow().value
+                Timber.i("Using existing TUNNEL_GIST_ID: $gistId")
+                variableSet = true
+                completedSteps.add(SetupStep.CREATING_GIST)
+                completedSteps.add(SetupStep.SETTING_VARIABLE)
+            } else {
+                // Step 2: Create Gist
+                emit(SetupProgress(SetupStep.CREATING_GIST, completedSteps.toList()))
+
+                val initialContent = """{"tunnel_url": null, "status": "pending", "repository": "$owner/$repo"}"""
+                val gistResult = retryOnFailure(retryConfig) {
+                    createGist(
+                        description = "Builder tunnel status for $owner/$repo",
+                        public = false,
+                        files = mapOf("tunnel-status.json" to initialContent)
+                    )
+                }
+
+                if (gistResult.isFailure) {
+                    val error = gistResult.exceptionOrNull()?.message ?: "Failed to create gist"
+                    emit(SetupProgress(
+                        SetupStep.CREATING_GIST,
+                        completedSteps.toList(),
+                        failedStep = SetupStep.CREATING_GIST,
+                        errorMessage = error
+                    ))
+                    return@flow
+                }
+
+                gistId = gistResult.getOrThrow().id
+                completedSteps.add(SetupStep.CREATING_GIST)
+
+                // Step 3: Set variable
+                emit(SetupProgress(SetupStep.SETTING_VARIABLE, completedSteps.toList()))
+
+                val varResult = retryOnFailure(retryConfig) {
+                    createVariable(owner, repo, "TUNNEL_GIST_ID", gistId)
+                }
+                variableSet = varResult.isSuccess
+
+                if (!variableSet) {
+                    Timber.w("Failed to set variable, but continuing...")
+                }
+                completedSteps.add(SetupStep.SETTING_VARIABLE)
+            }
+
+            // Step 4: Set secret (if provided)
+            if (gistToken != null && gistToken.isNotBlank()) {
+                emit(SetupProgress(SetupStep.SETTING_SECRET, completedSteps.toList()))
+
+                val secretResult = retryOnFailure(retryConfig) {
+                    createOrUpdateSecret(owner, repo, "GIST_TOKEN", gistToken)
+                }
+                secretSet = secretResult.isSuccess
+
+                if (!secretSet) {
+                    Timber.w("Failed to set secret, but continuing...")
+                }
+            }
+            completedSteps.add(SetupStep.SETTING_SECRET)
+
+            // Step 5: Create workflow
+            emit(SetupProgress(SetupStep.CREATING_WORKFLOW, completedSteps.toList()))
+
+            val workflowResult = retryOnFailure(retryConfig) {
+                setupBuilderDeployment(owner, repo, branch)
+            }
+            workflowCreated = workflowResult.isSuccess
+
+            if (!workflowCreated) {
+                val error = workflowResult.exceptionOrNull()?.message ?: "Failed to create workflow"
+                emit(SetupProgress(
+                    SetupStep.CREATING_WORKFLOW,
+                    completedSteps.toList(),
+                    failedStep = SetupStep.CREATING_WORKFLOW,
+                    errorMessage = error
+                ))
+                return@flow
+            }
+
+            completedSteps.add(SetupStep.CREATING_WORKFLOW)
+
+            // Complete
+            emit(SetupProgress(SetupStep.COMPLETE, completedSteps.toList()))
+
+            Timber.i("Full setup complete: gistId=$gistId, variable=$variableSet, secret=$secretSet, workflow=$workflowCreated")
+
+        } catch (e: Exception) {
+            Timber.e(e, "Setup failed with exception")
+            emit(SetupProgress(
+                SetupStep.CHECKING_EXISTING,
+                completedSteps.toList(),
+                failedStep = SetupStep.CHECKING_EXISTING,
+                errorMessage = e.message ?: "Unknown error"
+            ))
         }
     }
 }

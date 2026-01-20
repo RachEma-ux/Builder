@@ -1,5 +1,6 @@
 package com.builder.core.repository
 
+import com.builder.core.model.SetupProgress
 import com.builder.core.model.github.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -282,6 +283,17 @@ interface GitHubRepository {
         branch: String = "main",
         gistToken: String? = null
     ): Result<SetupResult>
+
+    /**
+     * Sets up a repository with full Builder deployment, emitting progress updates.
+     * Use this for UI that needs to show step-by-step progress.
+     */
+    fun setupFullBuilderDeploymentWithProgress(
+        owner: String,
+        repo: String,
+        branch: String = "main",
+        gistToken: String? = null
+    ): Flow<SetupProgress>
 }
 
 /**
