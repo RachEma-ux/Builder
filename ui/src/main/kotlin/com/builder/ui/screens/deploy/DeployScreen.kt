@@ -114,6 +114,7 @@ fun DeployScreen(
             when (uiState.selectedTab) {
                 DeployTab.DEPLOY -> DeployTabContent(
                     uiState = uiState,
+                    onDeployModeChange = viewModel::updateDeployMode,
                     onVersionChange = viewModel::updateVersion,
                     onDurationChange = viewModel::updateDuration,
                     onRunAppChange = viewModel::updateRunApp,
@@ -147,6 +148,7 @@ fun DeployScreen(
 @Composable
 fun DeployTabContent(
     uiState: DeployUiState,
+    onDeployModeChange: (DeployMode) -> Unit,
     onVersionChange: (String) -> Unit,
     onDurationChange: (String) -> Unit,
     onRunAppChange: (Boolean) -> Unit,
@@ -400,7 +402,7 @@ fun DeployTabContent(
             }
         }
 
-        // Release Card
+        // Version Card - Choose between New Version or Redeploy
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -409,7 +411,7 @@ fun DeployTabContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "Release",
+                        "Version",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -422,69 +424,139 @@ fun DeployTabContent(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Release Dropdown
-                ExposedDropdownMenuBox(
-                    expanded = releaseExpanded,
-                    onExpandedChange = { releaseExpanded = it }
+                // Deploy Mode Toggle (Segmented Button)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    OutlinedTextField(
-                        value = uiState.selectedRelease?.let { "${it.tagName} - ${it.name ?: "Release"}" }
-                            ?: if (uiState.releases.isEmpty()) "No releases available" else "Select release",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Release") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = releaseExpanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(),
-                        enabled = !uiState.isLoadingReleases && uiState.releases.isNotEmpty()
+                    FilterChip(
+                        selected = uiState.deployMode == DeployMode.NEW_VERSION,
+                        onClick = { onDeployModeChange(DeployMode.NEW_VERSION) },
+                        label = { Text("New Version") },
+                        leadingIcon = if (uiState.deployMode == DeployMode.NEW_VERSION) {
+                            { Icon(Icons.Default.Add, contentDescription = null, Modifier.size(18.dp)) }
+                        } else null,
+                        modifier = Modifier.weight(1f)
                     )
-                    ExposedDropdownMenu(
-                        expanded = releaseExpanded,
-                        onDismissRequest = { releaseExpanded = false }
-                    ) {
-                        if (uiState.releases.isEmpty()) {
-                            DropdownMenuItem(
-                                text = { Text("No releases found") },
-                                onClick = { releaseExpanded = false },
-                                enabled = false
+                    FilterChip(
+                        selected = uiState.deployMode == DeployMode.REDEPLOY,
+                        onClick = { onDeployModeChange(DeployMode.REDEPLOY) },
+                        label = { Text("Redeploy") },
+                        leadingIcon = if (uiState.deployMode == DeployMode.REDEPLOY) {
+                            { Icon(Icons.Default.Replay, contentDescription = null, Modifier.size(18.dp)) }
+                        } else null,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Show different content based on deploy mode
+                when (uiState.deployMode) {
+                    DeployMode.NEW_VERSION -> {
+                        // Version text field for new version
+                        OutlinedTextField(
+                            value = uiState.version,
+                            onValueChange = onVersionChange,
+                            label = { Text("Version") },
+                            placeholder = { Text("auto or e.g., 2.0.0") },
+                            supportingText = { Text("Use 'auto' for auto-increment") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    }
+                    DeployMode.REDEPLOY -> {
+                        // Release dropdown for redeploy
+                        ExposedDropdownMenuBox(
+                            expanded = releaseExpanded,
+                            onExpandedChange = { releaseExpanded = it }
+                        ) {
+                            OutlinedTextField(
+                                value = uiState.selectedRelease?.let { "${it.tagName} - ${it.name ?: "Release"}" }
+                                    ?: if (uiState.releases.isEmpty()) "No releases available" else "Select release",
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Select Release to Redeploy") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = releaseExpanded) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(),
+                                enabled = !uiState.isLoadingReleases && uiState.releases.isNotEmpty()
                             )
-                        } else {
-                            uiState.releases.forEach { release ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Column {
-                                            Text(release.tagName, fontWeight = FontWeight.Medium)
-                                            Text(
-                                                release.name ?: "Release",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                            Text(
-                                                release.publishedAt?.replace("T", " ")?.replace("Z", "") ?: "",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    },
-                                    onClick = {
-                                        onReleaseSelected(release)
-                                        releaseExpanded = false
+                            ExposedDropdownMenu(
+                                expanded = releaseExpanded,
+                                onDismissRequest = { releaseExpanded = false }
+                            ) {
+                                if (uiState.releases.isEmpty()) {
+                                    DropdownMenuItem(
+                                        text = { Text("No releases found") },
+                                        onClick = { releaseExpanded = false },
+                                        enabled = false
+                                    )
+                                } else {
+                                    uiState.releases.forEach { release ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Column {
+                                                    Text(release.tagName, fontWeight = FontWeight.Medium)
+                                                    Text(
+                                                        release.name ?: "Release",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    Text(
+                                                        release.publishedAt?.replace("T", " ")?.replace("Z", "") ?: "",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                            },
+                                            onClick = {
+                                                onReleaseSelected(release)
+                                                releaseExpanded = false
+                                            }
+                                        )
                                     }
-                                )
+                                }
+                            }
+                        }
+
+                        // Show selected release info
+                        uiState.selectedRelease?.let { release ->
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Surface(
+                                color = MaterialTheme.colorScheme.tertiaryContainer,
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Replay,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                    Column {
+                                        Text(
+                                            "Will redeploy: ${release.tagName}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+                                        Text(
+                                            "Assets: ${release.assets.size}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
-                }
-
-                // Show selected release info
-                uiState.selectedRelease?.let { release ->
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Assets: ${release.assets.size}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
         }
@@ -498,17 +570,6 @@ fun DeployTabContent(
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = uiState.version,
-                    onValueChange = onVersionChange,
-                    label = { Text("Version") },
-                    placeholder = { Text("e.g., 2.0.0") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
 
                 // Duration dropdown
                 ExposedDropdownMenuBox(

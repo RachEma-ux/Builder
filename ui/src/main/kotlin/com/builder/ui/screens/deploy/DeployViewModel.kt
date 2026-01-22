@@ -31,6 +31,14 @@ enum class DeployTab {
 }
 
 /**
+ * Deploy mode - new version or redeploy existing.
+ */
+enum class DeployMode {
+    NEW_VERSION,    // Deploy a new version (auto-increment or manual)
+    REDEPLOY        // Redeploy an existing release
+}
+
+/**
  * UI state for deploy screen.
  */
 data class DeployUiState(
@@ -53,7 +61,8 @@ data class DeployUiState(
     val isLoadingReleases: Boolean = false,
 
     // Deploy form state
-    val version: String = "2.0.0",
+    val deployMode: DeployMode = DeployMode.NEW_VERSION,
+    val version: String = "auto",
     val duration: String = "15",
     val runApp: Boolean = true,
     val owner: String = "",
@@ -406,7 +415,12 @@ class DeployViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 selectedRelease = release,
-                version = release.tagName.removePrefix("v")
+                // Only update version if in REDEPLOY mode
+                version = if (it.deployMode == DeployMode.REDEPLOY) {
+                    release.tagName.removePrefix("v")
+                } else {
+                    it.version
+                }
             )
         }
     }
@@ -427,6 +441,20 @@ class DeployViewModel @Inject constructor(
 
     fun updateVersion(version: String) {
         _uiState.update { it.copy(version = version) }
+    }
+
+    fun updateDeployMode(mode: DeployMode) {
+        Timber.d("Deploy: Mode changed to $mode")
+        _uiState.update {
+            it.copy(
+                deployMode = mode,
+                // Reset version based on mode
+                version = when (mode) {
+                    DeployMode.NEW_VERSION -> "auto"
+                    DeployMode.REDEPLOY -> it.selectedRelease?.tagName?.removePrefix("v") ?: it.version
+                }
+            )
+        }
     }
 
     fun updateDuration(duration: String) {
