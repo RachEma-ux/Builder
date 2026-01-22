@@ -675,14 +675,33 @@ fun StatusTabContent(
         ) {
             // Version Info Card
             if (uiState.deployVersion != null) {
+                val isRedeploy = uiState.deployType == "redeploy"
+                val isComplete = uiState.isDeployComplete
+                val statusText = when {
+                    isRedeploy && isComplete -> "Redeployed v${uiState.deployVersion}"
+                    isRedeploy && !isComplete -> "Redeploying v${uiState.deployVersion}"
+                    !isRedeploy && isComplete -> "Deployed v${uiState.deployVersion}"
+                    else -> "Deploying v${uiState.deployVersion}"
+                }
+                val containerColor = when {
+                    isComplete -> MaterialTheme.colorScheme.primaryContainer
+                    isRedeploy -> MaterialTheme.colorScheme.tertiaryContainer
+                    else -> MaterialTheme.colorScheme.secondaryContainer
+                }
+                val contentColor = when {
+                    isComplete -> MaterialTheme.colorScheme.onPrimaryContainer
+                    isRedeploy -> MaterialTheme.colorScheme.onTertiaryContainer
+                    else -> MaterialTheme.colorScheme.onSecondaryContainer
+                }
+                val icon = when {
+                    isComplete -> Icons.Default.CheckCircle
+                    isRedeploy -> Icons.Default.Replay
+                    else -> Icons.Default.RocketLaunch
+                }
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (uiState.deployType == "redeploy")
-                            MaterialTheme.colorScheme.tertiaryContainer
-                        else
-                            MaterialTheme.colorScheme.secondaryContainer
-                    )
+                    colors = CardDefaults.cardColors(containerColor = containerColor)
                 ) {
                     Row(
                         modifier = Modifier
@@ -692,26 +711,17 @@ fun StatusTabContent(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Icon(
-                            if (uiState.deployType == "redeploy") Icons.Default.Replay else Icons.Default.RocketLaunch,
+                            icon,
                             contentDescription = null,
                             modifier = Modifier.size(24.dp),
-                            tint = if (uiState.deployType == "redeploy")
-                                MaterialTheme.colorScheme.onTertiaryContainer
-                            else
-                                MaterialTheme.colorScheme.onSecondaryContainer
+                            tint = contentColor
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            if (uiState.deployType == "redeploy")
-                                "Redeploying v${uiState.deployVersion}"
-                            else
-                                "Deploying v${uiState.deployVersion}",
+                            statusText,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = if (uiState.deployType == "redeploy")
-                                MaterialTheme.colorScheme.onTertiaryContainer
-                            else
-                                MaterialTheme.colorScheme.onSecondaryContainer
+                            color = contentColor
                         )
                     }
                 }

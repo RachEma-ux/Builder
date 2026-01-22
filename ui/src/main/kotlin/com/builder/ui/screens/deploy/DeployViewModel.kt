@@ -68,6 +68,7 @@ data class DeployUiState(
     val isFetchingUrl: Boolean = false,
     val deployVersion: String? = null,
     val deployType: String? = null, // "new" or "redeploy"
+    val isDeployComplete: Boolean = false, // true when tunnel URL is available
 
     // History state
     val workflowRuns: List<WorkflowRun> = emptyList(),
@@ -489,11 +490,23 @@ class DeployViewModel @Inject constructor(
                     Timber.i("Deploy: Deployment triggered successfully for ${state.owner}/${state.repo} v${state.version}")
                     DebugLogger.logSync("INFO", "Deploy", "SUCCESS: Deployment triggered, switching to Status tab")
                     log(LogLevel.INFO, "SUCCESS: Deployment triggered for ${state.owner}/${state.repo} v${state.version}")
+
+                    // Determine if this is a redeploy by checking if version exists in releases
+                    val versionToCheck = state.version.removePrefix("v")
+                    val isRedeploy = state.releases.any {
+                        it.tagName.removePrefix("v") == versionToCheck
+                    }
+
                     _uiState.update {
                         it.copy(
                             isTriggering = false,
                             message = "Deployment triggered! Switching to status tab...",
-                            selectedTab = DeployTab.STATUS
+                            selectedTab = DeployTab.STATUS,
+                            // Set version info immediately
+                            deployVersion = versionToCheck,
+                            deployType = if (isRedeploy) "redeploy" else "new",
+                            isDeployComplete = false,
+                            tunnelUrl = null
                         )
                     }
                     // Wait a moment for GitHub to create the run, then find it
@@ -559,11 +572,19 @@ class DeployViewModel @Inject constructor(
             it.copy(
                 activeRunId = run.id,
                 activeRun = run,
-                selectedTab = DeployTab.STATUS
+                selectedTab = DeployTab.STATUS,
+                // Reset version info so it's fetched from Gist for this run
+                deployVersion = null,
+                deployType = null,
+                tunnelUrl = null,
+                isDeployComplete = false
             )
         }
         if (run.isRunning()) {
             startPolling(run.id)
+        } else {
+            // For completed runs, try to fetch version info from Gist once
+            fetchTunnelUrl(run.id)
         }
     }
 
@@ -572,7 +593,7 @@ class DeployViewModel @Inject constructor(
         log(LogLevel.INFO, "Starting polling for run ID $runId")
         pollingJob?.cancel()
         pollingJob = viewModelScope.launch {
-            _uiState.update { it.copy(isPolling = true, tunnelUrl = null, deployVersion = null, deployType = null) }
+            _uiState.update { it.copy(isPolling = true, tunnelUrl = null, isDeployComplete = false) }
 
             var shouldContinue = true
             var pollCount = 0
@@ -642,7 +663,7 @@ class DeployViewModel @Inject constructor(
                 if (url != null) {
                     Timber.i("Deploy: Found tunnel URL from Gist: $url")
                     log(LogLevel.INFO, "Tunnel URL found from Gist: $url")
-                    _uiState.update { it.copy(tunnelUrl = url, isFetchingUrl = false) }
+                    _uiState.update { it.copy(tunnelUrl = url, isFetchingUrl = false, isDeployComplete = true) }
                 } else {
                     Timber.d("Deploy: No tunnel URL in Gist yet, trying GitHub logs...")
                     // Fallback to GitHub logs extraction
@@ -652,7 +673,7 @@ class DeployViewModel @Inject constructor(
                             if (logUrl != null) {
                                 Timber.i("Deploy: Found tunnel URL from logs: $logUrl")
                                 log(LogLevel.INFO, "Tunnel URL found from logs: $logUrl")
-                                _uiState.update { it.copy(tunnelUrl = logUrl, isFetchingUrl = false) }
+                                _uiState.update { it.copy(tunnelUrl = logUrl, isFetchingUrl = false, isDeployComplete = true) }
                             } else {
                                 Timber.d("Deploy: No tunnel URL found yet")
                                 _uiState.update { it.copy(isFetchingUrl = false) }
@@ -699,13 +720,19 @@ class DeployViewModel @Inject constructor(
                         val version = statusJson.optString("version", null)
                         val deployType = statusJson.optString("deploy_type", null)
 
-                        // Update version and deploy type in UI state
+                        // Update version and deploy type in UI state only if Gist has valid data
+                        // Don't overwrite if we already have version from triggerDeploy and Gist has null
+                        val currentVersion = _uiState.value.deployVersion
                         if (version != null && version.isNotEmpty() && version != "null") {
+                            // Gist has valid version - update state
                             _uiState.update { it.copy(
                                 deployVersion = version,
                                 deployType = deployType
                             )}
                             Timber.d("Deploy: Gist version info - version=$version, deployType=$deployType")
+                        } else if (currentVersion == null) {
+                            // No version set yet and Gist doesn't have one - this is normal during early deploy
+                            Timber.d("Deploy: No version in Gist yet, waiting...")
                         }
 
                         // Only return URL if status is "running" and URL is valid
