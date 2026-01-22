@@ -715,7 +715,27 @@ class DeployViewModel @Inject constructor(
     )
 
     private suspend fun fetchTunnelUrlFromGist(): GistResult? {
-        val gistId = _uiState.value.tunnelGistId
+        var gistId = _uiState.value.tunnelGistId
+
+        // If gistId is missing, try to fetch it from repo variables
+        if (gistId.isNullOrBlank()) {
+            Timber.d("Deploy: No gist ID in state, trying to fetch from repo...")
+            val state = _uiState.value
+            if (state.owner.isNotBlank() && state.repo.isNotBlank()) {
+                val result = gitHubRepository.getVariable(state.owner, state.repo, "TUNNEL_GIST_ID")
+                result.fold(
+                    onSuccess = { variable ->
+                        gistId = variable.value
+                        Timber.i("Deploy: Fetched TUNNEL_GIST_ID: $gistId")
+                        _uiState.update { it.copy(tunnelGistId = gistId) }
+                    },
+                    onFailure = { e ->
+                        Timber.e(e, "Deploy: Failed to fetch TUNNEL_GIST_ID")
+                    }
+                )
+            }
+        }
+
         if (gistId.isNullOrBlank()) {
             Timber.d("Deploy: No gist ID available for this repository")
             return null
