@@ -1,4 +1,3 @@
-Starting a Gradle Daemon, 2 busy Daemons could not be reused, use --status for details
 
 > Configure project :app
 WARNING: The option setting 'android.defaults.buildfeatures.buildconfig=true' is deprecated.
@@ -11,116 +10,101 @@ You can resolve this warning in Android Studio via `Refactor` > `Migrate BuildCo
    WASM execution will not be available at runtime
    Run ./scripts/build-wasmtime.sh to enable WASM support
 
-> Task :ui:preBuild UP-TO-DATE
-> Task :runtime:preBuild UP-TO-DATE
-> Task :data:preBuild UP-TO-DATE
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :ui:preBuild UP-TO-DATE
+> Task :data:preBuild UP-TO-DATE
+> Task :domain:checkKotlinGradlePluginConfigurationErrors
 > Task :data:preDebugBuild UP-TO-DATE
-> Task :ui:preDebugBuild UP-TO-DATE
+> Task :core:checkKotlinGradlePluginConfigurationErrors
+> Task :data:writeDebugAarMetadata UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :data:generateDebugResValues UP-TO-DATE
+> Task :runtime:preBuild UP-TO-DATE
 > Task :runtime:preDebugBuild UP-TO-DATE
 > Task :runtime:writeDebugAarMetadata UP-TO-DATE
-> Task :ui:writeDebugAarMetadata UP-TO-DATE
-> Task :data:writeDebugAarMetadata UP-TO-DATE
-> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
-> Task :domain:checkKotlinGradlePluginConfigurationErrors
-> Task :core:checkKotlinGradlePluginConfigurationErrors
-> Task :app:checkKotlinGradlePluginConfigurationErrors
-> Task :data:generateDebugResValues UP-TO-DATE
 > Task :runtime:generateDebugResValues UP-TO-DATE
-> Task :data:generateDebugResources UP-TO-DATE
 > Task :runtime:generateDebugResources UP-TO-DATE
-> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :domain:processResources NO-SOURCE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :ui:preDebugBuild UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :ui:writeDebugAarMetadata UP-TO-DATE
+> Task :data:generateDebugResources UP-TO-DATE
 > Task :ui:generateDebugResValues UP-TO-DATE
 > Task :ui:generateDebugResources UP-TO-DATE
-> Task :domain:processResources NO-SOURCE
 > Task :ui:packageDebugResources UP-TO-DATE
-> Task :data:packageDebugResources UP-TO-DATE
-> Task :runtime:packageDebugResources UP-TO-DATE
 > Task :ui:extractDeepLinksDebug UP-TO-DATE
-> Task :data:extractDeepLinksDebug UP-TO-DATE
-> Task :runtime:extractDeepLinksDebug UP-TO-DATE
 > Task :ui:processDebugManifest UP-TO-DATE
+> Task :data:packageDebugResources UP-TO-DATE
+> Task :ui:compileDebugLibraryResources UP-TO-DATE
+> Task :data:extractDeepLinksDebug UP-TO-DATE
 > Task :data:processDebugManifest UP-TO-DATE
 > Task :data:compileDebugLibraryResources UP-TO-DATE
-> Task :ui:compileDebugLibraryResources UP-TO-DATE
-> Task :runtime:processDebugManifest UP-TO-DATE
-> Task :runtime:compileDebugLibraryResources UP-TO-DATE
-> Task :ui:parseDebugLocalResources UP-TO-DATE
+> Task :runtime:packageDebugResources UP-TO-DATE
 > Task :data:parseDebugLocalResources UP-TO-DATE
-> Task :ui:generateDebugRFile UP-TO-DATE
-> Task :ui:checkKotlinGradlePluginConfigurationErrors
-> Task :runtime:parseDebugLocalResources UP-TO-DATE
-> Task :ui:generateDebugBuildConfig UP-TO-DATE
+> Task :ui:parseDebugLocalResources UP-TO-DATE
 > Task :data:generateDebugRFile UP-TO-DATE
 > Task :data:checkKotlinGradlePluginConfigurationErrors
-> Task :runtime:generateDebugRFile UP-TO-DATE
 > Task :data:generateDebugBuildConfig UP-TO-DATE
+> Task :ui:generateDebugRFile UP-TO-DATE
+> Task :ui:checkKotlinGradlePluginConfigurationErrors
+> Task :runtime:extractDeepLinksDebug UP-TO-DATE
+> Task :ui:generateDebugBuildConfig UP-TO-DATE
+> Task :runtime:processDebugManifest UP-TO-DATE
+> Task :runtime:compileDebugLibraryResources UP-TO-DATE
+> Task :runtime:parseDebugLocalResources UP-TO-DATE
+> Task :runtime:generateDebugRFile UP-TO-DATE
 > Task :runtime:checkKotlinGradlePluginConfigurationErrors
 > Task :runtime:generateDebugBuildConfig UP-TO-DATE
 > Task :ui:javaPreCompileDebug UP-TO-DATE
-> Task :runtime:javaPreCompileDebug UP-TO-DATE
-> Task :runtime:mergeDebugShaders UP-TO-DATE
 > Task :ui:mergeDebugShaders UP-TO-DATE
-> Task :runtime:compileDebugShaders NO-SOURCE
-> Task :runtime:generateDebugAssets UP-TO-DATE
 > Task :ui:compileDebugShaders NO-SOURCE
 > Task :ui:generateDebugAssets UP-TO-DATE
 > Task :ui:packageDebugAssets UP-TO-DATE
-> Task :runtime:packageDebugAssets UP-TO-DATE
 > Task :ui:mergeDebugJniLibFolders UP-TO-DATE
-> Task :runtime:mergeDebugJniLibFolders UP-TO-DATE
 > Task :ui:mergeDebugNativeLibs NO-SOURCE
-> Task :runtime:mergeDebugNativeLibs NO-SOURCE
 > Task :ui:copyDebugJniLibsProjectOnly UP-TO-DATE
-> Task :runtime:copyDebugJniLibsProjectOnly UP-TO-DATE
-> Task :ui:stripDebugDebugSymbols NO-SOURCE
-> Task :runtime:stripDebugDebugSymbols NO-SOURCE
-> Task :runtime:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
-> Task :ui:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
-> Task :runtime:extractDeepLinksForAarDebug UP-TO-DATE
-> Task :ui:extractDeepLinksForAarDebug UP-TO-DATE
-> Task :runtime:prepareDebugArtProfile UP-TO-DATE
-> Task :runtime:prepareLintJarForPublish UP-TO-DATE
+> Task :runtime:javaPreCompileDebug UP-TO-DATE
+> Task :runtime:mergeDebugShaders UP-TO-DATE
+> Task :runtime:compileDebugShaders NO-SOURCE
+> Task :runtime:generateDebugAssets UP-TO-DATE
 > Task :data:javaPreCompileDebug UP-TO-DATE
-> Task :ui:prepareDebugArtProfile UP-TO-DATE
 > Task :data:mergeDebugShaders UP-TO-DATE
-> Task :core:compileKotlin UP-TO-DATE
 > Task :data:compileDebugShaders NO-SOURCE
 > Task :data:generateDebugAssets UP-TO-DATE
-> Task :ui:prepareLintJarForPublish UP-TO-DATE
+> Task :data:packageDebugAssets UP-TO-DATE
+> Task :runtime:packageDebugAssets UP-TO-DATE
+> Task :data:mergeDebugJniLibFolders UP-TO-DATE
+> Task :data:mergeDebugNativeLibs NO-SOURCE
+> Task :runtime:mergeDebugJniLibFolders UP-TO-DATE
+> Task :data:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :runtime:mergeDebugNativeLibs NO-SOURCE
+> Task :core:compileKotlin UP-TO-DATE
+> Task :runtime:copyDebugJniLibsProjectOnly UP-TO-DATE
 > Task :core:compileJava NO-SOURCE
 > Task :core:processResources NO-SOURCE
 > Task :core:classes UP-TO-DATE
-> Task :data:packageDebugAssets UP-TO-DATE
-> Task :data:mergeDebugJniLibFolders UP-TO-DATE
 > Task :core:jar UP-TO-DATE
-> Task :data:mergeDebugNativeLibs NO-SOURCE
-> Task :data:copyDebugJniLibsProjectOnly UP-TO-DATE
-> Task :data:stripDebugDebugSymbols NO-SOURCE
-> Task :data:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
-> Task :data:extractDeepLinksForAarDebug UP-TO-DATE
-> Task :data:prepareDebugArtProfile UP-TO-DATE
-> Task :data:prepareLintJarForPublish UP-TO-DATE
 > Task :domain:compileKotlin UP-TO-DATE
 > Task :domain:compileJava NO-SOURCE
 > Task :domain:classes UP-TO-DATE
 > Task :domain:jar UP-TO-DATE
 > Task :app:checkDebugAarMetadata UP-TO-DATE
-> Task :app:generateDebugResValues UP-TO-DATE
 > Task :app:mapDebugSourceSetPaths UP-TO-DATE
-> Task :app:generateDebugResources UP-TO-DATE
-> Task :runtime:kaptGenerateStubsDebugKotlin UP-TO-DATE
 > Task :app:mergeDebugResources UP-TO-DATE
-> Task :app:packageDebugResources UP-TO-DATE
-> Task :app:parseDebugLocalResources UP-TO-DATE
-> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
-> Task :app:extractDeepLinksDebug UP-TO-DATE
-> Task :runtime:kaptDebugKotlin UP-TO-DATE
-> Task :runtime:compileDebugKotlin UP-TO-DATE
 > Task :app:processDebugMainManifest UP-TO-DATE
 > Task :app:processDebugManifest UP-TO-DATE
 > Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :runtime:kaptGenerateStubsDebugKotlin UP-TO-DATE
+> Task :runtime:kaptDebugKotlin UP-TO-DATE
+> Task :runtime:compileDebugKotlin UP-TO-DATE
 AAPT2 aapt2-8.2.0-10154469-linux Daemon #0: Unexpected error output: error: "/data/data/com.termux/files/home/.gradle/caches/transforms-3/ec82526e211fe8a63a78c97b058f3265/transformed/aapt2-8.2.0-10154469-linux/aapt2" is for EM_X86_64 (62) instead of EM_AARCH64 (183)
 > Task :app:processDebugResources FAILED
 > Task :runtime:compileDebugJavaWithJavac FAILED
@@ -176,5 +160,5 @@ Execution failed for task ':runtime:compileDebugJavaWithJavac'.
 > Get more help at https://help.gradle.org.
 ==============================================================================
 
-BUILD FAILED in 25s
-81 actionable tasks: 8 executed, 73 up-to-date
+BUILD FAILED in 3s
+69 actionable tasks: 8 executed, 61 up-to-date

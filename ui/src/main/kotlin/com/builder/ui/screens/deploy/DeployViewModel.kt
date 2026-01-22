@@ -572,7 +572,7 @@ class DeployViewModel @Inject constructor(
         log(LogLevel.INFO, "Starting polling for run ID $runId")
         pollingJob?.cancel()
         pollingJob = viewModelScope.launch {
-            _uiState.update { it.copy(isPolling = true, tunnelUrl = null) }
+            _uiState.update { it.copy(isPolling = true, tunnelUrl = null, deployVersion = null, deployType = null) }
 
             var shouldContinue = true
             var pollCount = 0
@@ -590,8 +590,9 @@ class DeployViewModel @Inject constructor(
                         }
                         _uiState.update { it.copy(activeRun = run) }
 
-                        // Try to fetch tunnel URL if not already found and run is in progress
-                        if (state.tunnelUrl == null && run.status == "in_progress") {
+                        // Try to fetch tunnel URL and version info while run is in progress
+                        // Keep fetching from Gist until we have both URL and version info
+                        if (run.status == "in_progress" && (state.tunnelUrl == null || state.deployVersion == null)) {
                             // Fetch from Gist every poll (5 seconds) - Gist is updated when tunnel starts
                             fetchTunnelUrl(runId)
                         }

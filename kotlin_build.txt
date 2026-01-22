@@ -1,0 +1,80 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :app
+WARNING: The option setting 'android.defaults.buildfeatures.buildconfig=true' is deprecated.
+The current default is 'false'.
+It will be removed in version 9.0 of the Android Gradle plugin.
+You can resolve this warning in Android Studio via `Refactor` > `Migrate BuildConfig to Gradle Build Files`
+
+> Configure project :runtime
+⚠️  Wasmtime library not found - native build disabled
+   WASM execution will not be available at runtime
+   Run ./scripts/build-wasmtime.sh to enable WASM support
+
+> Task :data:preBuild UP-TO-DATE
+> Task :runtime:preBuild UP-TO-DATE
+> Task :data:preDebugBuild UP-TO-DATE
+> Task :runtime:preDebugBuild UP-TO-DATE
+> Task :data:generateDebugResValues UP-TO-DATE
+> Task :runtime:generateDebugResValues UP-TO-DATE
+> Task :data:generateDebugResources UP-TO-DATE
+> Task :runtime:generateDebugResources UP-TO-DATE
+> Task :domain:checkKotlinGradlePluginConfigurationErrors
+> Task :core:checkKotlinGradlePluginConfigurationErrors
+> Task :ui:checkKotlinGradlePluginConfigurationErrors
+> Task :ui:preBuild UP-TO-DATE
+> Task :ui:preDebugBuild UP-TO-DATE
+> Task :ui:generateDebugBuildConfig UP-TO-DATE
+> Task :ui:generateDebugResValues UP-TO-DATE
+> Task :ui:generateDebugResources UP-TO-DATE
+> Task :domain:processResources NO-SOURCE
+> Task :ui:packageDebugResources UP-TO-DATE
+> Task :runtime:packageDebugResources UP-TO-DATE
+> Task :data:packageDebugResources UP-TO-DATE
+> Task :runtime:parseDebugLocalResources UP-TO-DATE
+> Task :ui:parseDebugLocalResources UP-TO-DATE
+> Task :data:parseDebugLocalResources UP-TO-DATE
+> Task :ui:processDebugManifest UP-TO-DATE
+> Task :runtime:processDebugManifest UP-TO-DATE
+> Task :data:processDebugManifest UP-TO-DATE
+> Task :ui:generateDebugRFile UP-TO-DATE
+> Task :runtime:generateDebugRFile UP-TO-DATE
+> Task :runtime:checkKotlinGradlePluginConfigurationErrors
+> Task :data:generateDebugRFile UP-TO-DATE
+> Task :data:checkKotlinGradlePluginConfigurationErrors
+> Task :runtime:generateDebugBuildConfig UP-TO-DATE
+> Task :data:generateDebugBuildConfig UP-TO-DATE
+> Task :core:compileKotlin UP-TO-DATE
+> Task :core:compileJava NO-SOURCE
+> Task :core:processResources NO-SOURCE
+> Task :core:classes UP-TO-DATE
+> Task :core:jar UP-TO-DATE
+> Task :runtime:javaPreCompileDebug UP-TO-DATE
+> Task :data:javaPreCompileDebug UP-TO-DATE
+> Task :domain:compileKotlin UP-TO-DATE
+> Task :domain:compileJava NO-SOURCE
+> Task :domain:classes UP-TO-DATE
+> Task :domain:jar UP-TO-DATE
+> Task :runtime:kaptGenerateStubsDebugKotlin UP-TO-DATE
+> Task :runtime:kaptDebugKotlin UP-TO-DATE
+> Task :runtime:compileDebugKotlin UP-TO-DATE
+> Task :runtime:compileDebugJavaWithJavac FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':runtime:compileDebugJavaWithJavac'.
+> Could not resolve all files for configuration ':runtime:androidJdkImage'.
+   > Failed to transform core-for-system-modules.jar to match attributes {artifactType=_internal_android_jdk_image, org.gradle.libraryelements=jar, org.gradle.usage=java-runtime}.
+      > Execution failed for JdkImageTransform: /data/data/com.termux/files/home/android-sdk/platforms/android-34/core-for-system-modules.jar.
+         > Error while executing process /data/data/com.termux/files/usr/lib/jvm/java-21-openjdk/bin/jlink with arguments {--module-path /data/data/com.termux/files/home/.gradle/caches/transforms-3/87e7142f251ffbd28bae533cfa56768b/transformed/output/temp/jmod --add-modules java.base --output /data/data/com.termux/files/home/.gradle/caches/transforms-3/87e7142f251ffbd28bae533cfa56768b/transformed/output/jdkImage --disable-plugin system-modules}
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 21s
+33 actionable tasks: 6 executed, 27 up-to-date
