@@ -611,9 +611,9 @@ class DeployViewModel @Inject constructor(
                         }
                         _uiState.update { it.copy(activeRun = run) }
 
-                        // Try to fetch tunnel URL and version info while run is in progress
-                        // Keep fetching from Gist until we have both URL and version info
-                        if (run.status == "in_progress" && (state.tunnelUrl == null || state.deployVersion == null)) {
+                        // Try to fetch tunnel URL while run is in progress
+                        // Keep fetching until we have the URL (version is already set from triggerDeploy)
+                        if (run.status == "in_progress" && state.tunnelUrl == null) {
                             // Fetch from Gist every poll (5 seconds) - Gist is updated when tunnel starts
                             fetchTunnelUrl(runId)
                         }
@@ -650,23 +650,34 @@ class DeployViewModel @Inject constructor(
 
     fun fetchTunnelUrl(runId: Long? = null) {
         val id = runId ?: _uiState.value.activeRunId ?: return
-        val state = _uiState.value
 
         viewModelScope.launch {
-            if (state.isFetchingUrl) return@launch
+            // Check current state, not captured state
+            if (_uiState.value.isFetchingUrl) return@launch
 
             _uiState.update { it.copy(isFetchingUrl = true) }
             Timber.d("Deploy: Fetching tunnel URL from Gist for run $id")
 
             try {
-                val url = fetchTunnelUrlFromGist()
-                if (url != null) {
-                    Timber.i("Deploy: Found tunnel URL from Gist: $url")
-                    log(LogLevel.INFO, "Tunnel URL found from Gist: $url")
-                    _uiState.update { it.copy(tunnelUrl = url, isFetchingUrl = false, isDeployComplete = true) }
+                val gistResult = fetchTunnelUrlFromGist()
+                if (gistResult != null) {
+                    Timber.i("Deploy: Found tunnel URL from Gist: ${gistResult.tunnelUrl}")
+                    log(LogLevel.INFO, "Tunnel URL found from Gist: ${gistResult.tunnelUrl}")
+                    // Update URL, version, deployType and mark as complete - all atomically
+                    _uiState.update { current ->
+                        current.copy(
+                            tunnelUrl = gistResult.tunnelUrl,
+                            // Update version from Gist if available (has the actual resolved version)
+                            deployVersion = gistResult.version?.takeIf { it.isNotEmpty() && it != "null" } ?: current.deployVersion,
+                            deployType = gistResult.deployType?.takeIf { it.isNotEmpty() && it != "null" } ?: current.deployType,
+                            isFetchingUrl = false,
+                            isDeployComplete = true
+                        )
+                    }
                 } else {
                     Timber.d("Deploy: No tunnel URL in Gist yet, trying GitHub logs...")
                     // Fallback to GitHub logs extraction
+                    val state = _uiState.value
                     val result = gitHubRepository.extractTunnelUrl(state.owner, state.repo, id)
                     result.fold(
                         onSuccess = { logUrl ->
@@ -692,7 +703,14 @@ class DeployViewModel @Inject constructor(
         }
     }
 
-    private suspend fun fetchTunnelUrlFromGist(): String? {
+    // Data class to hold Gist fetch result
+    private data class GistResult(
+        val tunnelUrl: String,
+        val version: String?,
+        val deployType: String?
+    )
+
+    private suspend fun fetchTunnelUrlFromGist(): GistResult? {
         val gistId = _uiState.value.tunnelGistId
         if (gistId.isNullOrBlank()) {
             Timber.d("Deploy: No gist ID available for this repository")
@@ -720,26 +738,11 @@ class DeployViewModel @Inject constructor(
                         val version = statusJson.optString("version", null)
                         val deployType = statusJson.optString("deploy_type", null)
 
-                        // Update version and deploy type in UI state only if Gist has valid data
-                        // Don't overwrite if we already have version from triggerDeploy and Gist has null
-                        val currentVersion = _uiState.value.deployVersion
-                        if (version != null && version.isNotEmpty() && version != "null") {
-                            // Gist has valid version - update state
-                            _uiState.update { it.copy(
-                                deployVersion = version,
-                                deployType = deployType
-                            )}
-                            Timber.d("Deploy: Gist version info - version=$version, deployType=$deployType")
-                        } else if (currentVersion == null) {
-                            // No version set yet and Gist doesn't have one - this is normal during early deploy
-                            Timber.d("Deploy: No version in Gist yet, waiting...")
-                        }
-
-                        // Only return URL if status is "running" and URL is valid
+                        // Only return data if status is "running" and URL is valid
                         // The workflow resets the Gist to "pending" at start, so stale URLs are cleared
                         if (tunnelUrl != null && tunnelUrl.isNotEmpty() && tunnelUrl != "null" && status == "running") {
-                            Timber.d("Deploy: Gist tunnel status - url=$tunnelUrl, status=$status")
-                            return@withContext tunnelUrl
+                            Timber.d("Deploy: Gist data - url=$tunnelUrl, version=$version, deployType=$deployType")
+                            return@withContext GistResult(tunnelUrl, version, deployType)
                         }
                     }
                     null
