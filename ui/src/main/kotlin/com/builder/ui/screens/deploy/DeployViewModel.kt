@@ -613,9 +613,13 @@ class DeployViewModel @Inject constructor(
 
                         // Try to fetch tunnel URL while run is in progress
                         // Keep fetching until we have the URL (version is already set from triggerDeploy)
+                        Timber.d("Deploy: Poll check - status=${run.status}, tunnelUrl=${state.tunnelUrl}, gistId=${state.tunnelGistId}")
                         if (run.status == "in_progress" && state.tunnelUrl == null) {
                             // Fetch from Gist every poll (5 seconds) - Gist is updated when tunnel starts
+                            Timber.d("Deploy: Calling fetchTunnelUrl")
                             fetchTunnelUrl(runId)
+                        } else if (state.tunnelUrl != null) {
+                            Timber.d("Deploy: URL already found: ${state.tunnelUrl}")
                         }
 
                         if (run.isComplete()) {
@@ -738,11 +742,15 @@ class DeployViewModel @Inject constructor(
                         val version = statusJson.optString("version", null)
                         val deployType = statusJson.optString("deploy_type", null)
 
+                        Timber.d("Deploy: Gist raw data - status=$status, url=$tunnelUrl, version=$version")
+
                         // Only return data if status is "running" and URL is valid
                         // The workflow resets the Gist to "pending" at start, so stale URLs are cleared
                         if (tunnelUrl != null && tunnelUrl.isNotEmpty() && tunnelUrl != "null" && status == "running") {
-                            Timber.d("Deploy: Gist data - url=$tunnelUrl, version=$version, deployType=$deployType")
+                            Timber.d("Deploy: Gist data VALID - returning result")
                             return@withContext GistResult(tunnelUrl, version, deployType)
+                        } else {
+                            Timber.d("Deploy: Gist data not ready - status=$status, urlValid=${tunnelUrl != null && tunnelUrl.isNotEmpty() && tunnelUrl != "null"}")
                         }
                     }
                     null
