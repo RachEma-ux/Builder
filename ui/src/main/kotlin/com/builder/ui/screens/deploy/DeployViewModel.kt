@@ -39,6 +39,16 @@ enum class DeployMode {
 }
 
 /**
+ * Version increment type for new deployments.
+ */
+enum class VersionIncrement {
+    PATCH,   // X.Y.Z -> X.Y.(Z+1)
+    MINOR,   // X.Y.Z -> X.(Y+1).0
+    MAJOR,   // X.Y.Z -> (X+1).0.0
+    CUSTOM   // User enters custom version
+}
+
+/**
  * UI state for deploy screen.
  */
 data class DeployUiState(
@@ -62,7 +72,10 @@ data class DeployUiState(
 
     // Deploy form state
     val deployMode: DeployMode = DeployMode.NEW_VERSION,
-    val version: String = "auto",
+    val versionIncrement: VersionIncrement = VersionIncrement.PATCH,
+    val customVersion: String = "",
+    val version: String = "auto",  // Computed version to deploy
+    val latestVersion: String? = null,  // Latest version from releases
     val duration: String = "15",
     val runApp: Boolean = true,
     val owner: String = "",
@@ -384,10 +397,22 @@ class DeployViewModel @Inject constructor(
                 onSuccess = { releases ->
                     Timber.i("Deploy: Loaded ${releases.size} releases for $owner/$repo")
                     log(LogLevel.INFO, "Loaded ${releases.size} releases for $owner/$repo")
+
+                    // Parse latest version from releases
+                    val latest = releases.firstOrNull()?.tagName?.removePrefix("v")
+                    Timber.d("Deploy: Latest version: $latest")
+
                     _uiState.update {
                         it.copy(
                             releases = releases,
-                            isLoadingReleases = false
+                            isLoadingReleases = false,
+                            latestVersion = latest,
+                            // Auto-calculate next version based on current increment type
+                            version = if (it.deployMode == DeployMode.NEW_VERSION && it.versionIncrement != VersionIncrement.CUSTOM) {
+                                calculateNextVersion(latest, it.versionIncrement)
+                            } else {
+                                it.version
+                            }
                         )
                     }
                     // Auto-select latest release if available
@@ -450,10 +475,66 @@ class DeployViewModel @Inject constructor(
                 deployMode = mode,
                 // Reset version based on mode
                 version = when (mode) {
-                    DeployMode.NEW_VERSION -> "auto"
+                    DeployMode.NEW_VERSION -> {
+                        if (it.versionIncrement == VersionIncrement.CUSTOM) {
+                            it.customVersion.ifEmpty { "1.0.0" }
+                        } else {
+                            calculateNextVersion(it.latestVersion, it.versionIncrement)
+                        }
+                    }
                     DeployMode.REDEPLOY -> it.selectedRelease?.tagName?.removePrefix("v") ?: it.version
                 }
             )
+        }
+    }
+
+    fun updateVersionIncrement(increment: VersionIncrement) {
+        Timber.d("Deploy: Version increment changed to $increment")
+        _uiState.update {
+            it.copy(
+                versionIncrement = increment,
+                version = when (increment) {
+                    VersionIncrement.CUSTOM -> it.customVersion.ifEmpty { it.latestVersion ?: "1.0.0" }
+                    else -> calculateNextVersion(it.latestVersion, increment)
+                }
+            )
+        }
+    }
+
+    fun updateCustomVersion(version: String) {
+        _uiState.update {
+            it.copy(
+                customVersion = version,
+                version = version
+            )
+        }
+    }
+
+    /**
+     * Calculate the next version based on the increment type.
+     * Follows semantic versioning: MAJOR.MINOR.PATCH
+     */
+    private fun calculateNextVersion(currentVersion: String?, increment: VersionIncrement): String {
+        if (currentVersion.isNullOrBlank()) {
+            return when (increment) {
+                VersionIncrement.PATCH -> "1.0.0"
+                VersionIncrement.MINOR -> "1.0.0"
+                VersionIncrement.MAJOR -> "1.0.0"
+                VersionIncrement.CUSTOM -> "1.0.0"
+            }
+        }
+
+        // Parse version: X.Y.Z
+        val parts = currentVersion.split(".").mapNotNull { it.toIntOrNull() }
+        val major = parts.getOrElse(0) { 1 }
+        val minor = parts.getOrElse(1) { 0 }
+        val patch = parts.getOrElse(2) { 0 }
+
+        return when (increment) {
+            VersionIncrement.PATCH -> "$major.$minor.${patch + 1}"
+            VersionIncrement.MINOR -> "$major.${minor + 1}.0"
+            VersionIncrement.MAJOR -> "${major + 1}.0.0"
+            VersionIncrement.CUSTOM -> currentVersion
         }
     }
 

@@ -115,7 +115,8 @@ fun DeployScreen(
                 DeployTab.DEPLOY -> DeployTabContent(
                     uiState = uiState,
                     onDeployModeChange = viewModel::updateDeployMode,
-                    onVersionChange = viewModel::updateVersion,
+                    onVersionIncrementChange = viewModel::updateVersionIncrement,
+                    onCustomVersionChange = viewModel::updateCustomVersion,
                     onDurationChange = viewModel::updateDuration,
                     onRunAppChange = viewModel::updateRunApp,
                     onRepositorySelected = viewModel::selectRepository,
@@ -149,7 +150,8 @@ fun DeployScreen(
 fun DeployTabContent(
     uiState: DeployUiState,
     onDeployModeChange: (DeployMode) -> Unit,
-    onVersionChange: (String) -> Unit,
+    onVersionIncrementChange: (VersionIncrement) -> Unit,
+    onCustomVersionChange: (String) -> Unit,
     onDurationChange: (String) -> Unit,
     onRunAppChange: (Boolean) -> Unit,
     onRepositorySelected: (Repository) -> Unit,
@@ -454,16 +456,128 @@ fun DeployTabContent(
                 // Show different content based on deploy mode
                 when (uiState.deployMode) {
                     DeployMode.NEW_VERSION -> {
-                        // Version text field for new version
-                        OutlinedTextField(
-                            value = uiState.version,
-                            onValueChange = onVersionChange,
-                            label = { Text("Version") },
-                            placeholder = { Text("auto or e.g., 2.0.0") },
-                            supportingText = { Text("Use 'auto' for auto-increment") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                        // Show latest version
+                        if (uiState.latestVersion != null) {
+                            Text(
+                                "Latest: v${uiState.latestVersion}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+
+                        // Version increment chips
+                        Text(
+                            "Increment Type",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Calculate preview versions
+                        val latestParts = uiState.latestVersion?.split(".")?.mapNotNull { it.toIntOrNull() } ?: listOf(0, 0, 0)
+                        val major = latestParts.getOrElse(0) { 0 }
+                        val minor = latestParts.getOrElse(1) { 0 }
+                        val patch = latestParts.getOrElse(2) { 0 }
+                        val nextPatch = "$major.$minor.${patch + 1}"
+                        val nextMinor = "$major.${minor + 1}.0"
+                        val nextMajor = "${major + 1}.0.0"
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FilterChip(
+                                selected = uiState.versionIncrement == VersionIncrement.PATCH,
+                                onClick = { onVersionIncrementChange(VersionIncrement.PATCH) },
+                                label = {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("Patch", style = MaterialTheme.typography.labelSmall)
+                                        Text(nextPatch, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                                    }
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                            FilterChip(
+                                selected = uiState.versionIncrement == VersionIncrement.MINOR,
+                                onClick = { onVersionIncrementChange(VersionIncrement.MINOR) },
+                                label = {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("Minor", style = MaterialTheme.typography.labelSmall)
+                                        Text(nextMinor, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                                    }
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FilterChip(
+                                selected = uiState.versionIncrement == VersionIncrement.MAJOR,
+                                onClick = { onVersionIncrementChange(VersionIncrement.MAJOR) },
+                                label = {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("Major", style = MaterialTheme.typography.labelSmall)
+                                        Text(nextMajor, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                                    }
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                            FilterChip(
+                                selected = uiState.versionIncrement == VersionIncrement.CUSTOM,
+                                onClick = { onVersionIncrementChange(VersionIncrement.CUSTOM) },
+                                label = {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("Custom", style = MaterialTheme.typography.labelSmall)
+                                        Text("...", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                                    }
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        // Custom version text field
+                        if (uiState.versionIncrement == VersionIncrement.CUSTOM) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            OutlinedTextField(
+                                value = uiState.customVersion,
+                                onValueChange = onCustomVersionChange,
+                                label = { Text("Custom Version") },
+                                placeholder = { Text("e.g., 2.5.0") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                        }
+
+                        // Version preview
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.NewReleases,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Text(
+                                    "Will deploy: v${uiState.version}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
                     }
                     DeployMode.REDEPLOY -> {
                         // Release dropdown for redeploy
