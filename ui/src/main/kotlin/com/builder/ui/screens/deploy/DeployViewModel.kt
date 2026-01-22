@@ -66,6 +66,8 @@ data class DeployUiState(
     val isPolling: Boolean = false,
     val tunnelUrl: String? = null,
     val isFetchingUrl: Boolean = false,
+    val deployVersion: String? = null,
+    val deployType: String? = null, // "new" or "redeploy"
 
     // History state
     val workflowRuns: List<WorkflowRun> = emptyList(),
@@ -693,6 +695,17 @@ class DeployViewModel @Inject constructor(
                         val statusJson = JSONObject(content)
                         val tunnelUrl = statusJson.optString("tunnel_url", null)
                         val status = statusJson.optString("status", null)
+                        val version = statusJson.optString("version", null)
+                        val deployType = statusJson.optString("deploy_type", null)
+
+                        // Update version and deploy type in UI state
+                        if (version != null && version.isNotEmpty() && version != "null") {
+                            _uiState.update { it.copy(
+                                deployVersion = version,
+                                deployType = deployType
+                            )}
+                            Timber.d("Deploy: Gist version info - version=$version, deployType=$deployType")
+                        }
 
                         // Only return URL if status is "running" and URL is valid
                         // The workflow resets the Gist to "pending" at start, so stale URLs are cleared

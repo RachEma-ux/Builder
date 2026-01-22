@@ -673,6 +673,50 @@ fun StatusTabContent(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Version Info Card
+            if (uiState.deployVersion != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (uiState.deployType == "redeploy")
+                            MaterialTheme.colorScheme.tertiaryContainer
+                        else
+                            MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            if (uiState.deployType == "redeploy") Icons.Default.Replay else Icons.Default.RocketLaunch,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = if (uiState.deployType == "redeploy")
+                                MaterialTheme.colorScheme.onTertiaryContainer
+                            else
+                                MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            if (uiState.deployType == "redeploy")
+                                "Redeploying v${uiState.deployVersion}"
+                            else
+                                "Deploying v${uiState.deployVersion}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (uiState.deployType == "redeploy")
+                                MaterialTheme.colorScheme.onTertiaryContainer
+                            else
+                                MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
+            }
+
             // Status Card
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
